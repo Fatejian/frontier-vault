@@ -42,6 +42,8 @@ function hashStr(str) {
   return hash
 }
 
+let zoomSetupDone = false
+
 function renderMermaid() {
   const codeBlocks = document.querySelectorAll('pre code')
   const mermaidCodeBlocks = Array.from(codeBlocks).filter(cb => {
@@ -72,6 +74,7 @@ function renderMermaid() {
   renderedMermaidHashes.clear()
 
   let counter = 0
+  let pendingRenders = 0
 
   codeBlocks.forEach((codeBlock) => {
     const preBlock = codeBlock.parentElement
@@ -88,6 +91,7 @@ function renderMermaid() {
     svgContainer.className = 'mermaid-rendered'
     svgContainer.title = '点击放大查看'
 
+    pendingRenders++
     mermaid.render('mermaid-' + Date.now() + '-' + (counter++), code).then(({ svg }) => {
       svgContainer.innerHTML = svg
       const lineNumbersMode = preBlock.closest('.line-numbers-mode')
@@ -98,17 +102,30 @@ function renderMermaid() {
         preBlock.parentNode.insertBefore(svgContainer, preBlock.nextSibling)
         preBlock.classList.add('mermaid-source-hidden')
       }
+
+      pendingRenders--
+      // 所有渲染完成后，设置事件监听
+      if (pendingRenders === 0 && !zoomSetupDone) {
+        zoomSetupDone = true
+        setupMermaidZoom()
+      }
     }).catch((err) => {
       console.error('Mermaid render error:', err)
+      pendingRenders--
     })
   })
 }
 
 // 放大查看功能
+let isOverlayOpen = false
+
 function setupMermaidZoom() {
   if (document.querySelector('.mermaid-overlay')) return
 
   document.addEventListener('click', (e) => {
+    // 如果遮罩已打开，不处理（防止关闭时穿透到下方图表重新打开）
+    if (isOverlayOpen) return
+
     const rendered = e.target.closest('.mermaid-rendered')
     if (!rendered) return
 
@@ -117,6 +134,7 @@ function setupMermaidZoom() {
 
     const overlay = document.createElement('div')
     overlay.className = 'mermaid-overlay'
+    isOverlayOpen = true
 
     const content = document.createElement('div')
     content.className = 'mermaid-overlay-content'
@@ -125,7 +143,10 @@ function setupMermaidZoom() {
     closeBtn.className = 'mermaid-overlay-close'
     closeBtn.setAttribute('aria-label', '关闭')
     closeBtn.textContent = '✕'
-    closeBtn.addEventListener('click', () => overlay.remove())
+    closeBtn.addEventListener('click', () => {
+      overlay.remove()
+      isOverlayOpen = false
+    })
 
     // Clone SVG and fix size for overlay display
     const svgClone = svg.cloneNode(true)
@@ -147,37 +168,21 @@ function setupMermaidZoom() {
     overlay.appendChild(content)
 
     overlay.addEventListener('click', (ev) => {
-      if (ev.target === overlay) overlay.remove()
+      if (ev.target === overlay) {
+        overlay.remove()
+        // 延迟重置状态，确保当前 click 事件冒泡完成后再允许打开新遮罩
+        setTimeout(() => { isOverlayOpen = false }, 50)
+      }
     })
 
     document.body.appendChild(overlay)
   })
 }
 
-// 智能识别引用块类型并添加样式类
-function enhanceBlockquotes() {
-  const blockquotes = document.querySelectorAll('.vp-doc blockquote')
-  blockquotes.forEach((bq) => {
-    const text = bq.textContent.trim()
-    // 移除已有的类型类
-    bq.classList.remove('callout-conclusion', 'callout-warning', 'callout-tip', 'callout-info')
-    
-    if (text.includes('本节核心结论')) {
-      bq.classList.add('callout-conclusion')
-    } else if (text.includes('常见误区')) {
-      bq.classList.add('callout-warning')
-    } else if (text.includes('工程启示')) {
-      bq.classList.add('callout-tip')
-    } else if (text.includes('一句话')) {
-      bq.classList.add('callout-info')
-    }
-  })
-}
-
 // 创建回到顶部按钮
 function createBackToTop() {
   if (document.querySelector('.back-to-top')) return
-  
+
   const btn = document.createElement('button')
   btn.className = 'back-to-top'
   btn.innerHTML = '↑'
@@ -186,7 +191,7 @@ function createBackToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   })
   document.body.appendChild(btn)
-  
+
   window.addEventListener('scroll', () => {
     if (window.scrollY > 300) {
       btn.classList.add('visible')
@@ -196,19 +201,11 @@ function createBackToTop() {
   })
 }
 
-let initialRenderDone = false
 let renderTimer = null
 
 function doRender() {
-  if (initialRenderDone) {
-    renderMermaid(true)
-  } else {
-    renderMermaid(false)
-    initialRenderDone = true
-  }
-  enhanceBlockquotes()
+  renderMermaid()
   createBackToTop()
-  setupMermaidZoom()
 }
 
 function scheduleRender() {

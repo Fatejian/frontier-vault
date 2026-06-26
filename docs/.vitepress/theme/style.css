@@ -1,21 +1,107 @@
+/* ============================================
+   Frontier Vault Design System
+   ============================================ */
+
+/* Design Tokens */
+:root {
+  /* Colors - Light */
+  --fv-bg: #ffffff;
+  --fv-surface: #f8fafc;
+  --fv-surface-elevated: #ffffff;
+  --fv-text: #172033;
+  --fv-text-muted: #64748b;
+  --fv-border: #e2e8f0;
+  --fv-primary: #3b82f6;
+  --fv-success: #22c55e;
+  --fv-warning: #f59e0b;
+  --fv-danger: #ef4444;
+  --fv-purple: #a855f7;
+
+  /* Radius */
+  --fv-radius-sm: 8px;
+  --fv-radius-md: 12px;
+  --fv-radius-lg: 16px;
+  --fv-radius-xl: 20px;
+
+  /* Spacing */
+  --fv-space-1: 4px;
+  --fv-space-2: 8px;
+  --fv-space-3: 12px;
+  --fv-space-4: 16px;
+  --fv-space-6: 24px;
+  --fv-space-8: 32px;
+
+  /* Typography */
+  --fv-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --fv-font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Dark Mode Tokens */
+.dark {
+  --fv-bg: #0f172a;
+  --fv-surface: #1e293b;
+  --fv-surface-elevated: #334155;
+  --fv-text: #e5e7eb;
+  --fv-text-muted: #94a3b8;
+  --fv-border: #334155;
+  --fv-primary: #60a5fa;
+}
+
+/* ============================================
+   正文阅读体验
+   ============================================ */
+
+.vp-doc {
+  max-width: 840px;
+  font-size: 17px;
+  line-height: 1.78;
+}
+
+.vp-doc p {
+  margin: 1em 0;
+}
+
+.vp-doc h2 {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc h3 {
+  margin-top: 2rem;
+}
+
+.vp-doc h4 {
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   Mermaid 容器
+   ============================================ */
+
 .mermaid-rendered {
-  margin: 1rem 0;
-  padding: 0.5rem;
-  background: #1e1e1e;
-  border-radius: 8px;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: var(--fv-radius-xl);
+  border: 1px solid var(--vp-c-divider);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 32%),
+    var(--fv-surface);
   overflow-x: auto;
   cursor: zoom-in;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .mermaid-rendered:hover {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  border-color: var(--fv-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .mermaid-rendered svg {
   max-width: 100%;
   height: auto;
   display: block;
+  margin: 0 auto;
 }
 
 /* 隐藏已渲染的 mermaid 源码 */
@@ -47,8 +133,8 @@
   max-width: 95vw;
   max-height: 95vh;
   overflow: auto;
-  background: #1e1e1e;
-  border-radius: 12px;
+  background: var(--fv-surface);
+  border-radius: var(--fv-radius-xl);
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   cursor: default;
@@ -86,7 +172,64 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* 任务清单样式：隐藏无序列表的圆点，保留 [ ] 复选框 */
+/* ============================================
+   代码块
+   ============================================ */
+
+.vp-doc div[class*='language-'] {
+  margin: 1.5rem 0;
+  border-radius: var(--fv-radius-lg);
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dark .vp-doc div[class*='language-'] {
+  box-shadow: none;
+}
+
+.vp-doc pre {
+  position: relative;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.vp-doc pre code {
+  font-family: var(--fv-font-mono);
+}
+
+/* ============================================
+   VitePress Container 自定义样式
+   ============================================ */
+
+.vp-doc .custom-block {
+  border-radius: var(--fv-radius-md);
+  margin: 1.25rem 0;
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 600;
+}
+
+.vp-doc .custom-block.tip {
+  border-color: var(--fv-primary);
+}
+
+.vp-doc .custom-block.warning {
+  border-color: var(--fv-warning);
+}
+
+.vp-doc .custom-block.info {
+  border-color: var(--fv-purple);
+}
+
+.vp-doc .custom-block.danger {
+  border-color: var(--fv-danger);
+}
+
+/* ============================================
+   任务清单
+   ============================================ */
+
 .vp-doc ul.contains-task-list,
 .vp-doc ul.contains-task-list li.task-list-item {
   list-style: none !important;
@@ -99,72 +242,87 @@
 }
 
 .vp-doc li.task-list-item input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--fv-text-muted);
+  border-radius: var(--fv-space-1);
   margin-right: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: all 0.2s ease;
 }
 
-/* 自定义引用块样式：根据内容关键词自动区分类型 */
+.vp-doc li.task-list-item input[type="checkbox"]:hover {
+  border-color: var(--fv-primary);
+}
+
+.vp-doc li.task-list-item input[type="checkbox"]:checked {
+  background: var(--fv-primary);
+  border-color: var(--fv-primary);
+}
+
+.vp-doc li.task-list-item input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* ============================================
+   引用块（普通强调引语）
+   ============================================ */
+
 .vp-doc blockquote {
   position: relative;
   border-left-width: 4px;
   padding: 0.75rem 1rem 0.75rem 1.25rem;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--fv-radius-md) var(--fv-radius-md) 0;
   margin: 1.25rem 0;
-  transition: all 0.2s ease;
-  border-left-color: #4b5563;
-  background: rgba(255, 255, 255, 0.02);
+  transition: box-shadow 0.2s ease;
+  border-left-color: var(--fv-border);
+  background: var(--fv-surface);
 }
 
 .vp-doc blockquote:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* 核心结论 - 蓝色信息 */
-.vp-doc blockquote.callout-conclusion {
-  border-left-color: #3b82f6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%);
+/* ============================================
+   表格
+   ============================================ */
+
+.vp-doc table {
+  border-radius: var(--fv-radius-md);
+  overflow: hidden;
+  border-collapse: collapse;
 }
 
-.vp-doc blockquote.callout-conclusion strong {
-  color: #60a5fa;
+.vp-doc th {
+  background: var(--fv-surface);
+  font-weight: 600;
 }
 
-/* 常见误区 - 橙色警告 */
-.vp-doc blockquote.callout-warning {
-  border-left-color: #f59e0b;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%);
+.vp-doc td,
+.vp-doc th {
+  border-color: var(--fv-border);
 }
 
-.vp-doc blockquote.callout-warning strong {
-  color: #fbbf24;
-}
+/* ============================================
+   脚注
+   ============================================ */
 
-/* 工程启示 - 绿色提示 */
-.vp-doc blockquote.callout-tip {
-  border-left-color: #22c55e;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.02) 100%);
-}
-
-.vp-doc blockquote.callout-tip strong {
-  color: #4ade80;
-}
-
-/* 一句话总结 - 紫色强调 */
-.vp-doc blockquote.callout-info {
-  border-left-color: #a855f7;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.02) 100%);
-}
-
-.vp-doc blockquote.callout-info strong {
-  color: #c084fc;
-}
-
-/* 脚注样式优化 */
 .footnotes {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--vp-c-divider);
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--fv-text-muted);
 }
 
 .footnotes ol {
@@ -176,7 +334,7 @@
 }
 
 .footnotes a {
-  color: #60a5fa;
+  color: var(--fv-primary);
   text-decoration: none;
 }
 
@@ -184,7 +342,10 @@
   text-decoration: underline;
 }
 
-/* 回到顶部按钮 */
+/* ============================================
+   回到顶部按钮
+   ============================================ */
+
 .back-to-top {
   position: fixed;
   bottom: 2rem;
@@ -192,7 +353,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--fv-primary);
   color: white;
   border: none;
   cursor: pointer;
@@ -218,46 +379,29 @@
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
 }
 
-/* 代码块标题样式 */
-.vp-doc pre {
-  position: relative;
+.back-to-top:focus-visible {
+  outline: 2px solid var(--fv-primary);
+  outline-offset: 2px;
 }
 
-.vp-doc pre code {
-  font-size: 0.875rem;
-  line-height: 1.7;
-}
+/* ============================================
+   响应式
+   ============================================ */
 
-/* 任务清单复选框样式优化 */
-.vp-doc li.task-list-item input[type="checkbox"] {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid #4b5563;
-  border-radius: 3px;
-  margin-right: 0.5rem;
-  cursor: pointer;
-  position: relative;
-  vertical-align: middle;
-  transition: all 0.2s ease;
-}
+@media (max-width: 768px) {
+  .vp-doc {
+    font-size: 16px;
+  }
 
-.vp-doc li.task-list-item input[type="checkbox"]:hover {
-  border-color: #3b82f6;
-}
+  .mermaid-rendered {
+    padding: 1rem;
+    margin: 1.5rem 0;
+  }
 
-.vp-doc li.task-list-item input[type="checkbox"]:checked {
-  background: #3b82f6;
-  border-color: #3b82f6;
-}
-
-.vp-doc li.task-list-item input[type="checkbox"]:checked::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
+  .back-to-top {
+    bottom: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+  }
 }

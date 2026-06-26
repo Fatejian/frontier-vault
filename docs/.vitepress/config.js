@@ -1,4 +1,6 @@
 import { defineConfig } from 'vitepress'
+import taskLists from 'markdown-it-task-lists'
+import footnote from 'markdown-it-footnote'
 
 export default defineConfig({
   title: 'Frontier Vault',
@@ -6,7 +8,11 @@ export default defineConfig({
   base: '/frontier-vault/',
   markdown: {
     theme: 'github-dark',
-    lineNumbers: true
+    lineNumbers: true,
+    config: (md) => {
+      md.use(taskLists, { enabled: true, label: true })
+      md.use(footnote)
+    }
   },
   themeConfig: {
     nav: [
@@ -17,46 +23,79 @@ export default defineConfig({
       { text: '性能优化', link: '/performance/' },
       { text: '职业体系', link: '/career/' }
     ],
-    sidebar: {
-      '/browser/': [
+    sidebar:     {
+      "/browser/": [
         {
-          text: '浏览器原理',
-          items: [
-            { text: '概述', link: '/browser/' },
-            // 后面文章逐渐补充，例如：
-            // { text: '架构与进程模型', link: '/browser/architecture' }
+          "text": "浏览器原理",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/browser/"
+            },
+            {
+              "text": "渲染流水线：从HTML到像素",
+              "link": "/browser/03-渲染流水线：从HTML到像素"
+            },
+            {
+              "text": "布局抖动的真相：Layout Thrashing 如何搞垮你的动画",
+              "link": "/browser/04-layout-thrashing"
+            },
+            {
+              "text": "绘制与光栅化",
+              "link": "/browser/05-绘制与光栅化"
+            }
           ]
         }
       ],
-      '/javascript/': [
+      "/career/": [
         {
-          text: 'JavaScript 深度',
-          items: [
-            { text: '概述', link: '/javascript/' }
+          "text": "职业体系",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/career/"
+            }
           ]
         }
       ],
-      '/frameworks/': [
+      "/frameworks/": [
         {
-          text: '框架与生态',
-          items: [
-            { text: '概述', link: '/frameworks/' }
+          "text": "框架与生态",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/frameworks/"
+            }
           ]
         }
       ],
-      '/performance/': [
+      "/javascript/": [
         {
-          text: '性能优化工程',
-          items: [
-            { text: '概述', link: '/performance/' }
+          "text": "JavaScript 深度",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/javascript/"
+            }
           ]
         }
       ],
-      '/career/': [
+      "/performance/": [
         {
-          text: '职业体系',
-          items: [
-            { text: '概述', link: '/career/' }
+          "text": "性能优化工程",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/performance/"
+            },
+            {
+              "text": "渲染性能避坑指南",
+              "link": "/performance/03-渲染性能避坑指南"
+            },
+            {
+              "text": "现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作",
+              "link": "/performance/现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作"
+            }
           ]
         }
       ]

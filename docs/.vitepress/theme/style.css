@@ -1,0 +1,263 @@
+.mermaid-rendered {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background: #1e1e1e;
+  border-radius: 8px;
+  overflow-x: auto;
+  cursor: zoom-in;
+  transition: box-shadow 0.2s ease;
+}
+
+.mermaid-rendered:hover {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.mermaid-rendered svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 隐藏已渲染的 mermaid 源码 */
+.mermaid-source-hidden {
+  display: none !important;
+}
+
+/* Mermaid 放大查看遮罩 */
+.mermaid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  cursor: zoom-out;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mermaid-overlay-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: auto;
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.mermaid-overlay-content svg {
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: block;
+  margin: 0 auto;
+}
+
+.mermaid-overlay-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+.mermaid-overlay-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 任务清单样式：隐藏无序列表的圆点，保留 [ ] 复选框 */
+.vp-doc ul.contains-task-list,
+.vp-doc ul.contains-task-list li.task-list-item {
+  list-style: none !important;
+  list-style-type: none !important;
+  padding-left: 0;
+}
+
+.vp-doc li.task-list-item::before {
+  display: none !important;
+}
+
+.vp-doc li.task-list-item input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+/* 自定义引用块样式：根据内容关键词自动区分类型 */
+.vp-doc blockquote {
+  position: relative;
+  border-left-width: 4px;
+  padding: 0.75rem 1rem 0.75rem 1.25rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1.25rem 0;
+  transition: all 0.2s ease;
+  border-left-color: #4b5563;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.vp-doc blockquote:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 核心结论 - 蓝色信息 */
+.vp-doc blockquote.callout-conclusion {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%);
+}
+
+.vp-doc blockquote.callout-conclusion strong {
+  color: #60a5fa;
+}
+
+/* 常见误区 - 橙色警告 */
+.vp-doc blockquote.callout-warning {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%);
+}
+
+.vp-doc blockquote.callout-warning strong {
+  color: #fbbf24;
+}
+
+/* 工程启示 - 绿色提示 */
+.vp-doc blockquote.callout-tip {
+  border-left-color: #22c55e;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.02) 100%);
+}
+
+.vp-doc blockquote.callout-tip strong {
+  color: #4ade80;
+}
+
+/* 一句话总结 - 紫色强调 */
+.vp-doc blockquote.callout-info {
+  border-left-color: #a855f7;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.02) 100%);
+}
+
+.vp-doc blockquote.callout-info strong {
+  color: #c084fc;
+}
+
+/* 脚注样式优化 */
+.footnotes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.footnotes ol {
+  padding-left: 1.5rem;
+}
+
+.footnotes li {
+  margin-bottom: 0.5rem;
+}
+
+.footnotes a {
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+.footnotes a:hover {
+  text-decoration: underline;
+}
+
+/* 回到顶部按钮 */
+.back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 100;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.back-to-top:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+}
+
+/* 代码块标题样式 */
+.vp-doc pre {
+  position: relative;
+}
+
+.vp-doc pre code {
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+/* 任务清单复选框样式优化 */
+.vp-doc li.task-list-item input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #4b5563;
+  border-radius: 3px;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+}
+
+.vp-doc li.task-list-item input[type="checkbox"]:hover {
+  border-color: #3b82f6;
+}
+
+.vp-doc li.task-list-item input[type="checkbox"]:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.vp-doc li.task-list-item input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}

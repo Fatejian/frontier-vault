@@ -1,0 +1,1 @@
+import{_ as e,o as t,c as r}from"./chunks/framework.DnrXFDHb.js";const d=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"performance/03-渲染性能避坑指南.md","filePath":"performance/03-渲染性能避坑指南.md"}'),a={name:"performance/03-渲染性能避坑指南.md"};function _(o,c,n,s,p,m){return t(),r("div")}const i=e(a,[["render",_]]);export{d as __pageData,i as default};

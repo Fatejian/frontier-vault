@@ -6,6 +6,9 @@ export default defineConfig({
   title: 'Frontier Vault',
   description: 'Advanced frontend knowledge base & career system',
   base: '/frontier-vault/',
+  head: [
+    ['link', { rel: 'icon', href: '/frontier-vault/favicon.png', type: 'image/png' }]
+  ],
   markdown: {
     theme: 'github-dark',
     lineNumbers: true,

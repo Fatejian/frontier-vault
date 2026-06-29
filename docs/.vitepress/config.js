@@ -6,6 +6,14 @@ export default defineConfig({
   title: 'Frontier Vault',
   description: 'Advanced frontend knowledge base & career system',
   base: '/',
+  cleanUrls: true,
+  rewrites: {
+    'browser/03-渲染流水线：从HTML到像素.md': 'browser/rendering-pipeline.md',
+    'browser/04-layout-thrashing.md': 'browser/layout-thrashing.md',
+    'browser/05-绘制与光栅化.md': 'browser/painting-rasterization.md',
+    'performance/03-渲染性能避坑指南.md': 'performance/rendering-pitfalls.md',
+    'performance/现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作.md': 'performance/critical-path.md',
+  },
   head: [
     ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
@@ -37,15 +45,15 @@ export default defineConfig({
             },
             {
               "text": "渲染流水线：从HTML到像素",
-              "link": "/browser/03-渲染流水线：从HTML到像素"
+              "link": "/browser/rendering-pipeline"
             },
             {
               "text": "布局抖动的真相：Layout Thrashing 如何搞垮你的动画",
-              "link": "/browser/04-layout-thrashing"
+              "link": "/browser/layout-thrashing"
             },
             {
               "text": "绘制与光栅化",
-              "link": "/browser/05-绘制与光栅化"
+              "link": "/browser/painting-rasterization"
             }
           ]
         }
@@ -93,11 +101,11 @@ export default defineConfig({
             },
             {
               "text": "渲染性能避坑指南",
-              "link": "/performance/03-渲染性能避坑指南"
+              "link": "/performance/rendering-pitfalls"
             },
             {
               "text": "现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作",
-              "link": "/performance/现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作"
+              "link": "/performance/critical-path"
             }
           ]
         }

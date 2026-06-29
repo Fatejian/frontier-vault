@@ -39,11 +39,11 @@ jobs:
       # 部署到百度云服务器
       - name: Deploy to Baidu Cloud Server
         if: success()
-        uses: easingthemes/ssh-deploy@v5
+        uses: burnett01/rsync-deployments@v6
         with:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-          REMOTE_USER: root
-          SOURCE: "docs/.vitepress/dist/"
-          TARGET: "/var/www/frontier-vault/"
-          ARGS: "--delete --compress"
+          switches: -avzr --delete
+          path: docs/.vitepress/dist/
+          remote_path: /var/www/frontier-vault/
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: root
+          remote_key: ${{ secrets.SERVER_SSH_KEY }}

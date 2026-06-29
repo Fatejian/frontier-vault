@@ -5,7 +5,7 @@ const docsDir = path.join(process.cwd(), 'docs')
 const configPath = path.join(docsDir, '.vitepress', 'config.js')
 
 const excludedDirs = ['.vitepress', 'public']
-const excludedFiles = ['api-examples.md', 'markdown-examples.md']
+const excludedFiles = []
 
 function getModuleName(dirName) {
   const names = {

@@ -5,9 +5,9 @@ import footnote from 'markdown-it-footnote'
 export default defineConfig({
   title: 'Frontier Vault',
   description: 'Advanced frontend knowledge base & career system',
-  base: '/frontier-vault/',
+  base: '/',
   head: [
-    ['link', { rel: 'icon', href: '/frontier-vault/favicon.png', type: 'image/png' }]
+    ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
   markdown: {
     theme: 'github-dark',

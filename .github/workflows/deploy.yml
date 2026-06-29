@@ -1,4 +1,4 @@
-name: Deploy VitePress site to Pages
+name: Deploy VitePress site
 
 on:
   push:
@@ -29,8 +29,21 @@ jobs:
       - name: Build
         run: npm run docs:build
 
+      # 部署到 GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/.vitepress/dist
+
+      # 部署到百度云服务器
+      - name: Deploy to Baidu Cloud Server
+        if: success()
+        uses: easingthemes/ssh-deploy@v5
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+          REMOTE_USER: root
+          SOURCE: "docs/.vitepress/dist/"
+          TARGET: "/var/www/frontier-vault/"
+          ARGS: "--delete --compress"

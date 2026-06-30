@@ -22,6 +22,7 @@ export default defineConfig({
     'frameworks/01-React-Fiber架构：从栈调度到链式可中断渲染.md': 'frameworks/react-fiber.md',
     'frameworks/02-Vue3响应式系统：Proxy与依赖收集的完整实现.md': 'frameworks/vue3-reactivity.md',
     'frameworks/03-现代状态管理演进：从Flux到Zustand的设计哲学.md': 'frameworks/state-management.md',
+    'testing/01-负载测试工程实践：从测试计划到瓶颈定位的全流程方法论.md': 'testing/load-testing-practice.md',
   },
   head: [
     ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
@@ -41,6 +42,7 @@ export default defineConfig({
       { text: 'JavaScript', link: '/javascript/' },
       { text: '框架生态', link: '/frameworks/' },
       { text: '性能优化', link: '/performance/' },
+      { text: '测试工程', link: '/testing/' },
       { text: '职业体系', link: '/career/' }
     ],
     sidebar:     {
@@ -151,6 +153,21 @@ export default defineConfig({
             {
               "text": "现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作",
               "link": "/performance/critical-path"
+            }
+          ]
+        }
+      ],
+      "/testing/": [
+        {
+          "text": "测试工程",
+          "items": [
+            {
+              "text": "概述",
+              "link": "/testing/"
+            },
+            {
+              "text": "负载测试工程实践：从测试计划到瓶颈定位的全流程方法论",
+              "link": "/testing/load-testing-practice"
             }
           ]
         }

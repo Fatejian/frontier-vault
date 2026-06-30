@@ -20,6 +20,8 @@ features:
     details: 剖析 React Fiber 链式可中断渲染、Vue 3 Proxy 响应式、状态管理从 Flux 到 Zustand 的设计演进，看透框架抽象背后的工程取舍
   - title: 性能优化
     details: 围绕 Core Web Vitals（LCP / INP / CLS）与渲染管线，拆解关键路径上的等待、阻塞与重复工作，输出可执行的优化清单
+  - title: 测试工程
+    details: 覆盖负载测试全流程方法论、TPS / P95 指标体系、瓶颈分层诊断、降级与熔断验证，构建可验证的质量保障体系
   - title: 职业体系
     details: 从 T 型到 π 型能力模型、初级到架构师的成长路径、技术影响力构建方法，提供可量化的进阶框架而非空泛建议
 ---

@@ -66,7 +66,7 @@ outline: deep
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
 flowchart LR
-    subgraph Parse[① 解析阶段]
+    subgraph Parse["① 解析阶段"]
         direction TB
         A1[HTML 解析器]
         A2[DOM 树]
@@ -76,14 +76,14 @@ flowchart LR
         A3 --> A4
     end
 
-    subgraph Render[② 渲染树合成]
+    subgraph Render["② 渲染树合成"]
         direction TB
         B1[Style 计算]
         B2[Render Tree]
         B1 --> B2
     end
 
-    subgraph Layout[③ 布局]
+    subgraph Layout["③ 布局"]
         direction TB
         C1[Layout Tree]
         C2[布局计算]
@@ -91,7 +91,7 @@ flowchart LR
         C1 --> C2 --> C3
     end
 
-    subgraph Paint[④ 绘制]
+    subgraph Paint["④ 绘制"]
         direction TB
         D1[Paint Record]
         D2[Layer 分层]
@@ -106,7 +106,7 @@ flowchart LR
         E1 --> E2 --> E3
     end
 
-    subgraph Composite[⑥ 合成]
+    subgraph Composite["⑥ 合成"]
         direction TB
         F1[合成器帧]
         F2[GPU 合成]

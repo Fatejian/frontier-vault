@@ -444,9 +444,9 @@ flowchart TB
     TM -->|state| K1
     TM -->|otherState| K2
 
-    K1A --> E1[effect 1: render]
-    K1A --> E2[effect 2: computed]
-    K1B --> E3[effect 3: watch]
+    K1A --> E1["effect 1: render"]
+    K1A --> E2["effect 2: computed"]
+    K1B --> E3["effect 3: watch"]
     K1C --> E1
     K1C --> E2
 
@@ -687,17 +687,17 @@ Vue 的响应式系统和 React 的状态更新机制是两种完全不同的模
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
 flowchart TB
-    subgraph Vue[Vue：Push 模型]
-        V1[state.count = 1]
-        V2[setter 拦截]
-        V3[trigger: 找到该 key 的 dep]
+    subgraph Vue["Vue：Push 模型"]
+        V1["state.count = 1"]
+        V2["setter 拦截"]
+        V3["trigger: 找到该 key 的 dep"]
         V4[执行订阅的 effect]
         V5[只更新受影响的组件]
 
         V1 --> V2 --> V3 --> V4 --> V5
     end
 
-    subgraph React[React：Pull 模型]
+    subgraph React["React：Pull 模型"]
         R1["setState(1)"]
         R2["标记组件 dirty"]
         R3[调度器安排任务]

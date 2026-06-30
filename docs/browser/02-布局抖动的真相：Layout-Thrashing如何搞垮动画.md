@@ -107,11 +107,11 @@ flowchart TB
 
     subgraph Thrashing[布局抖动]
         direction TB
-        T1[循环 i=0]
+        T1["循环 i=0"]
         T2[写]
         T3[读]
         T4[强制 Layout]
-        T5[循环 i=1]
+        T5["循环 i=1"]
         T6[写]
         T7[读]
         T8[强制 Layout]
@@ -229,7 +229,7 @@ updateWidthsGood(items)
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
 flowchart TB
-    subgraph Bad[坏例子：N 次强制 Layout]
+    subgraph Bad["坏例子：N 次强制 Layout"]
         direction TB
         B1[循环开始] --> B2[读 offsetWidth]
         B2 --> B3[触发强制 Layout #1]
@@ -239,7 +239,7 @@ flowchart TB
         B2 -.重复 N 次.- B5
     end
 
-    subgraph Good[好例子：1 次 Layout]
+    subgraph Good["好例子：1 次 Layout"]
         direction TB
         G1[批量读阶段] --> G2[读 offsetWidth #1]
         G2 --> G3[读 offsetWidth #2...N<br/>使用缓存值，免费]

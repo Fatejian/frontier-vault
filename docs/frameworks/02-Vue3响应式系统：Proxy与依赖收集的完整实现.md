@@ -429,14 +429,14 @@ function trigger(target, key) {
 flowchart TB
     TM[targetMap<br/>WeakMap]
 
-    subgraph T1[state = { count: 0, name: 'Vue' }]
+    subgraph T1["state = { count: 0, name: 'Vue' }"]
         K1[keyMap<br/>Map]
         K1A[count -> Set]
         K1B[name -> Set]
         K1C[ITERATE_KEY -> Set]
     end
 
-    subgraph T2[otherState = { ... }]
+    subgraph T2["otherState = { ... }"]
         K2[keyMap<br/>Map]
         K2A[... -> Set]
     end
@@ -698,8 +698,8 @@ flowchart TB
     end
 
     subgraph React[React：Pull 模型]
-        R1[setState(1)]
-        R2[标记组件 dirty]
+        R1["setState(1)"]
+        R2["标记组件 dirty"]
         R3[调度器安排任务]
         R4[重新渲染整个组件]
         R5[Virtual DOM diff]

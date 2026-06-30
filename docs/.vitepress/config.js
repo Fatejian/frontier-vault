@@ -28,7 +28,10 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
   markdown: {
-    theme: 'github-dark',
+    theme: {
+      light: 'vitesse-light',
+      dark: 'github-dark'
+    },
     lineNumbers: true,
     config: (md) => {
       md.use(taskLists, { enabled: true, label: true })

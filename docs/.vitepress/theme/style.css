@@ -256,6 +256,190 @@
   font-family: var(--fv-font-mono);
 }
 
+/* 亮色主题代码块：确保文字可读性 */
+.vp-doc div[class*='language-'] {
+  /* 亮色模式下使用浅灰背景，深色文字 */
+  --vp-code-block-bg: #f6f8fa;
+  --vp-code-line-highlight-color: rgba(0, 0, 0, 0.06);
+  --vp-code-line-number-color: #8b949e;
+  --vp-code-copy-code-hover-bg: rgba(0, 0, 0, 0.04);
+  --vp-code-copy-code-active-text: #57606a;
+}
+
+/* 亮色模式下语法高亮文字颜色加深 */
+.vp-doc div[class*='language-'] .token {
+  /* 默认文字颜色 */
+  color: #24292f;
+}
+
+.vp-doc div[class*='language-'] .token.comment,
+.vp-doc div[class*='language-'] .token.prolog,
+.vp-doc div[class*='language-'] .token.doctype,
+.vp-doc div[class*='language-'] .token.cdata {
+  color: #6e7781;
+}
+
+.vp-doc div[class*='language-'] .token.punctuation {
+  color: #24292f;
+}
+
+.vp-doc div[class*='language-'] .token.namespace {
+  opacity: 0.7;
+}
+
+.vp-doc div[class*='language-'] .token.property,
+.vp-doc div[class*='language-'] .token.tag,
+.vp-doc div[class*='language-'] .token.boolean,
+.vp-doc div[class*='language-'] .token.number,
+.vp-doc div[class*='language-'] .token.constant,
+.vp-doc div[class*='language-'] .token.symbol {
+  color: #0550ae;
+}
+
+.vp-doc div[class*='language-'] .token.selector,
+.vp-doc div[class*='language-'] .token.attr-name,
+.vp-doc div[class*='language-'] .token.string,
+.vp-doc div[class*='language-'] .token.char,
+.vp-doc div[class*='language-'] .token.builtin {
+  color: #0a3069;
+}
+
+.vp-doc div[class*='language-'] .token.operator,
+.vp-doc div[class*='language-'] .token.entity,
+.vp-doc div[class*='language-'] .token.url,
+.vp-doc div[class*='language-'] .language-css .token.string,
+.vp-doc div[class*='language-'] .style .token.string {
+  color: #0550ae;
+}
+
+.vp-doc div[class*='language-'] .token.atrule,
+.vp-doc div[class*='language-'] .token.attr-value,
+.vp-doc div[class*='language-'] .token.keyword {
+  color: #cf222e;
+}
+
+.vp-doc div[class*='language-'] .token.function,
+.vp-doc div[class*='language-'] .token.class-name {
+  color: #8250df;
+}
+
+.vp-doc div[class*='language-'] .token.regex,
+.vp-doc div[class*='language-'] .token.important,
+.vp-doc div[class*='language-'] .token.variable {
+  color: #0550ae;
+}
+
+/* 亮色模式下行号颜色加深 */
+.vp-doc div[class*='language-'] .line-numbers-wrapper .line-number {
+  color: #8b949e;
+}
+
+/* 暗色主题代码块：保持原有样式 */
+.dark .vp-doc div[class*='language-'] {
+  --vp-code-block-bg: #16181d;
+  --vp-code-line-highlight-color: rgba(255, 255, 255, 0.06);
+  --vp-code-line-number-color: #484f58;
+  --vp-code-copy-code-hover-bg: rgba(255, 255, 255, 0.04);
+  --vp-code-copy-code-active-text: #8b949e;
+}
+
+.dark .vp-doc div[class*='language-'] .token {
+  color: #e6edf3;
+}
+
+.dark .vp-doc div[class*='language-'] .token.comment,
+.dark .vp-doc div[class*='language-'] .token.prolog,
+.dark .vp-doc div[class*='language-'] .token.doctype,
+.dark .vp-doc div[class*='language-'] .token.cdata {
+  color: #8b949e;
+}
+
+.dark .vp-doc div[class*='language-'] .token.punctuation {
+  color: #e6edf3;
+}
+
+.dark .vp-doc div[class*='language-'] .token.property,
+.dark .vp-doc div[class*='language-'] .token.tag,
+.dark .vp-doc div[class*='language-'] .token.boolean,
+.dark .vp-doc div[class*='language-'] .token.number,
+.dark .vp-doc div[class*='language-'] .token.constant,
+.dark .vp-doc div[class*='language-'] .token.symbol {
+  color: #79c0ff;
+}
+
+.dark .vp-doc div[class*='language-'] .token.selector,
+.dark .vp-doc div[class*='language-'] .token.attr-name,
+.dark .vp-doc div[class*='language-'] .token.string,
+.dark .vp-doc div[class*='language-'] .token.char,
+.dark .vp-doc div[class*='language-'] .token.builtin {
+  color: #a5d6ff;
+}
+
+.dark .vp-doc div[class*='language-'] .token.operator,
+.dark .vp-doc div[class*='language-'] .token.entity,
+.dark .vp-doc div[class*='language-'] .token.url,
+.dark .vp-doc div[class*='language-'] .language-css .token.string,
+.dark .vp-doc div[class*='language-'] .style .token.string {
+  color: #79c0ff;
+}
+
+.dark .vp-doc div[class*='language-'] .token.atrule,
+.dark .vp-doc div[class*='language-'] .token.attr-value,
+.dark .vp-doc div[class*='language-'] .token.keyword {
+  color: #ff7b72;
+}
+
+.dark .vp-doc div[class*='language-'] .token.function,
+.dark .vp-doc div[class*='language-'] .token.class-name {
+  color: #d2a8ff;
+}
+
+.dark .vp-doc div[class*='language-'] .token.regex,
+.dark .vp-doc div[class*='language-'] .token.important,
+.dark .vp-doc div[class*='language-'] .token.variable {
+  color: #79c0ff;
+}
+
+.dark .vp-doc div[class*='language-'] .line-numbers-wrapper .line-number {
+  color: #484f58;
+}
+
+/* 行内代码（inline code）样式优化 */
+.vp-doc :not(pre) > code {
+  background: var(--fv-surface);
+  color: #cf222e;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-size: 0.875em;
+  font-family: var(--fv-font-mono);
+  border: 1px solid var(--fv-border);
+}
+
+.dark .vp-doc :not(pre) > code {
+  background: #16181d;
+  color: #ff7b72;
+  border-color: #30363d;
+}
+
+/* 代码块语言标签 */
+.vp-doc div[class*='language-']::before {
+  color: var(--fv-text-muted);
+}
+
+/* 代码复制按钮 */
+.vp-doc .vp-code-group .tabs {
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc .vp-code-group .tabs label {
+  color: var(--fv-text-muted);
+}
+
+.vp-doc .vp-code-group .tabs input:checked + label {
+  color: var(--fv-primary);
+  border-bottom-color: var(--fv-primary);
+}
+
 /* ============================================
    VitePress Container 自定义样式
    ============================================ */

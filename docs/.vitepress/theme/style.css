@@ -89,6 +89,22 @@
   transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
+/* 重置 Mermaid 容器内所有元素的行高，防止被 .vp-doc p 的 line-height: 28px 继承导致文字溢出 */
+/* 使用 .vp-doc 前缀提升选择器优先级，覆盖 VitePress 默认主题 */
+.vp-doc .mermaid-rendered,
+.vp-doc .mermaid-rendered svg,
+.vp-doc .mermaid-rendered svg text,
+.vp-doc .mermaid-rendered svg foreignObject,
+.vp-doc .mermaid-rendered svg foreignObject text,
+.vp-doc .mermaid-rendered svg foreignObject div,
+.vp-doc .mermaid-rendered svg foreignObject span,
+.vp-doc .mermaid-rendered svg foreignObject p,
+.vp-doc .mermaid-rendered .noteLabel p,
+.vp-doc .mermaid-rendered .edgeLabel p,
+.vp-doc .mermaid-rendered .label p {
+  line-height: 1.5 !important;
+}
+
 /* 暗色主题容器背景（写死颜色，不依赖页面主题变量） */
 .mermaid-rendered[data-theme="dark"] {
   background: #1e293b;

@@ -1,5 +1,9 @@
 // 模块显示名单一数据源：每语言每模块的本地化显示名。
 // 键为模块标识（与 docs 目录名一致），值为对应语言的模块名称。
+
+// 模块的规范顺序（sidebar 遍历与翻译检查均以此为准，不依赖文件系统 sort）
+export const order = ['browser', 'javascript', 'frameworks', 'performance', 'testing', 'career']
+
 export default {
   zh: {
     browser: '浏览器原理',

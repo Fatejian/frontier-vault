@@ -44,9 +44,10 @@ frontier-vault/
 │   ├── .vitepress/
 │   │   ├── config.js              # VitePress 配置（由 generate-sidebar.js 生成）
 │   │   ├── i18n/                 # i18n 单一数据源
-│   │   │   ├── languages.js      # 语言元数据（code/label/lang/isDefault/dir）
-│   │   │   ├── modules.js        # 每语言每模块的本地化显示名
-│   │   │   └── ui.js             # 每语言的 nav/search/footer/概述文案
+│   │   ├── languages.js      # 语言元数据（code/label/lang/isDefault/dir）
+│   │   ├── modules.js        # 每语言每模块的本地化显示名 + 模块规范顺序 order
+│   │   ├── ui.js             # 每语言的 nav/search/footer/概述文案
+│   │   ├── home.js           # 每语言首页 hero/features 配置（用于 --sync-home 校验）
 │   │   └── theme/                # 自定义主题（Mermaid 五色主题、点击放大、明暗切换）
 │   ├── browser/                  # 浏览器原理模块（中文，文件名用英文 slug）
 │   │   ├── rendering-pipeline.md
@@ -90,8 +91,9 @@ frontier-vault/
 | 文件 | 作用 |
 | --- | --- |
 | `i18n/languages.js` | 语言列表与元数据（code / label / lang / isDefault / dir） |
-| `i18n/modules.js` | 每语言每模块的本地化显示名 |
+| `i18n/modules.js` | 每语言每模块的本地化显示名 + 模块规范顺序 `order` |
 | `i18n/ui.js` | 每语言的 nav 文案、search 翻译、footer、概述标签 |
+| `i18n/home.js` | 每语言首页 hero / features 配置（用于 `i18n:home` 校验） |
 
 ### 文件命名约定
 
@@ -103,18 +105,31 @@ frontier-vault/
 # 重新生成 config.js（修改 i18n 数据源或新增/删除 Markdown 文件后执行）
 npm run sidebar:gen
 
-# 检查翻译完整性（对比默认语言与其他语言的文章 slug 集合）
+# 检查翻译完整性（对比默认语言与其他语言的文章 slug 与模块目录集合）
 npm run i18n:check
+
+# 校验各语言 index.md 的 hero/features frontmatter 与 home.js 一致
+npm run i18n:home
 ```
+
+### 资源约定
+
+- **共享资源**（所有语言通用，如 favicon、logo）放 `docs/public/`，URL 为 `/xxx.png`。
+- **语言特定资源**（如中文 UI 截图）放 `docs/public/<lang>/`（如 `docs/public/zh/`），URL 为 `/<lang>/xxx.png`；若 VitePress 不支持子目录 public，则放 `docs/<lang>/images/` 用相对路径引用。
+- **推荐**：优先使用共享资源，仅在必须区分语言时才使用语言特定资源。
 
 ### 新增一种语言
 
 1. 在 `docs/.vitepress/i18n/languages.js` 增加一条记录：`{ code: '<lang>', label: '<本地化名>', lang: '<HTML lang>', isDefault: false, dir: '<lang>', description: '...', title: 'Frontier Vault' }`
 2. 在 `modules.js` 与 `ui.js` 中补齐该语言的文案
-3. 创建 `docs/<lang>/` 目录，放入对应语言的 Markdown 文件（文件名须与默认语言的 slug 一致）
-4. 运行 `npm run sidebar:gen` 重新生成 config.js
+3. 在 `home.js` 中补齐该语言的 hero / features 配置
+4. 创建 `docs/<lang>/` 目录，放入对应语言的 Markdown 文件（文件名须与默认语言的 slug 一致），并创建 `index.md` 站点首页
+5. 运行 `npm run sidebar:gen` 重新生成 config.js
+6. 运行 `npm run i18n:check` 与 `npm run i18n:home` 确认无缺失
 
 无需修改 `generate-sidebar.js` 或 `config.js` 任何硬编码——脚本会自动从 `languages.js` 读取语言列表并生成对应的 locale 配置。
+
+> 完整的译者协作规范（翻译规则、Mermaid 标签转义、`:::` 指令、内链/外链更新、缺翻译策略等）参见 [`CONTRIBUTING-i18n.md`](CONTRIBUTING-i18n.md)。
 
 ## 快速开始
 
@@ -149,11 +164,14 @@ npm run docs:preview
 # 重新生成 config.js（数据驱动，从 i18n 数据源与目录结构生成）
 npm run sidebar:gen
 
-# 检查翻译完整性（对比默认语言与其他语言的文章 slug 集合）
+# 检查翻译完整性（对比默认语言与其他语言的文章 slug 与模块目录集合）
 npm run i18n:check
+
+# 校验各语言 index.md 首页 frontmatter 与 home.js 一致
+npm run i18n:home
 ```
 
-> 命令的详细语义、数据源结构以及新增语言的完整流程参见下方 [多语言支持](#多语言支持) 章节。
+> 命令的详细语义、数据源结构以及新增语言的完整流程参见上方 [多语言支持](#多语言支持) 章节。
 
 ## 部署
 

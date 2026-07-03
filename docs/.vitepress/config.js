@@ -59,25 +59,25 @@ export default defineConfig({
               ]
             }
           ],
-          "/career/": [
+          "/javascript/": [
             {
-              "text": "职业体系",
+              "text": "JavaScript 深度",
               "items": [
                 {
                   "text": "概述",
-                  "link": "/career/"
+                  "link": "/javascript/"
                 },
                 {
-                  "text": "前端工程师能力模型：从 T 型到 π 型人才的进阶框架",
-                  "link": "/career/capability-model"
+                  "text": "异步编程的演进：从回调地狱到 async/await",
+                  "link": "/javascript/async-evolution"
                 },
                 {
-                  "text": "技术成长路径：从初级到架构师的能力跃迁",
-                  "link": "/career/growth-path"
+                  "text": "执行上下文与作用域链：从 V8 视角理解闭包本质",
+                  "link": "/javascript/execution-context-closure"
                 },
                 {
-                  "text": "技术影响力构建：从代码贡献到技术领导力",
-                  "link": "/career/technical-influence"
+                  "text": "V8 引擎揭秘：JIT 编译与垃圾回收机制",
+                  "link": "/javascript/v8-jit-gc"
                 }
               ]
             }
@@ -101,29 +101,6 @@ export default defineConfig({
                 {
                   "text": "Vue 3 响应式系统：Proxy 与依赖收集的完整实现",
                   "link": "/frameworks/vue3-reactivity"
-                }
-              ]
-            }
-          ],
-          "/javascript/": [
-            {
-              "text": "JavaScript 深度",
-              "items": [
-                {
-                  "text": "概述",
-                  "link": "/javascript/"
-                },
-                {
-                  "text": "异步编程的演进：从回调地狱到 async/await",
-                  "link": "/javascript/async-evolution"
-                },
-                {
-                  "text": "执行上下文与作用域链：从 V8 视角理解闭包本质",
-                  "link": "/javascript/execution-context-closure"
-                },
-                {
-                  "text": "V8 引擎揭秘：JIT 编译与垃圾回收机制",
-                  "link": "/javascript/v8-jit-gc"
                 }
               ]
             }
@@ -158,6 +135,29 @@ export default defineConfig({
                 {
                   "text": "负载测试工程实践：从测试计划到瓶颈定位的全流程方法论",
                   "link": "/testing/load-testing-practice"
+                }
+              ]
+            }
+          ],
+          "/career/": [
+            {
+              "text": "职业体系",
+              "items": [
+                {
+                  "text": "概述",
+                  "link": "/career/"
+                },
+                {
+                  "text": "前端工程师能力模型：从 T 型到 π 型人才的进阶框架",
+                  "link": "/career/capability-model"
+                },
+                {
+                  "text": "技术成长路径：从初级到架构师的能力跃迁",
+                  "link": "/career/growth-path"
+                },
+                {
+                  "text": "技术影响力构建：从代码贡献到技术领导力",
+                  "link": "/career/technical-influence"
                 }
               ]
             }
@@ -229,25 +229,25 @@ export default defineConfig({
               ]
             }
           ],
-          "/en/career/": [
+          "/en/javascript/": [
             {
-              "text": "Career System",
+              "text": "JavaScript Deep Dive",
               "items": [
                 {
                   "text": "Overview",
-                  "link": "/en/career/"
+                  "link": "/en/javascript/"
                 },
                 {
-                  "text": "Frontend Engineer Capability Model: A Growth Framework from T-Shaped to π-Shaped Talent",
-                  "link": "/en/career/capability-model"
+                  "text": "Async Programming Evolution: From Callback Hell to async/await",
+                  "link": "/en/javascript/async-evolution"
                 },
                 {
-                  "text": "Technical Growth Path: The Capability Leap from Junior to Architect",
-                  "link": "/en/career/growth-path"
+                  "text": "Execution Context & Scope Chain: Understanding Closures from the V8 Perspective",
+                  "link": "/en/javascript/execution-context-closure"
                 },
                 {
-                  "text": "Building Technical Influence: From Code Contribution to Technical Leadership",
-                  "link": "/en/career/technical-influence"
+                  "text": "V8 Engine Deep Dive: JIT Compilation and Garbage Collection",
+                  "link": "/en/javascript/v8-jit-gc"
                 }
               ]
             }
@@ -271,29 +271,6 @@ export default defineConfig({
                 {
                   "text": "Vue 3 Reactivity System: The Complete Implementation of Proxy and Dependency Collection",
                   "link": "/en/frameworks/vue3-reactivity"
-                }
-              ]
-            }
-          ],
-          "/en/javascript/": [
-            {
-              "text": "JavaScript Deep Dive",
-              "items": [
-                {
-                  "text": "Overview",
-                  "link": "/en/javascript/"
-                },
-                {
-                  "text": "Async Programming Evolution: From Callback Hell to async/await",
-                  "link": "/en/javascript/async-evolution"
-                },
-                {
-                  "text": "Execution Context & Scope Chain: Understanding Closures from the V8 Perspective",
-                  "link": "/en/javascript/execution-context-closure"
-                },
-                {
-                  "text": "V8 Engine Deep Dive: JIT Compilation and Garbage Collection",
-                  "link": "/en/javascript/v8-jit-gc"
                 }
               ]
             }
@@ -328,6 +305,29 @@ export default defineConfig({
                 {
                   "text": "Load Testing Engineering Practice: A Full-Stack Methodology from Test Plan to Bottleneck Localization",
                   "link": "/en/testing/load-testing-practice"
+                }
+              ]
+            }
+          ],
+          "/en/career/": [
+            {
+              "text": "Career System",
+              "items": [
+                {
+                  "text": "Overview",
+                  "link": "/en/career/"
+                },
+                {
+                  "text": "Frontend Engineer Capability Model: A Growth Framework from T-Shaped to π-Shaped Talent",
+                  "link": "/en/career/capability-model"
+                },
+                {
+                  "text": "Technical Growth Path: The Capability Leap from Junior to Architect",
+                  "link": "/en/career/growth-path"
+                },
+                {
+                  "text": "Building Technical Influence: From Code Contribution to Technical Leadership",
+                  "link": "/en/career/technical-influence"
                 }
               ]
             }

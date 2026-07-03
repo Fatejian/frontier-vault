@@ -8,7 +8,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "sidebar:gen": "node scripts/generate-sidebar.js",
-    "i18n:check": "node scripts/generate-sidebar.js --check"
+    "i18n:check": "node scripts/generate-sidebar.js --check",
+    "i18n:home": "node scripts/generate-sidebar.js --sync-home"
   },
   "repository": {
     "type": "git",

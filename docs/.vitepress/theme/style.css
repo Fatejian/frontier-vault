@@ -2,26 +2,37 @@
    Frontier Vault Design System
    ============================================ */
 
-/* Design Tokens */
+/* Design Tokens
+   设计原则：单一克制强调色（ink-blue），暖度轻微的中性色，着色阴影，
+   无第二强调色，无渐变。Mermaid 图表内部五色主题由 index.js 独立管理，与此处解耦。 */
 :root {
-  /* Colors - Light */
+  /* Colors - Light
+     主色从通用 blue-500 (#3b82f6) 收敛到更克制的 ink-blue (#2563eb)，
+     避免普通 SaaS 蓝的"亮蓝按钮"既视感；中性色保留 slate 冷调以匹配工程师审美。 */
   --fv-bg: #ffffff;
   --fv-surface: #f8fafc;
   --fv-surface-elevated: #ffffff;
   --fv-text: #172033;
   --fv-text-muted: #64748b;
   --fv-border: #e2e8f0;
-  --fv-primary: #3b82f6;
-  --fv-success: #22c55e;
-  --fv-warning: #f59e0b;
-  --fv-danger: #ef4444;
-  --fv-purple: #a855f7;
+  --fv-primary: #2563eb;
+  --fv-primary-soft: rgba(37, 99, 235, 0.10);
+  --fv-success: #16a34a;
+  --fv-warning: #d97706;
+  --fv-danger: #dc2626;
 
-  /* Radius */
-  --fv-radius-sm: 8px;
-  --fv-radius-md: 12px;
-  --fv-radius-lg: 16px;
-  --fv-radius-xl: 20px;
+  /* Tinted shadows — 与背景同色相的着色阴影，替代纯黑透明，避免灰冷感 */
+  --fv-shadow-sm: 0 1px 2px rgba(30, 58, 138, 0.04);
+  --fv-shadow-md: 0 4px 12px rgba(30, 58, 138, 0.06);
+  --fv-shadow-lg: 0 8px 24px rgba(30, 58, 138, 0.08);
+
+  /* Radius
+     代码块圆角从 16px 收紧到 10px，技术内容更"工程化"而非"卡片化" */
+  --fv-radius-sm: 6px;
+  --fv-radius-md: 10px;
+  --fv-radius-lg: 12px;
+  --fv-radius-xl: 16px;
+  --fv-radius-code: 10px;
 
   /* Spacing */
   --fv-space-1: 4px;
@@ -31,20 +42,46 @@
   --fv-space-6: 24px;
   --fv-space-8: 32px;
 
-  /* Typography */
-  --fv-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --fv-font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  /* Typography
+     字体栈不再以 Inter 为首，让系统原生字体（macOS SF / Windows Segoe）发挥字符感，
+     避免 Inter 成为整站视觉指纹；中文回退 PingFang/MS YaHei 保持阅读体验 */
+  --fv-font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --fv-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* Dark Mode Tokens */
+/* Dark Mode Tokens
+   暗色底从纯 slate-900 微调到带轻微蓝墨色温的 #0c1424，提升高级感；
+   表面色相应跟随，避免冷暖不一致。 */
 .dark {
-  --fv-bg: #0f172a;
-  --fv-surface: #1e293b;
-  --fv-surface-elevated: #334155;
-  --fv-text: #e5e7eb;
-  --fv-text-muted: #94a3b8;
-  --fv-border: #334155;
-  --fv-primary: #60a5fa;
+  --fv-bg: #0c1424;
+  --fv-surface: #162136;
+  --fv-surface-elevated: #1e2d47;
+  --fv-text: #e6eaf0;
+  --fv-text-muted: #8b97a8;
+  --fv-border: #243149;
+  --fv-primary: #7aa2f7;
+  --fv-primary-soft: rgba(122, 162, 247, 0.14);
+  --fv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --fv-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --fv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ============================================
+   全局字体绑定
+   ============================================ */
+
+:root {
+  font-family: var(--fv-font-body);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 数字内容启用等宽字形，提升表格/指标的工程感 */
+.vp-doc table,
+.vp-doc .custom-block {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
@@ -52,19 +89,48 @@
    ============================================ */
 
 .vp-doc {
-  max-width: 840px;
-  font-size: 17px;
+  max-width: 760px;
+  font-size: 16.5px;
   line-height: 1.78;
+  color: var(--fv-text);
 }
 
 .vp-doc p {
-  margin: 1em 0;
+  margin: 1.15em 0;
+  text-wrap: pretty;
+}
+
+/* 标题层级：收紧字距、使用 SemiBold(600) 替代默认 Bold(700)，
+   让标题更"克制精致"而非"大声喊叫" */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4,
+.vp-doc h5,
+.vp-doc h6 {
+  letter-spacing: -0.012em;
+  font-weight: 600;
 }
 
 .vp-doc h2 {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--vp-c-divider);
+  margin-top: 2.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--fv-border);
+  position: relative;
+}
+
+/* h2 章节锚点：左侧品牌色细条，作为阅读节奏的视觉锚，
+   取代通用 divider，提升品牌识别度 */
+.vp-doc h2::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 1.35rem;
+  width: 3px;
+  height: 1.1em;
+  background: var(--fv-primary);
+  border-radius: 2px;
+  opacity: 0.85;
 }
 
 .vp-doc h3 {
@@ -73,6 +139,7 @@
 
 .vp-doc h4 {
   margin-top: 1.5rem;
+  font-size: 1.05em;
 }
 
 /* ============================================
@@ -119,7 +186,7 @@
 
 .mermaid-rendered:hover {
   border-color: var(--fv-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--fv-primary-soft);
 }
 
 /* Mermaid 主题切换按钮 — 基础样式（不依赖页面主题变量） */
@@ -145,7 +212,7 @@
 }
 
 .mermaid-theme-toggle:hover {
-  border-color: #3b82f6;
+  border-color: #2563eb;
   background: #f1f5f9;
   transform: scale(1.1);
 }
@@ -158,7 +225,7 @@
 }
 
 .mermaid-rendered[data-theme="dark"] .mermaid-theme-toggle:hover {
-  border-color: #60a5fa !important;
+  border-color: #7aa2f7 !important;
   background: #475569 !important;
 }
 
@@ -253,13 +320,13 @@
 
 .vp-doc div[class*='language-'] {
   margin: 1.5rem 0;
-  border-radius: var(--fv-radius-lg);
-  border: 1px solid var(--vp-c-divider);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  border-radius: var(--fv-radius-code);
+  border: 1px solid var(--fv-border);
+  box-shadow: var(--fv-shadow-md);
 }
 
 .dark .vp-doc div[class*='language-'] {
-  box-shadow: none;
+  box-shadow: var(--fv-shadow-md);
 }
 
 .vp-doc pre {
@@ -420,12 +487,14 @@
   color: #484f58;
 }
 
-/* 行内代码（inline code）样式优化 */
+/* 行内代码（inline code）样式优化
+   红色稍微柔化（#cf222e → #b3231f），避免在长段落中过度跳眼；
+   圆角与边框跟随新 token 体系 */
 .vp-doc :not(pre) > code {
   background: var(--fv-surface);
-  color: #cf222e;
-  padding: 0.2em 0.4em;
-  border-radius: 6px;
+  color: #b3231f;
+  padding: 0.15em 0.4em;
+  border-radius: var(--fv-radius-sm);
   font-size: 0.875em;
   font-family: var(--fv-font-mono);
   border: 1px solid var(--fv-border);
@@ -433,7 +502,7 @@
 
 .dark .vp-doc :not(pre) > code {
   background: #16181d;
-  color: #ff7b72;
+  color: #ff8a82;
   border-color: #30363d;
 }
 
@@ -469,16 +538,18 @@
   font-weight: 600;
 }
 
+/* tip 与 info 均使用主色家族，仅靠饱和度区分，避免引入第二强调色 */
 .vp-doc .custom-block.tip {
   border-color: var(--fv-primary);
 }
 
-.vp-doc .custom-block.warning {
-  border-color: var(--fv-warning);
+.vp-doc .custom-block.info {
+  border-color: color-mix(in srgb, var(--fv-primary) 45%, var(--fv-border));
+  background: color-mix(in srgb, var(--fv-primary) 5%, var(--fv-surface));
 }
 
-.vp-doc .custom-block.info {
-  border-color: var(--fv-purple);
+.vp-doc .custom-block.warning {
+  border-color: var(--fv-warning);
 }
 
 .vp-doc .custom-block.danger {
@@ -549,7 +620,7 @@
 }
 
 .vp-doc blockquote:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--fv-shadow-sm);
 }
 
 /* ============================================
@@ -620,7 +691,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: var(--fv-shadow-md);
   transition: all 0.3s ease;
   opacity: 0;
   visibility: hidden;
@@ -633,14 +704,106 @@
 }
 
 .back-to-top:hover {
-  background: #2563eb;
+  background: #1d4ed8;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+  box-shadow: var(--fv-shadow-lg);
 }
 
 .back-to-top:focus-visible {
   outline: 2px solid var(--fv-primary);
   outline-offset: 2px;
+}
+
+/* ============================================
+   首页（VitePress Home Layout）
+   不修改 home.js 数据源，仅通过 CSS 弱化默认模板感、强化品牌识别
+   ============================================ */
+
+/* Hero：品牌名字距收紧、字号增强；tagline 限宽提升可读性 */
+.VPHero .name {
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  background-image: none;
+  -webkit-text-fill-color: var(--fv-text);
+}
+
+.VPHero .text {
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+.VPHero .tagline {
+  max-width: 640px;
+  opacity: 0.78;
+  line-height: 1.65;
+}
+
+/* Hero 按钮：alt 按钮去除默认紫色调，统一到中性色边框，避免引入第二强调色 */
+.VPButton.alt {
+  border-color: var(--fv-border);
+  background-color: var(--fv-surface-elevated);
+  color: var(--fv-text);
+}
+
+.VPButton.alt:hover {
+  border-color: var(--fv-primary);
+  color: var(--fv-primary);
+}
+
+.VPButton.brand {
+  background-color: var(--fv-primary);
+}
+
+.VPButton.brand:hover {
+  background-color: #1d4ed8;
+}
+
+/* Features 网格：保持 3 列（docs 站点约定，非营销页），
+   但去除重边框、加品牌色左侧锚点、收紧间距与 hover 反馈 */
+.VPFeatures .item .VPLink,
+.VPFeatures .item .box {
+  border: 1px solid var(--fv-border);
+  border-radius: var(--fv-radius-md);
+  background-color: var(--fv-surface-elevated);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* feature 卡片左侧品牌色锚点条，与 h2 章节锚点形成一致的品牌语言 */
+.VPFeatures .item .VPLink::before,
+.VPFeatures .item .box::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--fv-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.VPFeatures .item .VPLink:hover,
+.VPFeatures .item .box:hover {
+  border-color: color-mix(in srgb, var(--fv-primary) 35%, var(--fv-border));
+  box-shadow: var(--fv-shadow-md);
+  transform: translateY(-1px);
+}
+
+.VPFeatures .item .VPLink:hover::before,
+.VPFeatures .item .box:hover::before {
+  opacity: 0.85;
+}
+
+.VPFeatures .title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.VPFeatures .details {
+  color: var(--fv-text-muted);
+  line-height: 1.65;
 }
 
 /* ============================================
@@ -662,5 +825,10 @@
     right: 1rem;
     width: 40px;
     height: 40px;
+  }
+
+  /* 移动端：h2 左侧锚点条隐藏，避免与正文边距冲突 */
+  .vp-doc h2::before {
+    display: none;
   }
 }

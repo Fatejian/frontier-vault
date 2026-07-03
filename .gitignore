@@ -20,3 +20,5 @@ yarn-error.log*
 .vscode/
 .idea/
 /.trae
+/.agents
+/skills-lock.json

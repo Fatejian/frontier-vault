@@ -4,7 +4,7 @@
 >
 > 面向中高级前端工程师的系统化知识库，从浏览器底层原理到职业成长路径，构建可落地的工程认知体系。
 
-Built with [VitePress](https://vitepress.dev/) · Deployed via GitHub Actions to Baidu Cloud · Content in Chinese
+Built with [VitePress](https://vitepress.dev/) · Deployed via GitHub Actions to Baidu Cloud · Bilingual: 中文 / English
 
 ## 项目特色
 
@@ -42,22 +42,39 @@ Built with [VitePress](https://vitepress.dev/) · Deployed via GitHub Actions to
 frontier-vault/
 ├── docs/
 │   ├── .vitepress/
-│   │   ├── config.js          # VitePress 配置（nav / sidebar / rewrites / markdown）
+│   │   ├── config.js          # VitePress 配置（locales / nav / sidebar / rewrites / markdown）
 │   │   └── theme/             # 自定义主题（Mermaid 五色主题、点击放大、明暗切换）
-│   ├── browser/               # 浏览器原理模块
-│   ├── javascript/            # JavaScript 深度模块
-│   ├── frameworks/            # 框架生态模块
-│   ├── performance/           # 性能优化模块
-│   ├── testing/               # 测试工程模块
-│   ├── career/                # 职业体系模块
+│   ├── browser/               # 浏览器原理模块（中文）
+│   ├── javascript/            # JavaScript 深度模块（中文）
+│   ├── frameworks/            # 框架生态模块（中文）
+│   ├── performance/           # 性能优化模块（中文）
+│   ├── testing/               # 测试工程模块（中文）
+│   ├── career/                # 职业体系模块（中文）
+│   ├── en/                    # 英文版本（English version）
+│   │   ├── browser/
+│   │   ├── javascript/
+│   │   ├── frameworks/
+│   │   ├── performance/
+│   │   ├── testing/
+│   │   ├── career/
+│   │   └── index.md
 │   ├── public/                # 静态资源
-│   └── index.md               # 站点首页
+│   └── index.md               # 中文站点首页
 ├── backup/                    # 备份资源（含写作风格 skill 文件）
 ├── scripts/                   # 辅助脚本（标题提取、自动侧边栏）
 ├── .github/workflows/deploy.yml  # GitHub Actions 部署工作流
 ├── package.json
 └── vite.config.js
 ```
+
+## 多语言支持
+
+站点采用 VitePress 原生 [i18n](https://vitepress.dev/guide/i18n) 实现：
+
+- **中文（默认）**：内容位于 `docs/` 根目录，访问路径为 `/`。
+- **English**：内容位于 `docs/en/` 目录，访问路径为 `/en/`。
+
+新增或修改 Markdown 文件后，`scripts/generate-sidebar.js` 会自动从 `docs/` 与 `docs/en/` 生成对应语言的侧边栏，并回写到 `docs/.vitepress/config.js`。
 
 ## 快速开始
 

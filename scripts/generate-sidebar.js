@@ -1,50 +1,47 @@
+/**
+ * generate-sidebar.js — 从 i18n 数据源生成 VitePress config.js
+ *
+ * 用途：以 docs/.vitepress/i18n/ 下的三个数据源为单一真相来源，
+ *      数据驱动地生成 VitePress 的 config.js（locales / nav / sidebar / footer / search）。
+ *
+ * 依赖（单一数据源）：
+ *   - docs/.vitepress/i18n/languages.js  语言元数据（code/label/dir/isDefault/...）
+ *   - docs/.vitepress/i18n/modules.js    每语言每模块的本地化显示名
+ *   - docs/.vitepress/i18n/ui.js          每语言的导航/搜索/页脚/概述等界面文案
+ *
+ * 用法：
+ *   node scripts/generate-sidebar.js          生成 docs/.vitepress/config.js
+ *   node scripts/generate-sidebar.js --check  检查翻译完整性（不写入 config.js）
+ *
+ * 新增语言步骤：
+ *   1. 在 docs/.vitepress/i18n/languages.js 增加语言条目（isDefault: false, dir: '<code>'）
+ *   2. 在 modules.js 与 ui.js 中补齐该语言的文案
+ *   3. 创建 docs/<code>/ 目录并放入对应 Markdown 文件
+ *   4. 重新运行 node scripts/generate-sidebar.js
+ */
+
 import fs from 'fs'
 import path from 'path'
 
-const docsDir = path.join(process.cwd(), 'docs')
+import languages from '../docs/.vitepress/i18n/languages.js'
+import moduleNames from '../docs/.vitepress/i18n/modules.js'
+import uiStrings from '../docs/.vitepress/i18n/ui.js'
+
+// 脚本约定从项目根目录运行（npm scripts 即如此）
+const projectRoot = process.cwd()
+const docsDir = path.join(projectRoot, 'docs')
 const configPath = path.join(docsDir, '.vitepress', 'config.js')
 
-const excludedDirs = ['.vitepress', 'public', 'en']
-const excludedFiles = []
+// 基础排除目录（任何语言扫描都排除）
+const baseExcludedDirs = ['.vitepress', 'public']
+// 非默认语言目录列表（默认语言扫描 docs/ 根时需排除这些语言目录）
+const nonDefaultLangDirs = languages.filter(l => !l.isDefault).map(l => l.dir)
+// 默认语言扫描 docs/ 根时的排除集合：基础项 + 所有非默认语言目录
+const defaultLangExcludedDirs = [...baseExcludedDirs, ...nonDefaultLangDirs]
 
-// 中文源文件名 → 英文 slug 的映射（与 .vitepress/config.js 中的 rewrites 保持一致）
-const rewriteMap = {
-  'browser/01-渲染流水线：从HTML到像素.md': 'browser/rendering-pipeline',
-  'browser/02-布局抖动的真相：Layout-Thrashing如何搞垮动画.md': 'browser/layout-thrashing',
-  'browser/03-绘制与光栅化.md': 'browser/painting-rasterization',
-  'performance/01-现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作.md': 'performance/critical-path',
-  'performance/02-渲染性能避坑指南.md': 'performance/rendering-pitfalls',
-  'career/01-前端工程师能力模型：从T型到π型人才的进阶框架.md': 'career/capability-model',
-  'career/02-技术成长路径：从初级到架构师的能力跃迁.md': 'career/growth-path',
-  'career/03-技术影响力构建：从代码贡献到技术领导力.md': 'career/technical-influence',
-  'javascript/01-执行上下文与作用域链：从V8视角理解闭包本质.md': 'javascript/execution-context-closure',
-  'javascript/02-异步编程的演进：从回调地狱到async-await.md': 'javascript/async-evolution',
-  'javascript/03-V8引擎揭秘：JIT编译与垃圾回收机制.md': 'javascript/v8-jit-gc',
-  'frameworks/01-React-Fiber架构：从栈调度到链式可中断渲染.md': 'frameworks/react-fiber',
-  'frameworks/02-Vue3响应式系统：Proxy与依赖收集的完整实现.md': 'frameworks/vue3-reactivity',
-  'frameworks/03-现代状态管理演进：从Flux到Zustand的设计哲学.md': 'frameworks/state-management',
-  'testing/01-负载测试工程实践：从测试计划到瓶颈定位的全流程方法论.md': 'testing/load-testing-practice',
-}
-
-const moduleNames = {
-  zh: {
-    browser: '浏览器原理',
-    javascript: 'JavaScript 深度',
-    frameworks: '框架与生态',
-    performance: '性能优化工程',
-    career: '职业体系',
-    testing: '测试工程'
-  },
-  en: {
-    browser: 'Browser Internals',
-    javascript: 'JavaScript Deep Dive',
-    frameworks: 'Frameworks & Ecosystem',
-    performance: 'Performance Engineering',
-    career: 'Career System',
-    testing: 'Testing Engineering'
-  }
-}
-
+/**
+ * 从 Markdown 文件读取首个 H1 标题；读不到返回 null
+ */
 function getTitleFromMarkdown(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8')
   const lines = content.split('\n')
@@ -56,56 +53,53 @@ function getTitleFromMarkdown(filePath) {
   return null
 }
 
-function parseFileName(fileName) {
-  const match = fileName.match(/^(\d+-)?(.+)\.md$/)
-  if (match) {
-    return match[2]
-  }
-  return fileName.replace('.md', '')
-}
-
-const langNames = {
-  zh: { overview: '概述' },
-  en: { overview: 'Overview' }
-}
-
-function generateSidebarForLang(langDir, prefix = '') {
+/**
+ * 为指定语言生成 sidebar 配置对象
+ * @param {object} lang  来自 languages.js 的语言配置对象
+ * @returns {object} sidebar 配置对象（key: 模块路径前缀，value: 条目数组）
+ */
+function generateSidebarForLang(lang) {
   const sidebar = {}
-  const modules = fs.readdirSync(langDir, { withFileTypes: true })
-    .filter(dir => dir.isDirectory() && !excludedDirs.includes(dir.name))
+  const prefix = lang.isDefault ? '' : `/${lang.dir}`
+  // 默认语言扫描 docs/ 根；非默认语言扫描 docs/<dir>/
+  const langDir = lang.isDefault ? docsDir : path.join(docsDir, lang.dir)
+  const excluded = lang.isDefault ? defaultLangExcludedDirs : baseExcludedDirs
 
-  modules.forEach(module => {
-    const modulePath = path.join(langDir, module.name)
+  if (!fs.existsSync(langDir)) return sidebar
+
+  const modules = fs.readdirSync(langDir, { withFileTypes: true })
+    .filter(d => d.isDirectory() && !excluded.includes(d.name))
+    .map(d => d.name)
+    .sort()
+
+  modules.forEach(moduleName => {
+    const modulePath = path.join(langDir, moduleName)
     const files = fs.readdirSync(modulePath, { withFileTypes: true })
-      .filter(f => f.isFile() && f.name.endsWith('.md'))
+      .filter(f => f.isFile() && f.name.endsWith('.md') && f.name !== 'index.md')
       .map(f => f.name)
-      .filter(f => f !== 'index.md')
       .sort()
 
     const items = []
 
-    const langKey = prefix ? 'en' : 'zh'
-
+    // index.md → 概述条目
     if (fs.existsSync(path.join(modulePath, 'index.md'))) {
-      items.push({ text: langNames[langKey].overview, link: `${prefix}/${module.name}/` })
+      items.push({
+        text: uiStrings[lang.code].overview,
+        link: `${prefix}/${moduleName}/`
+      })
     }
 
+    // 其余 .md 文件 → slug 直接拼 link，标题取自 H1
     files.forEach(file => {
-      if (excludedFiles.includes(file)) return
-
-      const relativePath = path.join(path.relative(docsDir, modulePath), file).replace(/\\/g, '/')
-      const rewriteKey = relativePath
-      const link = rewriteMap[rewriteKey]
-        ? `/${rewriteMap[rewriteKey]}`
-        : `${prefix}/${module.name}/${file.replace('.md', '')}`
-
-      const filePath = path.join(modulePath, file)
-      const title = getTitleFromMarkdown(filePath) || parseFileName(file)
+      const slug = file.replace(/\.md$/, '')
+      const link = `${prefix}/${moduleName}/${slug}`
+      const title = getTitleFromMarkdown(path.join(modulePath, file)) || slug
       items.push({ text: title, link })
     })
 
-    sidebar[`${prefix}/${module.name}/`] = [{
-      text: moduleNames[langKey][module.name] || module.name,
+    const sidebarKey = `${prefix}/${moduleName}/`
+    sidebar[sidebarKey] = [{
+      text: moduleNames[lang.code][moduleName] || moduleName,
       items
     }]
   })
@@ -113,25 +107,105 @@ function generateSidebarForLang(langDir, prefix = '') {
   return sidebar
 }
 
-function updateConfig() {
-  const zhSidebar = generateSidebarForLang(docsDir)
-  const enSidebar = generateSidebarForLang(path.join(docsDir, 'en'), '/en')
+/**
+ * 把字符串序列化为 JS 单引号字面量（转义反斜杠与单引号）
+ */
+function jsString(s) {
+  return `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+}
 
-  const sidebarStr = (sidebar) => JSON.stringify(sidebar, null, 2)
+/**
+ * 把 JS 值序列化为 JS 字面量风格字符串（单引号、无引号 key），
+ * 用于嵌入 search.translations 等结构化对象
+ * @param {*} value    待序列化的值
+ * @param {number} indent  当前层级闭合括号的缩进空格数
+ */
+function formatJs(value, indent = 0) {
+  const pad = ' '.repeat(indent)
+  const padInner = ' '.repeat(indent + 2)
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]'
+    const items = value.map(v => `${padInner}${formatJs(v, indent + 2)}`).join(',\n')
+    return `[\n${items}\n${pad}]`
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value)
+    if (entries.length === 0) return '{}'
+    const items = entries
+      .map(([k, v]) => `${padInner}${k}: ${formatJs(v, indent + 2)}`)
+      .join(',\n')
+    return `{\n${items}\n${pad}}`
+  }
+  if (typeof value === 'string') return jsString(value)
+  return String(value)
+}
+
+/**
+ * 把 sidebar 对象格式化为带 8 空格前缀的字符串
+ * 保持与历史输出一致：sidebar: 与首行 { 同行，后续每行加 8 空格缩进
+ */
+function formatSidebar(sidebar) {
+  return JSON.stringify(sidebar, null, 2)
     .split('\n')
     .map(line => '        ' + line)
     .join('\n')
+}
 
-  const configContent = `import { defineConfig } from 'vitepress'
+/**
+ * 生成单个语言的 locale 块字符串
+ */
+function generateLocaleBlock(lang) {
+  const navLines = uiStrings[lang.code].nav
+    .map(item => `          { text: ${jsString(item.text)}, link: ${jsString(item.link)} }`)
+    .join(',\n')
+
+  const sidebar = generateSidebarForLang(lang)
+  const sidebarStr = formatSidebar(sidebar)
+
+  const footer = uiStrings[lang.code].footer
+  // search.translations 块缩进对齐到 12 空格（与现有 config.js 一致）
+  const searchTranslations = formatJs(uiStrings[lang.code].search, 12)
+
+  const linkLine = lang.isDefault ? '' : `      link: '/${lang.dir}/',\n`
+  const localeKey = lang.isDefault ? 'root' : lang.code
+
+  return `    ${localeKey}: {
+      label: ${jsString(lang.label)},
+      lang: ${jsString(lang.lang)},
+${linkLine}      title: ${jsString(lang.title)},
+      description: ${jsString(lang.description)},
+      themeConfig: {
+        nav: [
+${navLines}
+        ],
+        sidebar: ${sidebarStr},
+        footer: {
+          message: ${jsString(footer.message)},
+          copyright: ${jsString(footer.copyright)}
+        },
+        search: {
+          provider: 'local',
+          options: {
+            translations: ${searchTranslations}
+          }
+        }
+      }
+    }`
+}
+
+/**
+ * 生成完整 config.js 文件内容
+ */
+function generateConfigContent() {
+  const localeBlocks = languages.map(generateLocaleBlock).join(',\n')
+
+  return `import { defineConfig } from 'vitepress'
 import taskLists from 'markdown-it-task-lists'
 import footnote from 'markdown-it-footnote'
 
 export default defineConfig({
   base: '/',
   cleanUrls: true,
-  rewrites: {
-${Object.entries(rewriteMap).map(([k, v]) => `    '${k}': '${v}.md'`).join(',\n')}
-  },
   head: [
     ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
@@ -147,100 +221,81 @@ ${Object.entries(rewriteMap).map(([k, v]) => `    '${k}': '${v}.md'`).join(',\n'
     }
   },
   locales: {
-    root: {
-      label: '中文',
-      lang: 'zh-CN',
-      title: 'Frontier Vault',
-      description: '面向中高级前端工程师的系统化知识库',
-      themeConfig: {
-        nav: [
-          { text: '首页', link: '/' },
-          { text: '浏览器', link: '/browser/' },
-          { text: 'JavaScript', link: '/javascript/' },
-          { text: '框架生态', link: '/frameworks/' },
-          { text: '性能优化', link: '/performance/' },
-          { text: '测试工程', link: '/testing/' },
-          { text: '职业体系', link: '/career/' }
-        ],
-        sidebar: ${sidebarStr(zhSidebar)},
-        footer: {
-          message: 'Code: MIT | Content: CC BY 4.0',
-          copyright: 'Copyright © 2026-present'
-        },
-        search: {
-          provider: 'local',
-          options: {
-            translations: {
-              button: {
-                buttonText: '搜索文档',
-                buttonAriaLabel: '搜索文档'
-              },
-              modal: {
-                noResultsText: '无法找到相关结果',
-                resetButtonTitle: '清除查询条件',
-                footer: {
-                  selectText: '选择',
-                  navigateText: '切换',
-                  closeText: '关闭'
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    en: {
-      label: 'English',
-      lang: 'en-US',
-      link: '/en/',
-      title: 'Frontier Vault',
-      description: 'A systematic knowledge base for advanced frontend engineers',
-      themeConfig: {
-        nav: [
-          { text: 'Home', link: '/en/' },
-          { text: 'Browser', link: '/en/browser/' },
-          { text: 'JavaScript', link: '/en/javascript/' },
-          { text: 'Frameworks', link: '/en/frameworks/' },
-          { text: 'Performance', link: '/en/performance/' },
-          { text: 'Testing', link: '/en/testing/' },
-          { text: 'Career', link: '/en/career/' }
-        ],
-        sidebar: ${sidebarStr(enSidebar)},
-        footer: {
-          message: 'Code: MIT | Content: CC BY 4.0',
-          copyright: 'Copyright © 2026-present'
-        },
-        search: {
-          provider: 'local',
-          options: {
-            translations: {
-              button: {
-                buttonText: 'Search documentation',
-                buttonAriaLabel: 'Search documentation'
-              },
-              modal: {
-                noResultsText: 'No results found',
-                resetButtonTitle: 'Reset search',
-                footer: {
-                  selectText: 'Select',
-                  navigateText: 'Navigate',
-                  closeText: 'Close'
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+${localeBlocks}
   },
   socialLinks: [
     { icon: 'github', link: 'https://github.com/Fatejian/frontier-vault' }
   ]
-})`
-
-  fs.writeFileSync(configPath, configContent, 'utf-8')
-  console.log('侧边栏配置已更新：')
-  console.log(JSON.stringify({ ...zhSidebar, ...enSidebar }, null, 2))
+})
+`
 }
 
-updateConfig()
+/**
+ * 翻译完整性检查：
+ * 扫描默认语言的所有 <module>/<slug>.md（排除 index.md），收集 slug 集合；
+ * 对每个非默认语言目录，检查同 <module>/<slug>.md 是否存在。
+ * 有缺失退出码 1，无缺失退出码 0。
+ */
+function checkTranslations() {
+  const defaultLang = languages.find(l => l.isDefault)
+  if (!defaultLang) {
+    console.error('No default language defined in languages.js')
+    process.exit(2)
+  }
+
+  // 收集默认语言所有 module/slug 集合（以 `module/slug` 形式存储）
+  const sourceSlugs = new Set()
+  const moduleDirs = fs.readdirSync(docsDir, { withFileTypes: true })
+    .filter(d => d.isDirectory() && !defaultLangExcludedDirs.includes(d.name))
+    .map(d => d.name)
+
+  for (const moduleName of moduleDirs) {
+    const modulePath = path.join(docsDir, moduleName)
+    const files = fs.readdirSync(modulePath, { withFileTypes: true })
+      .filter(f => f.isFile() && f.name.endsWith('.md') && f.name !== 'index.md')
+      .map(f => f.name)
+    for (const file of files) {
+      const slug = file.replace(/\.md$/, '')
+      sourceSlugs.add(`${moduleName}/${slug}`)
+    }
+  }
+
+  let hasMissing = false
+  for (const lang of languages.filter(l => !l.isDefault)) {
+    const langDir = path.join(docsDir, lang.dir)
+    const missing = []
+    if (!fs.existsSync(langDir)) {
+      // 整个语言目录不存在：所有源 slug 均视为缺失
+      for (const slug of sourceSlugs) missing.push(slug)
+    } else {
+      for (const slugPath of sourceSlugs) {
+        const [moduleName, slug] = slugPath.split('/')
+        const expected = path.join(langDir, moduleName, `${slug}.md`)
+        if (!fs.existsSync(expected)) missing.push(slugPath)
+      }
+    }
+    for (const slug of missing) {
+      console.log(`MISSING  ${lang.code}  ${slug}`)
+    }
+    if (missing.length > 0) {
+      console.log(`Total: ${missing.length} missing translations in ${lang.code}`)
+      hasMissing = true
+    }
+  }
+
+  if (!hasMissing) {
+    console.log('All translations complete.')
+    process.exit(0)
+  } else {
+    process.exit(1)
+  }
+}
+
+// 主入口：--check 走翻译检查；否则生成 config.js
+if (process.argv.includes('--check')) {
+  checkTranslations()
+} else {
+  const content = generateConfigContent()
+  fs.writeFileSync(configPath, content, 'utf-8')
+  console.log(`已生成 ${path.relative(projectRoot, configPath)}`)
+}

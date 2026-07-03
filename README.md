@@ -20,7 +20,7 @@ Built with [VitePress](https://vitepress.dev/) · Deployed via GitHub Actions to
 | 站点框架 | VitePress 1.6 |
 | 图表渲染 | Mermaid 11（自定义五色主题，集成于自定义主题，支持点击放大与明暗切换） |
 | Markdown 扩展 | markdown-it-task-lists（任务清单）、markdown-it-footnote（脚注） |
-| URL 策略 | `cleanUrls: true` + `rewrites` 将中文源文件名映射为英文 slug |
+| URL 策略 | `cleanUrls: true`，中文源文件统一使用英文 slug 命名（无需 rewrites） |
 | CI/CD | GitHub Actions：push 到 master 自动构建并部署到 GitHub Pages 与百度云服务器 |
 
 ## 模块总览
@@ -42,15 +42,23 @@ Built with [VitePress](https://vitepress.dev/) · Deployed via GitHub Actions to
 frontier-vault/
 ├── docs/
 │   ├── .vitepress/
-│   │   ├── config.js          # VitePress 配置（locales / nav / sidebar / rewrites / markdown）
-│   │   └── theme/             # 自定义主题（Mermaid 五色主题、点击放大、明暗切换）
-│   ├── browser/               # 浏览器原理模块（中文）
-│   ├── javascript/            # JavaScript 深度模块（中文）
-│   ├── frameworks/            # 框架生态模块（中文）
-│   ├── performance/           # 性能优化模块（中文）
-│   ├── testing/               # 测试工程模块（中文）
-│   ├── career/                # 职业体系模块（中文）
-│   ├── en/                    # 英文版本（English version）
+│   │   ├── config.js              # VitePress 配置（由 generate-sidebar.js 生成）
+│   │   ├── i18n/                 # i18n 单一数据源
+│   │   │   ├── languages.js      # 语言元数据（code/label/lang/isDefault/dir）
+│   │   │   ├── modules.js        # 每语言每模块的本地化显示名
+│   │   │   └── ui.js             # 每语言的 nav/search/footer/概述文案
+│   │   └── theme/                # 自定义主题（Mermaid 五色主题、点击放大、明暗切换）
+│   ├── browser/                  # 浏览器原理模块（中文，文件名用英文 slug）
+│   │   ├── rendering-pipeline.md
+│   │   ├── layout-thrashing.md
+│   │   ├── painting-rasterization.md
+│   │   └── index.md
+│   ├── javascript/               # JavaScript 深度模块（中文）
+│   ├── frameworks/               # 框架生态模块（中文）
+│   ├── performance/              # 性能优化模块（中文）
+│   ├── testing/                  # 测试工程模块（中文）
+│   ├── career/                   # 职业体系模块（中文）
+│   ├── en/                       # 英文版本（English version）
 │   │   ├── browser/
 │   │   ├── javascript/
 │   │   ├── frameworks/
@@ -58,10 +66,13 @@ frontier-vault/
 │   │   ├── testing/
 │   │   ├── career/
 │   │   └── index.md
-│   ├── public/                # 静态资源
-│   └── index.md               # 中文站点首页
-├── backup/                    # 备份资源（含写作风格 skill 文件）
-├── scripts/                   # 辅助脚本（标题提取、自动侧边栏）
+│   ├── public/                   # 静态资源
+│   └── index.md                  # 中文站点首页
+├── backup/                       # 备份资源（含写作风格 skill 文件）
+├── scripts/
+│   ├── generate-sidebar.js       # 数据驱动生成 config.js + 翻译完整性检查
+│   ├── extract-headings.js
+│   └── vite-plugin-auto-sidebar.js
 ├── .github/workflows/deploy.yml  # GitHub Actions 部署工作流
 ├── package.json
 └── vite.config.js
@@ -69,12 +80,41 @@ frontier-vault/
 
 ## 多语言支持
 
-站点采用 VitePress 原生 [i18n](https://vitepress.dev/guide/i18n) 实现：
+站点采用数据驱动的 i18n 架构，所有语言元数据集中管理在 `docs/.vitepress/i18n/` 单一数据源：
 
 - **中文（默认）**：内容位于 `docs/` 根目录，访问路径为 `/`。
 - **English**：内容位于 `docs/en/` 目录，访问路径为 `/en/`。
 
-新增或修改 Markdown 文件后，`scripts/generate-sidebar.js` 会自动从 `docs/` 与 `docs/en/` 生成对应语言的侧边栏，并回写到 `docs/.vitepress/config.js`。
+### 数据源结构
+
+| 文件 | 作用 |
+| --- | --- |
+| `i18n/languages.js` | 语言列表与元数据（code / label / lang / isDefault / dir） |
+| `i18n/modules.js` | 每语言每模块的本地化显示名 |
+| `i18n/ui.js` | 每语言的 nav 文案、search 翻译、footer、概述标签 |
+
+### 文件命名约定
+
+同一篇文章在所有语言下使用相同的英文 slug 文件名（如 `rendering-pipeline.md`），文件名即为跨语言的 canonical article ID。中文标题保留在 Markdown H1 与 frontmatter 中，不进入文件名。因此 `config.js` 无需 `rewrites` 规则。
+
+### 常用命令
+
+```bash
+# 重新生成 config.js（修改 i18n 数据源或新增/删除 Markdown 文件后执行）
+npm run sidebar:gen
+
+# 检查翻译完整性（对比默认语言与其他语言的文章 slug 集合）
+npm run i18n:check
+```
+
+### 新增一种语言
+
+1. 在 `docs/.vitepress/i18n/languages.js` 增加一条记录：`{ code: '<lang>', label: '<本地化名>', lang: '<HTML lang>', isDefault: false, dir: '<lang>', description: '...', title: 'Frontier Vault' }`
+2. 在 `modules.js` 与 `ui.js` 中补齐该语言的文案
+3. 创建 `docs/<lang>/` 目录，放入对应语言的 Markdown 文件（文件名须与默认语言的 slug 一致）
+4. 运行 `npm run sidebar:gen` 重新生成 config.js
+
+无需修改 `generate-sidebar.js` 或 `config.js` 任何硬编码——脚本会自动从 `languages.js` 读取语言列表并生成对应的 locale 配置。
 
 ## 快速开始
 
@@ -100,6 +140,20 @@ npm run docs:preview
 ```
 
 开发服务器默认启动在 `http://localhost:5173`。
+
+### i18n 与侧边栏维护
+
+修改 i18n 数据源或新增/删除 Markdown 文件后，需要执行以下命令：
+
+```bash
+# 重新生成 config.js（数据驱动，从 i18n 数据源与目录结构生成）
+npm run sidebar:gen
+
+# 检查翻译完整性（对比默认语言与其他语言的文章 slug 集合）
+npm run i18n:check
+```
+
+> 命令的详细语义、数据源结构以及新增语言的完整流程参见下方 [多语言支持](#多语言支持) 章节。
 
 ## 部署
 

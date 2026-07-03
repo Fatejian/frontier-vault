@@ -6,7 +6,9 @@
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "sidebar:gen": "node scripts/generate-sidebar.js",
+    "i18n:check": "node scripts/generate-sidebar.js --check"
   },
   "repository": {
     "type": "git",

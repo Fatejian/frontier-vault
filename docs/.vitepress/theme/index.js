@@ -448,11 +448,20 @@ function autoTextColor(svg) {
     const isDark = isDarkColor(bgColor)
     const textColor = isDark ? '#ffffff' : '#1e293b'
 
-    // 给 foreignObject 内的 div 添加 padding，防止文字紧贴边缘
-    fo.querySelectorAll('div').forEach(div => {
+    // 给 foreignObject 直接子 div 动态添加 padding 并强制水平居中
+    // 只处理 :scope > div 避免嵌套结构下 padding 累加压缩内容区
+    // 同步设置 text-align:center 与 box-sizing:border-box：
+    //   - text-align:center：内层 span/p 默认 left 对齐，加 padding 后文字会偏左
+    //   - box-sizing:border-box：padding 不增加 div 总宽度，避免溢出 foreignObject
+    // 动态阈值：foreignObject 宽度 < 80px 时（短标签、序号、状态码节点），
+    //   padding 占比过高会显著挤压文字空间，直接取消 padding 让文字充分利用宽度
+    const foWidth = parseFloat(fo.getAttribute('width')) || fo.clientWidth || 0
+    fo.querySelectorAll(':scope > div').forEach(div => {
       if (!div.style.padding || div.style.padding === '0px') {
-        div.style.padding = '4px 8px'
+        div.style.padding = foWidth >= 80 ? '2px 6px' : '0'
       }
+      div.style.setProperty('text-align', 'center', 'important')
+      div.style.setProperty('box-sizing', 'border-box', 'important')
     })
 
     // 设置文字颜色（important 确保覆盖 Mermaid 内联样式）

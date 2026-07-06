@@ -47,3 +47,4 @@ jobs:
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: root
           remote_key: ${{ secrets.SERVER_SSH_KEY }}
+          debug: true

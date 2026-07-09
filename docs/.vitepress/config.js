@@ -158,6 +158,10 @@ export default defineConfig({
                 {
                   "text": "技术影响力构建：从代码贡献到技术领导力",
                   "link": "/career/technical-influence"
+                },
+                {
+                  "text": "Vibe Coder 与软件工程师：AI 时代的责任分界线",
+                  "link": "/career/vibe-coder-vs-software-engineer"
                 }
               ]
             }
@@ -328,6 +332,10 @@ export default defineConfig({
                 {
                   "text": "Building Technical Influence: From Code Contribution to Technical Leadership",
                   "link": "/en/career/technical-influence"
+                },
+                {
+                  "text": "Vibe Coder vs Software Engineer: The Boundary of Responsibility in the AI Era",
+                  "link": "/en/career/vibe-coder-vs-software-engineer"
                 }
               ]
             }

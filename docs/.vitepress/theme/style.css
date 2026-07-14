@@ -146,45 +146,45 @@
    Mermaid 容器
    ============================================ */
 
-.mermaid-rendered {
+.mermaid-container {
   margin: 2rem 0;
   padding: 1.5rem;
   border-radius: var(--fv-radius-xl);
   border: 1px solid var(--vp-c-divider);
   overflow-x: auto;
   cursor: zoom-in;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.3s ease;
 }
 
 /* 重置 Mermaid 容器内所有元素的行高，防止被 .vp-doc p 的 line-height: 28px 继承导致文字溢出 */
 /* 使用 .vp-doc 前缀提升选择器优先级，覆盖 VitePress 默认主题 */
-.vp-doc .mermaid-rendered,
-.vp-doc .mermaid-rendered svg,
-.vp-doc .mermaid-rendered svg text,
-.vp-doc .mermaid-rendered svg foreignObject,
-.vp-doc .mermaid-rendered svg foreignObject text,
-.vp-doc .mermaid-rendered svg foreignObject div,
-.vp-doc .mermaid-rendered svg foreignObject span,
-.vp-doc .mermaid-rendered svg foreignObject p,
-.vp-doc .mermaid-rendered .noteLabel p,
-.vp-doc .mermaid-rendered .edgeLabel p,
-.vp-doc .mermaid-rendered .label p {
+.vp-doc .mermaid-container,
+.vp-doc .mermaid-container svg,
+.vp-doc .mermaid-container svg text,
+.vp-doc .mermaid-container svg foreignObject,
+.vp-doc .mermaid-container svg foreignObject text,
+.vp-doc .mermaid-container svg foreignObject div,
+.vp-doc .mermaid-container svg foreignObject span,
+.vp-doc .mermaid-container svg foreignObject p,
+.vp-doc .mermaid-container .noteLabel p,
+.vp-doc .mermaid-container .edgeLabel p,
+.vp-doc .mermaid-container .label p {
   line-height: 1.5 !important;
 }
 
 /* 暗色主题容器背景（写死颜色，不依赖页面主题变量） */
-.mermaid-rendered[data-theme="dark"] {
+.mermaid-container[data-theme="dark"] {
   background: #1e293b;
   border-color: #334155;
 }
 
 /* 亮色主题容器背景 */
-.mermaid-rendered[data-theme="default"] {
+.mermaid-container[data-theme="default"] {
   background: #ffffff;
   border-color: #e2e8f0;
 }
 
-.mermaid-rendered:hover {
+.mermaid-container:hover {
   border-color: var(--fv-primary);
   box-shadow: 0 0 0 3px var(--fv-primary-soft);
 }
@@ -218,18 +218,18 @@
 }
 
 /* 深色 Mermaid 图表内的按钮样式 */
-.mermaid-rendered[data-theme="dark"] .mermaid-theme-toggle {
+.mermaid-container[data-theme="dark"] .mermaid-theme-toggle {
   border-color: #475569 !important;
   background: #334155 !important;
   color: #ffffff !important;
 }
 
-.mermaid-rendered[data-theme="dark"] .mermaid-theme-toggle:hover {
+.mermaid-container[data-theme="dark"] .mermaid-theme-toggle:hover {
   border-color: #7aa2f7 !important;
   background: #475569 !important;
 }
 
-.mermaid-rendered svg {
+.mermaid-container svg {
   max-width: 100%;
   height: auto;
   display: block;
@@ -237,13 +237,47 @@
 }
 
 /* Light theme SVG background */
-.mermaid-rendered[data-theme="default"] {
+.mermaid-container[data-theme="default"] {
   background: #ffffff !important;
   border-color: #e2e8f0;
 }
 
-.mermaid-rendered[data-theme="default"] svg {
+.mermaid-container[data-theme="default"] svg {
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+}
+
+/* Mermaid 代码块始终隐藏（兼容所有现代浏览器） */
+/* 使用 visibility + height 而不是 display: none，确保 IntersectionObserver 可以观察到 */
+.vp-doc .language-mermaid {
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* 隐藏已渲染的 mermaid 源码 */
+.vp-doc .mermaid-source-hidden {
+  display: none !important;
+}
+
+/* 预分配 Mermaid 渲染容器 */
+.mermaid-container {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: var(--fv-radius-xl);
+  border: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  min-height: 120px;
+  opacity: 0;
+  transition: opacity 0.3s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  visibility: hidden;
+}
+
+.mermaid-container.is-visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* 隐藏已渲染的 mermaid 源码 */
@@ -843,7 +877,7 @@
     font-size: 16px;
   }
 
-  .mermaid-rendered {
+  .mermaid-container {
     padding: 1rem;
     margin: 1.5rem 0;
   }

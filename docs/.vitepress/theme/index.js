@@ -3,56 +3,14 @@ import mermaid from 'mermaid'
 import HomePage from './components/HomePage.vue'
 import './style.css'
 
-// mermaid 主题默认跟随 VitePress 页面主题
-function getPageTheme() {
-  if (typeof document === 'undefined') return 'dark'
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'default'
-}
-
-function getMermaidThemeConfig(theme) {
-  return {
-    startOnLoad: false,
-    theme: theme === 'dark' ? 'dark' : 'default',
-    themeVariables: theme === 'dark' ? {
-      primaryColor: '#3b82f6',
-      primaryTextColor: '#ffffff',
-      primaryBorderColor: '#3b82f6',
-      lineColor: '#6b7280',
-      secondaryColor: '#6366f1',
-      tertiaryColor: '#8b5cf6',
-      background: '#1a2332',
-      mainBkg: '#1a2332',
-      nodeBorder: '#3b82f6',
-      clusterBkg: '#0f172a',
-      titleColor: '#ffffff',
-      edgeLabelBackground: '#1a2332',
-      textColor: '#e2e8f0',
-      fontFamily: 'inherit'
-    } : {
-      primaryColor: '#3b82f6',
-      primaryTextColor: '#1e293b',
-      primaryBorderColor: '#3b82f6',
-      lineColor: '#64748b',
-      secondaryColor: '#6366f1',
-      tertiaryColor: '#8b5cf6',
-      background: '#ffffff',
-      mainBkg: '#ffffff',
-      nodeBorder: '#3b82f6',
-      clusterBkg: '#f8fafc',
-      titleColor: '#1e293b',
-      edgeLabelBackground: '#ffffff',
-      textColor: '#1e293b',
-      fontFamily: 'inherit'
-    }
-  }
-}
-
-// 使用页面主题初始化 mermaid
-let currentMermaidTheme = getPageTheme()
-mermaid.initialize(getMermaidThemeConfig(currentMermaidTheme))
-
-function isMermaidCode(code) {
-  const mermaidKeywords = [
+const MERMAID_CONFIG = {
+  startOnLoad: false,
+  renderDelay: 50,
+  observer: {
+    rootMargin: '150px',
+    threshold: 0.05
+  },
+  keywords: [
     'flowchart',
     'graph',
     'mindmap',
@@ -64,21 +22,147 @@ function isMermaidCode(code) {
     'pie',
     '%%{init:'
   ]
-  return mermaidKeywords.some(keyword => code.includes(keyword))
+}
+
+const MERMAID_THEME_VARS = {
+  dark: {
+    primaryColor: '#3b82f6',
+    primaryTextColor: '#ffffff',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#6b7280',
+    secondaryColor: '#6366f1',
+    tertiaryColor: '#8b5cf6',
+    background: '#1a2332',
+    mainBkg: '#1a2332',
+    nodeBorder: '#3b82f6',
+    clusterBkg: '#0f172a',
+    titleColor: '#ffffff',
+    edgeLabelBackground: '#1a2332',
+    textColor: '#e2e8f0',
+    fontFamily: 'inherit'
+  },
+  default: {
+    primaryColor: '#3b82f6',
+    primaryTextColor: '#1e293b',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#64748b',
+    secondaryColor: '#6366f1',
+    tertiaryColor: '#8b5cf6',
+    background: '#ffffff',
+    mainBkg: '#ffffff',
+    nodeBorder: '#3b82f6',
+    clusterBkg: '#f8fafc',
+    titleColor: '#1e293b',
+    edgeLabelBackground: '#ffffff',
+    textColor: '#1e293b',
+    fontFamily: 'inherit'
+  }
+}
+
+function getPageTheme() {
+  if (typeof document === 'undefined') return 'dark'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'default'
+}
+
+function getMermaidThemeConfig(theme) {
+  return {
+    startOnLoad: MERMAID_CONFIG.startOnLoad,
+    theme: theme === 'dark' ? 'dark' : 'default',
+    themeVariables: MERMAID_THEME_VARS[theme] || MERMAID_THEME_VARS.default
+  }
+}
+
+let currentMermaidTheme = getPageTheme()
+mermaid.initialize(getMermaidThemeConfig(currentMermaidTheme))
+
+function isMermaidCode(code) {
+  return MERMAID_CONFIG.keywords.some(keyword => code.includes(keyword))
 }
 
 let renderedMermaidHashes = new Set()
 
 function hashStr(str) {
-  let hash = 0
+  let hash = 0x811c9dc5
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash |= 0
+    hash = (hash ^ str.charCodeAt(i)) * 0x01000193
   }
-  return hash
+  return hash.toString(36)
 }
 
 let zoomSetupDone = false
+let mermaidObserver = null
+let mermaidRenderCounter = 0
+
+function createMermaidContainer() {
+  const container = document.createElement('div')
+  container.className = 'mermaid-container'
+  return container
+}
+
+function renderSingleMermaid(codeBlock, options = {}) {
+  const { onComplete, onError } = options
+  const preBlock = codeBlock?.parentElement
+  if (!preBlock) {
+    onError?.()
+    return
+  }
+
+  const code = codeBlock.textContent.trim()
+  if (!isMermaidCode(code)) {
+    onComplete?.()
+    return
+  }
+
+  const hash = hashStr(code)
+  if (renderedMermaidHashes.has(hash)) {
+    onComplete?.()
+    return
+  }
+  renderedMermaidHashes.add(hash)
+
+  const pageTheme = getPageTheme()
+  const languageContainer = preBlock.closest('.language-mermaid')
+  if (!languageContainer) {
+    console.warn('Mermaid: .language-mermaid container not found')
+    onComplete?.()
+    return
+  }
+
+  const container = createMermaidContainer()
+  languageContainer.parentNode.insertBefore(container, languageContainer.nextSibling)
+
+  mermaid.render('mermaid-' + Date.now() + '-' + (mermaidRenderCounter++), code).then(({ svg }) => {
+    container.innerHTML = svg
+    container.dataset.theme = pageTheme
+    container.title = '点击放大查看'
+
+    requestAnimationFrame(() => {
+      container.classList.add('is-visible')
+
+      const svgEl = container.querySelector('svg')
+      if (svgEl) {
+        autoTextColor(svgEl)
+        expandForeignObjects(svgEl)
+      }
+    })
+
+    if (!zoomSetupDone) {
+      zoomSetupDone = true
+      setupMermaidZoom()
+    }
+
+    onComplete?.()
+  }).catch((err) => {
+    container.remove()
+    languageContainer.style.display = 'block'
+    console.error('Mermaid render error:', err)
+    onError?.(err)
+  })
+}
+
+function finalizeRender() {
+  addThemeSwitcher()
+}
 
 function renderMermaid() {
   const codeBlocks = document.querySelectorAll('pre code')
@@ -89,84 +173,71 @@ function renderMermaid() {
 
   if (mermaidCodeBlocks.length === 0) return
 
-  // 检查是否有可见的 mermaid 源码块（说明需要重新渲染）
-  const hasVisibleSource = mermaidCodeBlocks.some(cb => {
-    const pre = cb.parentElement
-    const wrapper = pre?.closest('.line-numbers-mode') || pre
-    return wrapper && !wrapper.classList.contains('mermaid-source-hidden')
-  })
-
-  if (!hasVisibleSource) return
-
-  // 恢复隐藏的源码块
-  document.querySelectorAll('.mermaid-source-hidden').forEach(el => {
-    el.classList.remove('mermaid-source-hidden')
-  })
-
-  // 移除旧的渲染结果
-  document.querySelectorAll('.mermaid-rendered').forEach(el => el.remove())
-
-  // 清空哈希，重新渲染
+  document.querySelectorAll('.mermaid-container').forEach(el => el.remove())
   renderedMermaidHashes.clear()
 
-  // 确保使用当前页面主题初始化 mermaid
   const pageTheme = getPageTheme()
   currentMermaidTheme = pageTheme
   mermaid.initialize(getMermaidThemeConfig(pageTheme))
 
-  let counter = 0
-  let pendingRenders = 0
+  if ('IntersectionObserver' in window) {
+    if (mermaidObserver) {
+      mermaidObserver.disconnect()
+    }
 
-  codeBlocks.forEach((codeBlock) => {
-    const preBlock = codeBlock.parentElement
-    if (!preBlock) return
-
-    const code = codeBlock.textContent.trim()
-    if (!isMermaidCode(code)) return
-
-    const hash = hashStr(code)
-    if (renderedMermaidHashes.has(hash)) return
-    renderedMermaidHashes.add(hash)
-
-    const svgContainer = document.createElement('div')
-    svgContainer.className = 'mermaid-rendered'
-    svgContainer.title = '点击放大查看'
-
-    pendingRenders++
-    mermaid.render('mermaid-' + Date.now() + '-' + (counter++), code).then(({ svg }) => {
-      svgContainer.innerHTML = svg
-      const lineNumbersMode = preBlock.closest('.line-numbers-mode')
-      if (lineNumbersMode) {
-        lineNumbersMode.parentNode.insertBefore(svgContainer, lineNumbersMode.nextSibling)
-        lineNumbersMode.classList.add('mermaid-source-hidden')
-      } else {
-        preBlock.parentNode.insertBefore(svgContainer, preBlock.nextSibling)
-        preBlock.classList.add('mermaid-source-hidden')
+    let pendingRenders = mermaidCodeBlocks.length
+    const checkCompletion = () => {
+      pendingRenders--
+      if (pendingRenders === 0) {
+        finalizeRender()
       }
+    }
 
-      // SVG 插入 DOM 后，动态调整文字颜色和扩展 edge label
-      requestAnimationFrame(() => {
-        const svgEl = svgContainer.querySelector('svg')
-        if (svgEl) {
-          autoTextColor(svgEl)
-          expandForeignObjects(svgEl)
+    mermaidObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const codeBlock = entry.target.querySelector('code')
+          if (codeBlock) {
+            renderSingleMermaid(codeBlock, {
+              onComplete: checkCompletion,
+              onError: checkCompletion
+            })
+          }
+          mermaidObserver.unobserve(entry.target)
         }
       })
+    }, MERMAID_CONFIG.observer)
 
-      pendingRenders--
-      // 所有渲染完成后，设置事件监听和主题切换按钮
-      if (pendingRenders === 0) {
-        if (!zoomSetupDone) {
-          zoomSetupDone = true
-          setupMermaidZoom()
-        }
-        addThemeSwitcher()
-      }
-    }).catch((err) => {
-      console.error('Mermaid render error:', err)
-      pendingRenders--
+    mermaidCodeBlocks.forEach(codeBlock => {
+      const preBlock = codeBlock?.parentElement
+      if (!preBlock) return
+      const languageContainer = preBlock.closest('.language-mermaid') || preBlock
+      mermaidObserver.observe(languageContainer)
     })
-  })
+  } else {
+    let pendingRenders = 0
+    const checkCompletion = () => {
+      pendingRenders--
+      if (pendingRenders === 0) {
+        finalizeRender()
+      }
+    }
+
+    mermaidCodeBlocks.forEach(codeBlock => {
+      pendingRenders++
+      renderSingleMermaid(codeBlock, {
+        onComplete: checkCompletion,
+        onError: checkCompletion
+      })
+    })
+  }
+}
+
+function cleanupMermaidObserver() {
+  if (mermaidObserver) {
+    mermaidObserver.disconnect()
+    mermaidObserver = null
+  }
 }
 
 // 放大查看功能
@@ -179,7 +250,7 @@ function setupMermaidZoom() {
     // 如果遮罩已打开，不处理（防止关闭时穿透到下方图表重新打开）
     if (isOverlayOpen) return
 
-    const rendered = e.target.closest('.mermaid-rendered')
+    const rendered = e.target.closest('.mermaid-container')
     if (!rendered) return
 
     const svg = rendered.querySelector('svg')
@@ -250,7 +321,7 @@ function setupMermaidZoom() {
 function addThemeSwitcher() {
   const pageTheme = getPageTheme()
 
-  document.querySelectorAll('.mermaid-rendered').forEach(container => {
+  document.querySelectorAll('.mermaid-container').forEach(container => {
     // 如果已有按钮，不重复添加
     if (container.querySelector('.mermaid-theme-toggle')) return
 
@@ -635,7 +706,7 @@ function setupPageThemeSync() {
     mermaid.initialize(getMermaidThemeConfig(pageTheme))
 
     // 更新所有 mermaid 图表
-    document.querySelectorAll('.mermaid-rendered').forEach(container => {
+    document.querySelectorAll('.mermaid-container').forEach(container => {
       const sourceBlock = container.previousElementSibling
       if (!sourceBlock) return
 
@@ -709,7 +780,7 @@ function doRender() {
 
 function scheduleRender() {
   if (renderTimer) clearTimeout(renderTimer)
-  renderTimer = setTimeout(doRender, 300)
+  renderTimer = setTimeout(doRender, MERMAID_CONFIG.renderDelay)
 }
 
 // 立即执行一次
@@ -723,6 +794,8 @@ if (typeof window !== 'undefined') {
     scheduleRender()
     setupPageThemeSync()
   }
+
+  window.addEventListener('beforeunload', cleanupMermaidObserver)
 }
 
 export default {

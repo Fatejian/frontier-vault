@@ -720,22 +720,44 @@
    ============================================ */
 
 /* Hero：品牌名字距收紧、字号增强；tagline 限宽提升可读性 */
+.VPHero {
+  padding-top: 4rem !important;
+  padding-bottom: 5rem !important;
+}
+
 .VPHero .name {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
   font-weight: 700;
   background-image: none;
   -webkit-text-fill-color: var(--fv-text);
+  font-size: 2.5rem !important;
+}
+
+@media (min-width: 768px) {
+  .VPHero .name {
+    font-size: 3.5rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .VPHero .name {
+    font-size: 4rem !important;
+  }
 }
 
 .VPHero .text {
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   font-weight: 600;
+  font-size: 1.15rem !important;
+  margin-top: 0.75rem !important;
 }
 
 .VPHero .tagline {
-  max-width: 640px;
-  opacity: 0.78;
-  line-height: 1.65;
+  max-width: 680px;
+  opacity: 0.72;
+  line-height: 1.7;
+  font-size: 1.05rem !important;
+  margin-top: 1.25rem !important;
 }
 
 /* Hero 按钮：alt 按钮去除默认紫色调，统一到中性色边框，避免引入第二强调色 */
@@ -786,9 +808,15 @@
 
 .VPFeatures .item .VPLink:hover,
 .VPFeatures .item .box:hover {
-  border-color: color-mix(in srgb, var(--fv-primary) 35%, var(--fv-border));
-  box-shadow: var(--fv-shadow-md);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--fv-primary) 45%, var(--fv-border));
+  box-shadow: var(--fv-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.VPFeatures .item .VPLink:active,
+.VPFeatures .item .box:active {
+  transform: translateY(0);
+  box-shadow: var(--fv-shadow-sm);
 }
 
 .VPFeatures .item .VPLink:hover::before,

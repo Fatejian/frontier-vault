@@ -1,5 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import mermaid from 'mermaid'
+import HomePage from './components/HomePage.vue'
 import './style.css'
 
 // mermaid 主题默认跟随 VitePress 页面主题
@@ -726,6 +727,10 @@ if (typeof window !== 'undefined') {
 
 export default {
   ...DefaultTheme,
+  layouts: {
+    ...DefaultTheme.layouts,
+    home: HomePage
+  },
   enhanceApp({ app, router }) {
     if (typeof window !== 'undefined') {
       router.onAfterRouteChanged = scheduleRender

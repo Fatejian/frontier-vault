@@ -12,16 +12,32 @@ hero:
       text: GitHub
       link: https://github.com/Fatejian/frontier-vault
 features:
-  - title: Browser Internals
+  - icon: '🌐'
+    title: Browser Internals
     details: Deep dive into Chromium's multi-process architecture, the rendering pipeline (Style / Layout / Paint / Raster / Composite), GPU compositing, and V8 engine mechanics. Build a complete mental model from request to pixel.
-  - title: JavaScript Deep Dive
+    link: /en/browser/
+  - icon: '�'
+    title: JavaScript Deep Dive
     details: From execution context, scope chain, and closure nature to V8 JIT compilation and GC. Understand the evolution of async programming and memory models to write predictable, high-performance code.
-  - title: Frameworks & Ecosystem
+    link: /en/javascript/
+  - icon: '⚛️'
+    title: Frameworks & Ecosystem
     details: Analyze React Fiber's interruptible chain rendering, Vue 3's Proxy reactivity, and the design evolution of state management from Flux to Zustand. See the engineering trade-offs behind framework abstractions.
-  - title: Performance Engineering
+    link: /en/frameworks/
+  - icon: '⚡'
+    title: Performance Engineering
     details: Centered on Core Web Vitals (LCP / INP / CLS) and the rendering pipeline, decompose waiting, blocking, and redundant work on the critical path. Produce actionable optimization checklists.
-  - title: Testing Engineering
+    link: /en/performance/
+  - icon: '✅'
+    title: Testing Engineering
     details: Cover the full load-testing methodology, TPS / P95 metrics, layered bottleneck diagnosis, and degradation / circuit-breaker validation. Build a verifiable quality-assurance system.
-  - title: Career System
+    link: /en/testing/
+  - icon: '🤖'
+    title: AI Engineering
+    details: Explore AI-assisted programming practices, prompt engineering methodologies, code generation quality assessment, and AI toolchain integration strategies. Build human-AI collaborative engineering workflows.
+    link: /en/ai/
+  - icon: '🚀'
+    title: Career System
     details: From T-shaped to π-shaped capability models, growth paths from junior to architect, and methods for building technical influence. Provide quantifiable advancement frameworks, not vague advice.
+    link: /en/career/
 ---

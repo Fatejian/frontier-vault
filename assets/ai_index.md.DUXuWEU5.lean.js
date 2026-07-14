@@ -1,0 +1,1 @@
+import{_ as a,o as n,c as i,a1 as l}from"./chunks/framework.BwbI10pK.js";const u=JSON.parse('{"title":"AI 工程","description":"","frontmatter":{},"headers":[],"relativePath":"ai/index.md","filePath":"ai/index.md"}'),e={name:"ai/index.md"};function r(t,s,p,o,h,c){return n(),i("div",null,[...s[0]||(s[0]=[l("",24)])])}const b=a(e,[["render",r]]);export{u as __pageData,b as default};

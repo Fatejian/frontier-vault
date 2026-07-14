@@ -33,6 +33,7 @@ export default defineConfig({
           { text: '框架生态', link: '/frameworks/' },
           { text: '性能优化', link: '/performance/' },
           { text: '测试工程', link: '/testing/' },
+          { text: 'AI 工程', link: '/ai/' },
           { text: '职业体系', link: '/career/' }
         ],
         sidebar:         {
@@ -139,6 +140,21 @@ export default defineConfig({
               ]
             }
           ],
+          "/ai/": [
+            {
+              "text": "AI 工程",
+              "items": [
+                {
+                  "text": "概述",
+                  "link": "/ai/"
+                },
+                {
+                  "text": "AI 时代如何理解「上下文」及其在 AI 编程转型中的应用",
+                  "link": "/ai/understanding-context-in-ai-era"
+                }
+              ]
+            }
+          ],
           "/career/": [
             {
               "text": "职业体系",
@@ -207,6 +223,7 @@ export default defineConfig({
           { text: 'Frameworks', link: '/en/frameworks/' },
           { text: 'Performance', link: '/en/performance/' },
           { text: 'Testing', link: '/en/testing/' },
+          { text: 'AI Engineering', link: '/en/ai/' },
           { text: 'Career', link: '/en/career/' }
         ],
         sidebar:         {
@@ -309,6 +326,21 @@ export default defineConfig({
                 {
                   "text": "Load Testing Engineering Practice: A Full-Stack Methodology from Test Plan to Bottleneck Localization",
                   "link": "/en/testing/load-testing-practice"
+                }
+              ]
+            }
+          ],
+          "/en/ai/": [
+            {
+              "text": "AI Engineering",
+              "items": [
+                {
+                  "text": "Overview",
+                  "link": "/en/ai/"
+                },
+                {
+                  "text": "Understanding Context in the AI Era and Its Role in AI Programming Transformation",
+                  "link": "/en/ai/understanding-context-in-ai-era"
                 }
               ]
             }

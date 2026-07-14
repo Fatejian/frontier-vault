@@ -1,8 +1,8 @@
 # frontier-vault
 
-> A curated knowledge vault for advanced frontend engineering — browser internals, JavaScript deep dives, framework mechanics, performance optimization, testing engineering, and career frameworks.
+> A curated knowledge vault for advanced frontend engineering — browser internals, JavaScript deep dives, framework mechanics, performance optimization, testing engineering, AI engineering practice, and career frameworks.
 >
-> 面向中高级前端工程师的系统化知识库，从浏览器底层原理到职业成长路径，构建可落地的工程认知体系。
+> 面向中高级前端工程师的系统化知识库，从浏览器底层原理到职业成长路径，覆盖 AI 工程实践，构建可落地的工程认知体系。
 
 Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English · Deployed via GitHub Actions to GitHub Pages + Baidu Cloud
 
@@ -45,7 +45,7 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English ·
 
 ## 模块总览
 
-知识库按六大模块组织，每个模块围绕一个核心主题建立完整心智模型：
+知识库按七大模块组织，每个模块围绕一个核心主题建立完整心智模型：
 
 | 模块 | 中文路径 | 英文路径 | 核心主题 |
 | --- | --- | --- | --- |
@@ -54,6 +54,7 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English ·
 | 框架生态 | `docs/frameworks/` | `docs/en/frameworks/` | React Fiber 链式可中断渲染、Vue 3 Proxy 响应式、状态管理从 Flux 到 Zustand 的设计演进 |
 | 性能优化 | `docs/performance/` | `docs/en/performance/` | Core Web Vitals（LCP / INP / CLS）、关键路径、渲染管线、运行时性能 |
 | 测试工程 | `docs/testing/` | `docs/en/testing/` | 负载测试全流程方法论、TPS / P95 指标体系、瓶颈分层诊断、降级与熔断验证 |
+| AI 工程 | `docs/ai/` | `docs/en/ai/` | 上下文工程、上下文窗口、短期 / 长期 / 检索 / 工具上下文、AI 编程转型、角色能力迁移 |
 | 职业体系 | `docs/career/` | `docs/en/career/` | T 型到 π 型能力模型、初级到架构师成长路径、技术影响力构建 |
 
 ## 项目结构
@@ -81,6 +82,7 @@ frontier-vault/
 │   ├── frameworks/                # 框架生态模块（中文）
 │   ├── performance/               # 性能优化模块（中文）
 │   ├── testing/                   # 测试工程模块（中文）
+│   ├── ai/                        # AI 工程模块（中文）
 │   ├── career/                    # 职业体系模块（中文）
 │   ├── en/                        # English 版本（与中文一一对应，slug 完全一致）
 │   │   ├── browser/
@@ -88,6 +90,7 @@ frontier-vault/
 │   │   ├── frameworks/
 │   │   ├── performance/
 │   │   ├── testing/
+│   │   ├── ai/
 │   │   ├── career/
 │   │   └── index.md
 │   ├── public/                    # 静态资源（favicon 等）
@@ -189,7 +192,7 @@ npm run i18n:home
 1. 在 `i18n/languages.js` 增加语言条目（`isDefault: false`, `dir: '<code>'`）
 2. 在 `modules.js` 与 `ui.js` 中补齐该语言的文案
 3. 在 `home.js` 中补齐该语言的 hero / features 配置
-4. 创建 `docs/<code>/` 目录，按模块顺序建立 6 个子目录，放入对应语言的 Markdown 文件（文件名须与默认语言的 slug 一致）+ `index.md` 站点首页
+4. 创建 `docs/<code>/` 目录，按模块顺序建立 7 个子目录，放入对应语言的 Markdown 文件（文件名须与默认语言的 slug 一致）+ `index.md` 站点首页
 5. 运行 `npm run sidebar:gen` 重新生成 config.js
 6. 运行 `npm run i18n:check` 与 `npm run i18n:home` 确认无缺失
 

@@ -9,6 +9,7 @@ export default {
       { text: '框架生态', link: '/frameworks/' },
       { text: '性能优化', link: '/performance/' },
       { text: '测试工程', link: '/testing/' },
+      { text: 'AI 工程', link: '/ai/' },
       { text: '职业体系', link: '/career/' }
     ],
     overview: '概述',
@@ -30,6 +31,7 @@ export default {
       { text: 'Frameworks', link: '/en/frameworks/' },
       { text: 'Performance', link: '/en/performance/' },
       { text: 'Testing', link: '/en/testing/' },
+      { text: 'AI Engineering', link: '/en/ai/' },
       { text: 'Career', link: '/en/career/' }
     ],
     overview: 'Overview',

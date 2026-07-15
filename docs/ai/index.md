@@ -92,6 +92,6 @@ flowchart TB
 ## 延伸资源
 
 - [Anthropic Claude 文档](https://docs.anthropic.com/claude/docs)
-- [OpenAI Cookbook](https://cookbook.openai.com/)
+- [OpenAI Cookbook](https://github.com/openai/openai-cookbook)
 - [LangChain 文档](https://python.langchain.com/docs/)
 - 书籍：《AI Engineering: Building AI Systems That Work in Production》

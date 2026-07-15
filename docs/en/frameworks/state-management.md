@@ -943,12 +943,10 @@ It is worth it. The `createStore` implementation is only a few dozen lines, but 
 
 ## Sources
 
-1. Facebook Flux documentation (original design): <https://facebook.github.io/flux/>
-2. Redux official documentation: <https://redux.js.org/>
-3. MobX official documentation: <https://mobx.js.org/>
-4. Zustand GitHub: <https://github.com/pmndrs/zustand>
-5. Jotai GitHub: <https://github.com/pmndrs/jotai>
-6. Dan Abramov — You Might Not Need Redux: <https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
-7. Michel Weststrate — Redux or MobX: An attempt to dissolve the dilemma: <https://hackernoon.com/redux-or-mobx-an-attempt-to-dissolve-the-dilemma-22c5b57a16f8>
+1. Redux official documentation: <https://redux.js.org/>
+2. MobX official documentation: <https://mobx.js.org/>
+3. Zustand GitHub: <https://github.com/pmndrs/zustand>
+4. Jotai GitHub: <https://github.com/pmndrs/jotai>
+5. Dan Abramov — You Might Not Need Redux: <https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
 
 This article is also based on the author's practical reading of multiple state-management library source codes and project experience.

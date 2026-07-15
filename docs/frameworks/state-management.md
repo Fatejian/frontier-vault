@@ -943,12 +943,10 @@ MobX 仍有用户群体，特别是 Vue 背景的开发者转到 React 时偏好
 
 ## 来源
 
-1. Facebook Flux 文档（原始设计）：<https://facebook.github.io/flux/>
-2. Redux 官方文档：<https://redux.js.org/>
-3. MobX 官方文档：<https://mobx.js.org/>
-4. Zustand GitHub：<https://github.com/pmndrs/zustand>
-5. Jotai GitHub：<https://github.com/pmndrs/jotai>
-6. Dan Abramov - You Might Not Need Redux：<https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
-7. Michel Weststrate - Redux or MobX: An attempt to dissolve the dilemma：<https://hackernoon.com/redux-or-mobx-an-attempt-to-dissolve-the-dilemma-22c5b57a16f8>
+1. Redux 官方文档：<https://redux.js.org/>
+2. MobX 官方文档：<https://mobx.js.org/>
+3. Zustand GitHub：<https://github.com/pmndrs/zustand>
+4. Jotai GitHub：<https://github.com/pmndrs/jotai>
+5. Dan Abramov - You Might Not Need Redux：<https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
 
 本文同时基于作者对多个状态管理库源码的实践阅读与项目经验总结。

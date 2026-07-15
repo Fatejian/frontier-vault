@@ -686,7 +686,7 @@ A larger HTML volume makes the Parse HTML stage longer, increasing main-thread o
 
 This article is based on Chromium official documentation, the web.dev performance series, Chrome DevTools documentation, and the author's engineering practice. Key technical details can be found in:
 
-1. Chromium Rendering Pipeline official introduction: [https://www.chromium.org/developers/design-documents/gpu-accelerated-2d-canvas/](https://www.chromium.org/developers/design-documents/gpu-accelerated-2d-canvas/)
+1. Chromium Graphics architecture documentation: [https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/](https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/)
 2. web.dev rendering performance series: [https://web.dev/articles/rendering-performance](https://web.dev/articles/rendering-performance)
 3. CSS Triggers: [https://csstriggers.com/](https://csstriggers.com/)
 4. Chrome DevTools Performance panel docs: [https://developer.chrome.com/docs/devtools/performance/](https://developer.chrome.com/docs/devtools/performance/)

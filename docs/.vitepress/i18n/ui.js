@@ -21,7 +21,7 @@ export default {
         footer: { selectText: '选择', navigateText: '切换', closeText: '关闭' }
       }
     },
-    footer: { message: 'Code: MIT | Content: CC BY 4.0', copyright: 'Copyright © 2026-present' }
+    footer: { message: 'Code: MIT | Content: CC BY 4.0', copyright: 'Copyright © 2026-present', icp: '粤ICP备2026097578号-1', icpLink: 'https://beian.miit.gov.cn/' }
   },
   en: {
     nav: [
@@ -43,6 +43,6 @@ export default {
         footer: { selectText: 'Select', navigateText: 'Navigate', closeText: 'Close' }
       }
     },
-    footer: { message: 'Code: MIT | Content: CC BY 4.0', copyright: 'Copyright © 2026-present' }
+    footer: { message: 'Code: MIT | Content: CC BY 4.0', copyright: 'Copyright © 2026-present', icp: '粤ICP备2026097578号-1', icpLink: 'https://beian.miit.gov.cn/' }
   }
 }

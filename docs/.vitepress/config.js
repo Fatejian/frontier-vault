@@ -184,7 +184,7 @@ export default defineConfig({
           ]
         },
         footer: {
-          message: 'Code: MIT | Content: CC BY 4.0',
+          message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
         },
         search: {
@@ -374,7 +374,7 @@ export default defineConfig({
           ]
         },
         footer: {
-          message: 'Code: MIT | Content: CC BY 4.0',
+          message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
         },
         search: {

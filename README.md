@@ -4,6 +4,8 @@
 >
 > 面向中高级前端工程师的系统化知识库，从浏览器底层原理到职业成长路径，覆盖 AI 工程实践，构建可落地的工程认知体系。
 
+**🌐 访问站点**: [https://www.fatejian.icu/](https://www.fatejian.icu/)
+
 Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English · Deployed via GitHub Actions to GitHub Pages + Baidu Cloud
 
 ## 项目特色

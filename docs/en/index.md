@@ -16,7 +16,7 @@ features:
     title: Browser Internals
     details: Deep dive into Chromium's multi-process architecture, the rendering pipeline (Style / Layout / Paint / Raster / Composite), GPU compositing, and V8 engine mechanics. Build a complete mental model from request to pixel.
     link: /en/browser/
-  - icon: '�'
+  - icon: '💻'
     title: JavaScript Deep Dive
     details: From execution context, scope chain, and closure nature to V8 JIT compilation and GC. Understand the evolution of async programming and memory models to write predictable, high-performance code.
     link: /en/javascript/

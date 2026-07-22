@@ -6,8 +6,16 @@ export default defineConfig({
   base: '/',
   cleanUrls: true,
   head: [
-    ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
+    ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }]
   ],
+  vite: {
+    build: {
+      chunkSizeWarningLimit: 1000
+    }
+  },
   markdown: {
     theme: {
       light: 'vitesse-light',
@@ -187,6 +195,7 @@ export default defineConfig({
           message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
         },
+        prefetchLinks: false,
         search: {
           provider: 'local',
           options: {
@@ -377,6 +386,7 @@ export default defineConfig({
           message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
         },
+        prefetchLinks: false,
         search: {
           provider: 'local',
           options: {

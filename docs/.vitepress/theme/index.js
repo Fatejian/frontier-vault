@@ -1,7 +1,15 @@
 import DefaultTheme from 'vitepress/theme'
-import mermaid from 'mermaid'
 import HomePage from './components/HomePage.vue'
 import './style.css'
+
+let mermaid = null
+
+async function loadMermaid() {
+  if (!mermaid) {
+    mermaid = await import('mermaid')
+  }
+  return mermaid.default || mermaid
+}
 
 const MERMAID_CONFIG = {
   startOnLoad: false,
@@ -73,7 +81,6 @@ function getMermaidThemeConfig(theme) {
 }
 
 let currentMermaidTheme = getPageTheme()
-mermaid.initialize(getMermaidThemeConfig(currentMermaidTheme))
 
 function isMermaidCode(code) {
   return MERMAID_CONFIG.keywords.some(keyword => code.includes(keyword))
@@ -99,7 +106,7 @@ function createMermaidContainer() {
   return container
 }
 
-function renderSingleMermaid(codeBlock, options = {}) {
+async function renderSingleMermaid(codeBlock, options = {}) {
   const { onComplete, onError } = options
   const preBlock = codeBlock?.parentElement
   if (!preBlock) {
@@ -131,7 +138,10 @@ function renderSingleMermaid(codeBlock, options = {}) {
   const container = createMermaidContainer()
   languageContainer.parentNode.insertBefore(container, languageContainer.nextSibling)
 
-  mermaid.render('mermaid-' + Date.now() + '-' + (mermaidRenderCounter++), code).then(({ svg }) => {
+  const mermaidLib = await loadMermaid()
+  mermaidLib.initialize(getMermaidThemeConfig(pageTheme))
+
+  mermaidLib.render('mermaid-' + Date.now() + '-' + (mermaidRenderCounter++), code).then(({ svg }) => {
     container.innerHTML = svg
     container.dataset.theme = pageTheme
     container.title = '点击放大查看'
@@ -178,7 +188,6 @@ function renderMermaid() {
 
   const pageTheme = getPageTheme()
   currentMermaidTheme = pageTheme
-  mermaid.initialize(getMermaidThemeConfig(pageTheme))
 
   if ('IntersectionObserver' in window) {
     if (mermaidObserver) {
@@ -642,7 +651,7 @@ function applyThemeToSvg(svg, theme) {
   })
 }
 
-function toggleMermaidTheme(container) {
+async function toggleMermaidTheme(container) {
   const currentTheme = container.dataset.theme
   const newTheme = currentTheme === 'dark' ? 'default' : 'dark'
 
@@ -655,11 +664,12 @@ function toggleMermaidTheme(container) {
 
   const mermaidCode = code.textContent.trim()
 
+  const mermaidLib = await loadMermaid()
   // 临时切换全局 mermaid 主题为目标主题，渲染后恢复为页面主题
-  mermaid.initialize(getMermaidThemeConfig(newTheme))
+  mermaidLib.initialize(getMermaidThemeConfig(newTheme))
 
   const id = 'mermaid-' + Date.now()
-  mermaid.render(id, mermaidCode).then(({ svg: newSvgStr }) => {
+  mermaidLib.render(id, mermaidCode).then(({ svg: newSvgStr }) => {
     // mermaid.render 返回的是 SVG 字符串，需要解析为 DOM 元素才能应用主题颜色
     const parser = new DOMParser()
     const doc = parser.parseFromString(newSvgStr, 'image/svg+xml')
@@ -699,14 +709,15 @@ function toggleMermaidTheme(container) {
 
 // 监听 VitePress 页面主题切换，同步更新所有 mermaid 图表
 function setupPageThemeSync() {
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver(async () => {
     const pageTheme = getPageTheme()
 
+    const mermaidLib = await loadMermaid()
     // 重新初始化 mermaid 使用页面主题
-    mermaid.initialize(getMermaidThemeConfig(pageTheme))
+    mermaidLib.initialize(getMermaidThemeConfig(pageTheme))
 
     // 更新所有 mermaid 图表
-    document.querySelectorAll('.mermaid-container').forEach(container => {
+    document.querySelectorAll('.mermaid-container').forEach(async (container) => {
       const sourceBlock = container.previousElementSibling
       if (!sourceBlock) return
 
@@ -716,7 +727,7 @@ function setupPageThemeSync() {
       const mermaidCode = code.textContent.trim()
       const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).slice(2)
 
-      mermaid.render(id, mermaidCode).then(({ svg: newSvg }) => {
+      mermaidLib.render(id, mermaidCode).then(({ svg: newSvg }) => {
         const oldSvg = container.querySelector('svg')
         if (oldSvg) {
           oldSvg.outerHTML = newSvg

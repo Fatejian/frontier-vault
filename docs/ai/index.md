@@ -22,30 +22,26 @@ flowchart TB
 
     subgraph 已收录
         work1["上下文与 AI 编程转型"]
+        work2["AI Agent 技术理解"]
     end
 
     subgraph 规划中
         wait1["Prompt 工程到上下文工程"]
-        wait2["AI Agent 架构"]
         wait3["AI 代码审查"]
-        wait4["RAG 与知识库构建"]
-        wait5["AI 测试自动化"]
     end
 
     center --> work1
+    center --> work2
     center --> wait1
-    center --> wait2
     center --> wait3
-    center --> wait4
-    center --> wait5
 
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px
     classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
 
     class center core
-    class work1 work
-    class wait1,wait2,wait3,wait4,wait5 wait
+    class work1,work2 work
+    class wait1,wait3 wait
 ```
 
 ---
@@ -56,11 +52,9 @@ flowchart TB
 - ✓ **AI 上下文概念**：上下文窗口、短期 / 长期上下文、检索上下文、工具上下文的工程化运用
 - ✓ **AI 编程转型**：个人任务包设计、团队共享上下文资产、可验证的工程执行闭环
 - ✓ **质量与风险**：上下文不足 / 过载 / 冲突 / 失效四类质量问题的识别与治理
+- ✓ **AI Agent 技术理解**：LLM 能力底座、RAG 检索增强、Agent 架构与 AI 测试体系（功能测试、效果评测、鲁棒性与安全测试）
 - ◯ **Prompt 工程到上下文工程**：从单点提示词优化走向系统化上下文治理
-- ◯ **AI Agent 架构**：多步规划、工具调用与状态管理
 - ◯ **AI 代码审查**：自动化规则与人工协同的审查闭环
-- ◯ **RAG 与知识库构建**：检索增强生成与私有知识沉淀
-- ◯ **AI 测试自动化**：生成、执行与回归验证
 
 ---
 
@@ -71,13 +65,14 @@ flowchart TB
 3. 设计个人任务包，将"写 Prompt"升级为"构建信息环境"。
 4. 在团队层面沉淀共享上下文资产，建立可复用的工程基线。
 5. 引入自动化测试与代码审查作为质量门禁，形成可验证的执行闭环。
-6. 按规划主题（Agent 架构、RAG、AI 测试等）横向扩展能力。
+6. 阅读「AI Agent 技术理解」，从技术原理与测试方法双视角横向扩展 LLM、RAG、Agent 架构与 AI 测试能力。
 
 ---
 
 ## 文章导览
 
 - [AI 时代如何理解「上下文」及其在 AI 编程转型中的应用](/ai/understanding-context-in-ai-era) — 六层上下文模型、AI 中的核心上下文概念、三层转型路径与自动化测试应用
+- [AI Agent 技术理解：从 LLM、RAG 到 Agent 架构与 AI 测试体系](/ai/ai-agent-tech-understanding) — LLM/RAG/Agent 技术原理与 AI 功能测试、效果评测、鲁棒性测试、安全测试的工程化要点
 
 ---
 

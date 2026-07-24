@@ -6,16 +6,8 @@ export default defineConfig({
   base: '/',
   cleanUrls: true,
   head: [
-    ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }]
+    ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
-  vite: {
-    build: {
-      chunkSizeWarningLimit: 1000
-    }
-  },
   markdown: {
     theme: {
       light: 'vitesse-light',
@@ -157,6 +149,10 @@ export default defineConfig({
                   "link": "/ai/"
                 },
                 {
+                  "text": "AI Agent 技术理解：从 LLM、RAG 到 Agent 架构与 AI 测试体系",
+                  "link": "/ai/ai-agent-tech-understanding"
+                },
+                {
                   "text": "AI 时代如何理解「上下文」及其在 AI 编程转型中的应用",
                   "link": "/ai/understanding-context-in-ai-era"
                 }
@@ -192,10 +188,9 @@ export default defineConfig({
           ]
         },
         footer: {
-          message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
+          message: 'Code: MIT | Content: CC BY 4.0',
           copyright: 'Copyright © 2026-present'
         },
-        prefetchLinks: false,
         search: {
           provider: 'local',
           options: {
@@ -348,6 +343,10 @@ export default defineConfig({
                   "link": "/en/ai/"
                 },
                 {
+                  "text": "Understanding AI Agent Technology: From LLM and RAG to Agent Architecture and the AI Testing System",
+                  "link": "/en/ai/ai-agent-tech-understanding"
+                },
+                {
                   "text": "Understanding Context in the AI Era and Its Role in AI Programming Transformation",
                   "link": "/en/ai/understanding-context-in-ai-era"
                 }
@@ -383,10 +382,9 @@ export default defineConfig({
           ]
         },
         footer: {
-          message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
+          message: 'Code: MIT | Content: CC BY 4.0',
           copyright: 'Copyright © 2026-present'
         },
-        prefetchLinks: false,
         search: {
           provider: 'local',
           options: {

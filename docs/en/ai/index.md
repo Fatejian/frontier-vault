@@ -22,30 +22,26 @@ flowchart TB
 
     subgraph Included
         work1["Context and AI Programming Transformation"]
+        work2["Understanding AI Agent Technology"]
     end
 
     subgraph Planned
         wait1["From Prompt Engineering to Context Engineering"]
-        wait2["AI Agent Architecture"]
         wait3["AI Code Review"]
-        wait4["RAG and Knowledge Base Construction"]
-        wait5["AI Test Automation"]
     end
 
     center --> work1
+    center --> work2
     center --> wait1
-    center --> wait2
     center --> wait3
-    center --> wait4
-    center --> wait5
 
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px
     classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
 
     class center core
-    class work1 work
-    class wait1,wait2,wait3,wait4,wait5 wait
+    class work1,work2 work
+    class wait1,wait3 wait
 ```
 
 ---
@@ -56,11 +52,9 @@ flowchart TB
 - ✓ **AI Context Concepts**: Context window, short-term / long-term context, retrieval context, tool context — and their engineering application.
 - ✓ **AI Programming Transformation**: Individual task package design, team shared context assets, verifiable engineering execution loop.
 - ✓ **Quality and Risk**: Identification and remediation of four context quality problems — insufficient / overload / conflict / stale.
+- ✓ **Understanding AI Agent Technology**: LLM capability foundation, RAG retrieval augmentation, Agent architecture, and the AI testing system (function testing, effect evaluation, robustness, and security testing).
 - ◯ **From Prompt Engineering to Context Engineering**: Move from single-point prompt tuning to systematic context governance.
-- ◯ **AI Agent Architecture**: Multi-step planning, tool invocation, and state management.
 - ◯ **AI Code Review**: A review loop combining automated rules and human collaboration.
-- ◯ **RAG & Knowledge Base Construction**: Retrieval-augmented generation and private knowledge accumulation.
-- ◯ **AI Test Automation**: Generation, execution, and regression verification.
 
 ---
 
@@ -71,13 +65,14 @@ flowchart TB
 3. Design personal task packages and upgrade "writing prompts" into "building information environments."
 4. Accumulate shared context assets at the team level to establish a reusable engineering baseline.
 5. Introduce automated testing and code review as quality gates to form a verifiable execution loop.
-6. Expand horizontally across planned topics (Agent architecture, RAG, AI testing, etc.).
+6. Read "Understanding AI Agent Technology" to expand horizontally across LLM, RAG, Agent architecture, and AI testing from a dual perspective of technical principles and testing methods.
 
 ---
 
 ## Article Guide
 
 - [Understanding Context in the AI Era and Its Role in AI Programming Transformation](/en/ai/understanding-context-in-ai-era) — Six-layer context model, core AI context concepts, three-layer transformation path, and automated testing application.
+- [Understanding AI Agent Technology: From LLM and RAG to Agent Architecture and the AI Testing System](/en/ai/ai-agent-tech-understanding) — LLM/RAG/Agent technical principles and engineering essentials of AI function testing, effect evaluation, robustness testing, and security testing.
 
 ---
 

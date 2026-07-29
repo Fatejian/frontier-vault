@@ -9,6 +9,8 @@ docs/.vitepress/dist/
 
 backup/
 
+debug/
+
 .DS_Store
 Thumbs.db
 

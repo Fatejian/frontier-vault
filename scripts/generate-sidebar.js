@@ -160,6 +160,14 @@ function generateLocaleBlock(lang) {
   const sidebarStr = formatSidebar(sidebar)
 
   const footer = uiStrings[lang.code].footer
+  // 组合 footer message：基础 message + ICP 备案号
+  let footerMessage = footer.message
+  if (footer.icp) {
+    const icpHtml = footer.icpLink
+      ? ` | <a href="${footer.icpLink}" target="_blank" rel="noopener noreferrer">${footer.icp}</a>`
+      : ` | ${footer.icp}`
+    footerMessage = footerMessage ? footerMessage + icpHtml : footer.icp
+  }
   // search.translations 块缩进对齐到 12 空格（与现有 config.js 一致）
   const searchTranslations = formatJs(uiStrings[lang.code].search, 12)
 
@@ -177,7 +185,7 @@ ${navLines}
         ],
         sidebar: ${sidebarStr},
         footer: {
-          message: ${jsString(footer.message)},
+          message: ${jsString(footerMessage)},
           copyright: ${jsString(footer.copyright)}
         },
         search: {

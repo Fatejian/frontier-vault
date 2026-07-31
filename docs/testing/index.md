@@ -23,6 +23,7 @@ flowchart TB
 
     subgraph published["已收录"]
         work1["负载测试工程实践"]
+        work2["Python 自动化测试核心概念"]
     end
 
     subgraph planned["规划中"]
@@ -34,6 +35,7 @@ flowchart TB
     end
 
     core --> work1
+    core --> work2
     core --> wait1
     core --> wait2
     core --> wait3
@@ -45,7 +47,7 @@ flowchart TB
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
 
     class core core
-    class work1 work
+    class work1,work2 work
     class wait1,wait2,wait3,wait4,wait5 wait
 ```
 
@@ -56,6 +58,7 @@ flowchart TB
 **✓ 已收录**
 
 - **负载测试工程实践** — 测试计划、负载模型、JMeter 脚本参数化、TPS / 响应时间 / 错误率指标体系、瓶颈定位
+- **Python 自动化测试核心概念** — POM 架构、XPath 与 CSS Selector 定位策略、Driver 生命周期管理、pytest fixture 工程化
 
 **◯ 规划中**
 
@@ -80,6 +83,7 @@ flowchart TB
 ## 文章导览
 
 - [负载测试工程实践：从测试计划到瓶颈定位的全流程方法论](/testing/load-testing-practice) — 负载测试全流程方法论与瓶颈诊断框架
+- [Python 自动化测试核心概念：从 POM 架构到元素定位与 Driver 工程](/testing/python-automation-testing-core-concepts) — POM 架构、定位策略、Driver 生命周期的工程化体系
 
 ---
 

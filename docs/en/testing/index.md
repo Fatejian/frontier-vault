@@ -23,6 +23,7 @@ flowchart TB
 
     subgraph published["Published"]
         work1["Load Testing Practice"]
+        work2["Python Test Automation Core Concepts"]
     end
 
     subgraph planned["Planned"]
@@ -34,6 +35,7 @@ flowchart TB
     end
 
     core --> work1
+    core --> work2
     core --> wait1
     core --> wait2
     core --> wait3
@@ -45,7 +47,7 @@ flowchart TB
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
 
     class core core
-    class work1 work
+    class work1,work2 work
     class wait1,wait2,wait3,wait4,wait5 wait
 ```
 
@@ -56,6 +58,7 @@ flowchart TB
 **✓ Published**
 
 - **Load Testing Engineering Practice** — Test plans, load models, JMeter script parameterization, TPS / response time / error-rate metrics, bottleneck localization
+- **Python Test Automation Core Concepts** — POM architecture, XPath vs CSS Selector locator strategies, Driver lifecycle management, pytest fixture engineering
 
 **◯ Planned**
 
@@ -80,6 +83,7 @@ flowchart TB
 ## Article Guide
 
 - [Load Testing Engineering Practice: From Test Plan to Bottleneck Identification](/en/testing/load-testing-practice) — Full-process methodology for load testing and bottleneck diagnosis
+- [Python Test Automation Core Concepts: From POM Architecture to Element Locators and Driver Engineering](/en/testing/python-automation-testing-core-concepts) — Engineering system of POM architecture, locator strategies, and Driver lifecycle
 
 ---
 

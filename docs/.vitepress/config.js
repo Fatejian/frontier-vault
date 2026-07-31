@@ -136,6 +136,10 @@ export default defineConfig({
                 {
                   "text": "负载测试工程实践：从测试计划到瓶颈定位的全流程方法论",
                   "link": "/testing/load-testing-practice"
+                },
+                {
+                  "text": "Python 自动化测试核心概念：从 POM 架构到元素定位与 Driver 工程",
+                  "link": "/testing/python-automation-testing-core-concepts"
                 }
               ]
             }
@@ -330,6 +334,10 @@ export default defineConfig({
                 {
                   "text": "Load Testing Engineering Practice: A Full-Stack Methodology from Test Plan to Bottleneck Localization",
                   "link": "/en/testing/load-testing-practice"
+                },
+                {
+                  "text": "Python Test Automation Core Concepts: From POM Architecture to Element Locators and Driver Engineering",
+                  "link": "/en/testing/python-automation-testing-core-concepts"
                 }
               ]
             }

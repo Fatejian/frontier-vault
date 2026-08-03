@@ -4,6 +4,12 @@ import './style.css'
 
 let mermaid = null
 
+function getScrollOffset() {
+  if (typeof window === 'undefined') return 0
+  const sticky = document.querySelector('.VPNav') || document.querySelector('.vp-sticky')
+  return sticky ? sticky.getBoundingClientRect().height : 0
+}
+
 async function loadMermaid() {
   if (!mermaid) {
     mermaid = await import('mermaid')
@@ -172,6 +178,22 @@ async function renderSingleMermaid(codeBlock, options = {}) {
 
 function finalizeRender() {
   addThemeSwitcher()
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash
+    if (hash) {
+      try {
+        const target = document.getElementById(decodeURIComponent(hash).slice(1))
+        if (target) {
+          const offset = getScrollOffset()
+          const rect = target.getBoundingClientRect()
+          const top = window.scrollY + rect.top - offset
+          requestAnimationFrame(() => {
+            window.scrollTo(0, top)
+          })
+        }
+      } catch (e) {}
+    }
+  }
 }
 
 function renderMermaid() {
@@ -189,57 +211,22 @@ function renderMermaid() {
   const pageTheme = getPageTheme()
   currentMermaidTheme = pageTheme
 
-  if ('IntersectionObserver' in window) {
-    if (mermaidObserver) {
-      mermaidObserver.disconnect()
+  cleanupMermaidObserver()
+
+  let pendingRenders = mermaidCodeBlocks.length
+  const checkCompletion = () => {
+    pendingRenders--
+    if (pendingRenders <= 0) {
+      finalizeRender()
     }
-
-    let pendingRenders = mermaidCodeBlocks.length
-    const checkCompletion = () => {
-      pendingRenders--
-      if (pendingRenders === 0) {
-        finalizeRender()
-      }
-    }
-
-    mermaidObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const codeBlock = entry.target.querySelector('code')
-          if (codeBlock) {
-            renderSingleMermaid(codeBlock, {
-              onComplete: checkCompletion,
-              onError: checkCompletion
-            })
-          }
-          mermaidObserver.unobserve(entry.target)
-        }
-      })
-    }, MERMAID_CONFIG.observer)
-
-    mermaidCodeBlocks.forEach(codeBlock => {
-      const preBlock = codeBlock?.parentElement
-      if (!preBlock) return
-      const languageContainer = preBlock.closest('.language-mermaid') || preBlock
-      mermaidObserver.observe(languageContainer)
-    })
-  } else {
-    let pendingRenders = 0
-    const checkCompletion = () => {
-      pendingRenders--
-      if (pendingRenders === 0) {
-        finalizeRender()
-      }
-    }
-
-    mermaidCodeBlocks.forEach(codeBlock => {
-      pendingRenders++
-      renderSingleMermaid(codeBlock, {
-        onComplete: checkCompletion,
-        onError: checkCompletion
-      })
-    })
   }
+
+  mermaidCodeBlocks.forEach(codeBlock => {
+    renderSingleMermaid(codeBlock, {
+      onComplete: checkCompletion,
+      onError: checkCompletion
+    })
+  })
 }
 
 function cleanupMermaidObserver() {
@@ -817,7 +804,110 @@ export default {
   },
   enhanceApp({ app, router }) {
     if (typeof window !== 'undefined') {
-      router.onAfterRouteChanged = scheduleRender
+      // #region fix:inline-toc-fallback
+      // 修复 Markdown 内联 TOC 链接 hash 与 h2 ID 不匹配导致无法跳转的问题
+      // 当 document.getElementById 找不到目标时，使用 slug 归一化进行模糊匹配
+
+      // 预编译的正则表达式（避免每次点击时重新构造）
+      const PUNCTUATION_REPLACE_DASH = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅]/g
+      const PUNCTUATION_STRIP = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅\-]/g
+
+      /**
+       * 三级 fallback 查找与 hash 对应的 h1-h6 标题元素
+       * Level 1: 精确匹配 document.getElementById
+       * Level 2: 标点 → '-' 归一化后匹配
+       * Level 3: 移除所有标点后匹配
+       * @param {string} hashValue - URL hash 值（不含 '#' 前缀）
+       * @returns {HTMLElement | null} 匹配到的标题元素
+       */
+      function findHeadingByHash(hashValue) {
+        const decoded = decodeURIComponent(hashValue)
+        // 1. 精确匹配
+        const direct = document.getElementById(decoded)
+        if (direct) return direct
+        // 2. 标点 → '-' 归一化匹配
+        const toDash = (s) => s
+          .toLowerCase()
+          .replace(PUNCTUATION_REPLACE_DASH, '-')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+        const normalizedHash = toDash(decoded)
+        // 3. 移除所有标点匹配
+        const stripPunct = (s) => s
+          .toLowerCase()
+          .replace(PUNCTUATION_STRIP, '')
+          .replace(/\s+/g, '')
+        const strippedHash = stripPunct(decoded)
+        const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6')
+        for (const h of headings) {
+          if (!h.id) continue
+          if (toDash(h.id) === normalizedHash) return h
+          if (stripPunct(h.id) === strippedHash) return h
+        }
+        return null
+      }
+
+      /**
+       * 滚动到指定 hash 对应的标题位置
+       * @param {string} hashValue - URL hash 值（不含 '#' 前缀）
+       */
+      function scrollToHash(hashValue) {
+        const target = findHeadingByHash(hashValue)
+        if (target) {
+          const offset = getScrollOffset()
+          const rect = target.getBoundingClientRect()
+          const top = window.scrollY + rect.top - offset
+          window.scrollTo(0, top)
+        }
+        return !!target
+      }
+
+      // 在 VitePress click 拦截器（capture: true）之前拦截 inline TOC 链接
+      document.addEventListener('click', (e) => {
+        const link = e.target.closest('a')
+        if (!link) return
+        const href = link.getAttribute('href') || ''
+        if (!href.startsWith('#') || href === '#') return
+        if (link.classList.contains('header-anchor')) return
+
+        const hash = href.slice(1)
+        if (!hash) return
+
+        const parentUl = link.closest('ul')
+        if (!parentUl || parentUl.closest('.VPDocAsideOutline')) return
+
+        const decodedHash = decodeURIComponent(hash)
+        const target = document.getElementById(decodedHash)
+        if (!target) {
+          e.preventDefault()
+          e.stopPropagation()
+          history.pushState({}, '', href)
+          const found = scrollToHash(hash)
+          if (found) {
+            scheduleRender()
+          }
+        }
+      }, true)
+      // #endregion
+
+      const originalHandler = router.onAfterRouteChanged
+      router.onAfterRouteChanged = (href) => {
+        if (originalHandler) {
+          originalHandler(href)
+        }
+        // 始终追加 fallback：处理跨页面 hash 导航时 slug 不匹配的情况
+        const hash = new URL(href, 'http://a.com').hash
+        if (hash) {
+          const slug = hash.slice(1)
+          if (!document.getElementById(decodeURIComponent(slug))) {
+            scrollToHash(slug)
+          }
+        } else {
+          window.scrollTo(0, 0)
+        }
+        scheduleRender()
+      }
     }
   }
 }

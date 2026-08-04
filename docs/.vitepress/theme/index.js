@@ -895,6 +895,37 @@ export default {
       }, true)
       // #endregion
 
+      // #region fix:outline-filter-toc
+      // 过滤右侧 Outline 中的「目录」条目（即文章内联 TOC 的标题）
+      // 避免用户在右侧栏看到指向 TOC 列表的无意义条目
+      const TOC_HEADING_IDS = ['目录', 'table-of-contents']
+      function filterOutlineTocEntries() {
+        const outline = document.querySelector('.VPDocAsideOutline')
+        if (!outline) return
+        const links = outline.querySelectorAll('a')
+        for (const link of links) {
+          const href = link.getAttribute('href') || ''
+          if (!href.startsWith('#')) continue
+          const targetId = decodeURIComponent(href.slice(1))
+          if (TOC_HEADING_IDS.includes(targetId)) {
+            const li = link.closest('li')
+            if (li) li.remove()
+          }
+        }
+      }
+      // 使用 MutationObserver 监听 Outline 变化（VitePress 异步渲染 Outline）
+      let outlineObserver = null
+      function setupOutlineObserver() {
+        if (outlineObserver) outlineObserver.disconnect()
+        const target = document.querySelector('.VPDocAsideOutline') || document.body
+        outlineObserver = new MutationObserver(() => {
+          filterOutlineTocEntries()
+        })
+        outlineObserver.observe(target, { childList: true, subtree: true })
+        filterOutlineTocEntries()
+      }
+      // #endregion
+
       const originalHandler = router.onAfterRouteChanged
       router.onAfterRouteChanged = (href) => {
         if (originalHandler) {
@@ -910,7 +941,15 @@ export default {
         } else {
           window.scrollTo(0, 0)
         }
+        filterOutlineTocEntries()
         scheduleRender()
+      }
+
+      // 页面初始化后设置 MutationObserver（持续监听 Outline 变化）
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupOutlineObserver)
+      } else {
+        setupOutlineObserver()
       }
     }
   }

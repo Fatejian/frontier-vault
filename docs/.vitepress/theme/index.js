@@ -796,6 +796,13 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', cleanupMermaidObserver)
 }
 
+// 预编译的标点归一化正则（模块级常量，避免重复构造）
+// 用于 inline TOC 锚点 fallback：当 TOC #锚点与 heading id 不完全一致时做归一化匹配
+// 含 em dash(— U+2014)/en dash(– U+2013)/horizontal bar(― U+2015) 等破折号变体，
+// 否则含破折号的标题（如 "AI Coding — 从工具使用到工作流认知"）的归一化 fallback 会失效
+const PUNCTUATION_REPLACE_DASH = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅—–―]/g
+const PUNCTUATION_STRIP = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅—–―\-]/g
+
 export default {
   ...DefaultTheme,
   layouts: {
@@ -807,10 +814,7 @@ export default {
       // #region fix:inline-toc-fallback
       // 修复 Markdown 内联 TOC 链接 hash 与 h2 ID 不匹配导致无法跳转的问题
       // 当 document.getElementById 找不到目标时，使用 slug 归一化进行模糊匹配
-
-      // 预编译的正则表达式（避免每次点击时重新构造）
-      const PUNCTUATION_REPLACE_DASH = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅]/g
-      const PUNCTUATION_STRIP = /[、·,，。！？!?；;:：'"''""''（）()\[\]【】{}《》→←↔↑↓⇒⇐⇔➔➜➡⬅\-]/g
+      // （PUNCTUATION_REPLACE_DASH / PUNCTUATION_STRIP 已提升为模块级常量，见文件顶部）
 
       /**
        * 三级 fallback 查找与 hash 对应的 h1-h6 标题元素

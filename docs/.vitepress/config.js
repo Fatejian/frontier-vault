@@ -153,6 +153,10 @@ export default defineConfig({
                   "link": "/ai/"
                 },
                 {
+                  "text": "Agent 工程学习路线：从 AI Coding 到可观测性的五阶段工程化路径",
+                  "link": "/ai/agent-engineering-learning-path"
+                },
+                {
                   "text": "AI Agent 技术理解：从 LLM、RAG 到 Agent 架构与 AI 测试体系",
                   "link": "/ai/ai-agent-tech-understanding"
                 },
@@ -349,6 +353,10 @@ export default defineConfig({
                 {
                   "text": "Overview",
                   "link": "/en/ai/"
+                },
+                {
+                  "text": "Agent Engineering Learning Path: A Five-Stage Roadmap from AI Coding to Observability",
+                  "link": "/en/ai/agent-engineering-learning-path"
                 },
                 {
                   "text": "Understanding AI Agent Technology: From LLM and RAG to Agent Architecture and the AI Testing System",

@@ -23,6 +23,7 @@ flowchart TB
     subgraph 已收录
         work1["上下文与 AI 编程转型"]
         work2["AI Agent 技术理解"]
+        work3["Agent 工程学习路线"]
     end
 
     subgraph 规划中
@@ -32,6 +33,7 @@ flowchart TB
 
     center --> work1
     center --> work2
+    center --> work3
     center --> wait1
     center --> wait3
 
@@ -73,6 +75,7 @@ flowchart TB
 
 - [AI 时代如何理解「上下文」及其在 AI 编程转型中的应用](/ai/understanding-context-in-ai-era) — 六层上下文模型、AI 中的核心上下文概念、三层转型路径与自动化测试应用
 - [AI Agent 技术理解：从 LLM、RAG 到 Agent 架构与 AI 测试体系](/ai/ai-agent-tech-understanding) — LLM/RAG/Agent 技术原理与 AI 功能测试、效果评测、鲁棒性测试、安全测试的工程化要点
+- [Agent 工程学习路线：从 AI Coding 到可观测性的五阶段工程化路径](/ai/agent-engineering-learning-path) — AI Coding、Agent Runtime、MCP/Function Calling、容器化与 Agent 可观测性的五阶段工程化成长路径
 
 ---
 

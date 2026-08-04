@@ -23,6 +23,7 @@ flowchart TB
     subgraph Included
         work1["Context and AI Programming Transformation"]
         work2["Understanding AI Agent Technology"]
+        work3["Agent Engineering Learning Path"]
     end
 
     subgraph Planned
@@ -32,6 +33,7 @@ flowchart TB
 
     center --> work1
     center --> work2
+    center --> work3
     center --> wait1
     center --> wait3
 
@@ -40,7 +42,7 @@ flowchart TB
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
 
     class center core
-    class work1,work2 work
+    class work1,work2,work3 work
     class wait1,wait3 wait
 ```
 
@@ -73,6 +75,7 @@ flowchart TB
 
 - [Understanding Context in the AI Era and Its Role in AI Programming Transformation](/en/ai/understanding-context-in-ai-era) — Six-layer context model, core AI context concepts, three-layer transformation path, and automated testing application.
 - [Understanding AI Agent Technology: From LLM and RAG to Agent Architecture and the AI Testing System](/en/ai/ai-agent-tech-understanding) — LLM/RAG/Agent technical principles and engineering essentials of AI function testing, effect evaluation, robustness testing, and security testing.
+- [Agent Engineering Learning Path: A Five-Stage Roadmap from AI Coding to Observability](/en/ai/agent-engineering-learning-path) — A five-stage engineering growth path covering AI Coding, Agent Runtime, MCP/Function Calling, containerization, and Agent observability
 
 ---
 

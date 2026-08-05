@@ -1,5 +1,5 @@
 ---
-title: 异步编程的演进：从回调地狱到 async/await
+title: "异步编程的演进：从回调地狱到 async/await"
 description: 从单线程事件循环、宏任务与微任务调度、回调信任问题、Promise 状态机到 async/await 执行模型的深度解析
 category: JavaScript
 tags:
@@ -75,7 +75,7 @@ JavaScript 是**单线程**的——它只有一个调用栈，同一时刻只�
 4. **事件循环（Event Loop）**：不断检查"调用栈是否为空"和"队列里是否有任务"，把就绪的任务推入调用栈执行。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph JS[JS 主线程]
         Stack["调用栈<br/>同步代码执行"]
@@ -291,7 +291,7 @@ getUser(userId, function (err, user) {
 2. 决议只能发生**一次**。再次 resolve / reject 会被静默忽略。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 stateDiagram-v2
     [*] --> pending: new Promise(executor)
     pending --> fulfilled: resolve(value)
@@ -383,7 +383,7 @@ async function loadDetail(userId) {
 ### 2. await 的执行时序
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 sequenceDiagram
     participant Main as 主线程
     participant AF as async 函数

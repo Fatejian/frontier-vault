@@ -1,5 +1,5 @@
 ---
-title: 渲染流水线：从 HTML 到像素
+title: "渲染流水线：从 HTML 到像素"
 description: 从 HTML 流式解析、CSSOM 构建、渲染树合成、布局计算、绘制分层到 GPU 合成的完整链路深度解析
 category: Browser
 tags:
@@ -64,7 +64,7 @@ outline: deep
 现代浏览器的渲染流水线（以 Chromium 为参考）可以简化为以下六个阶段：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Parse["① 解析阶段"]
         direction TB
@@ -188,7 +188,7 @@ HTML 解析阶段的主要阻塞点有两个：
 - **CSS 阻塞 JS 执行**：如果脚本要操作 DOM 的样式，CSS 必须先加载完成。所以 CSS 不阻塞 HTML 解析，但可能阻塞 JS 执行
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([HTML 到达]) --> Parse[主解析器流式构建 DOM]
     Parse --> MeetCSS{遇到 CSS 链接}
@@ -516,7 +516,7 @@ function updateList(items) {
 这是渲染流水线最实用的知识：**修改不同 CSS 属性会触发不同长度的流水线**。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([修改 CSS 属性]) --> Class{属性类别}
 

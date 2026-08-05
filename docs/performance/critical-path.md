@@ -1,5 +1,5 @@
 ---
-title: 现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作
+title: "现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作"
 description: 从 TTFB、LCP、Hydration 到 ESM、JIT、GC、光栅化、IPC 与资源调度
 category: Performance
 tags:
@@ -68,7 +68,7 @@ outline: deep
 理解这三组问题，需要先理解现代浏览器从请求到像素的完整链路。下图展示了这条链路的完整路径，每一段都可能出现等待、阻塞或重复工作：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
 flowchart LR
     Start([用户发起导航])
 
@@ -397,7 +397,7 @@ LCP 可能是一张大图、一个视频首帧、一块大文本区域，或者�
 下图展示了 LCP 的完整拆解链路：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
 flowchart LR
     subgraph Phase1[发现阶段]
         A[HTML 到达]
@@ -741,7 +741,7 @@ bfcache 和 Service Worker 的本质都是减少重复工作。bfcache 是浏览
 下图将全文的三组问题汇总为统一模型：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
 flowchart TB
     Core((前端性能优化<br/>关键路径管理))
 

@@ -1,5 +1,5 @@
 ---
-title: 'Rendering Performance Pitfalls: Common Traps and Solutions from Layout, Paint to Composite'
+title: "Rendering Performance Pitfalls: Common Traps and Solutions from Layout, Paint to Composite"
 description: From layout thrashing, forced synchronous layout, large-area repaints, composite layer explosion to will-change abuse
 category: Performance
 tags:
@@ -68,7 +68,7 @@ This main thread can be broken down into three groups of problems:
 Understanding these three groups requires first reviewing the complete path of the modern browser rendering pipeline. The diagram below shows the five-stage chain from Style to Composite; every stage may encounter waiting, blocking, or repeated work:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
 flowchart LR
     Start(["Style or DOM Change"])
 
@@ -121,7 +121,7 @@ Different CSS property changes trigger recomputation of different stages:
 - Changing `transform` / `opacity`: in most cases only triggers **Composite**
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
 flowchart LR
     Change{CSS Property Change}
 
@@ -749,7 +749,7 @@ Thinking "scroll jank is caused by too many event listeners". The real reason is
 The diagram below summarizes all rendering performance pitfalls in this article into a unified model, grouped into "waiting, blocking, repeated work":
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
 flowchart TB
     Core(("Rendering Performance Optimization<br/>Pipeline Work Management"))
 

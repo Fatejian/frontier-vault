@@ -1,5 +1,5 @@
 ---
-title: 'Technical Growth Path: The Capability Leap from Junior to Architect'
+title: "Technical Growth Path: The Capability Leap from Junior to Architect"
 description: 'Core characteristics of five stages, four key leaps, turning points and bottlenecks, and compounding effects.'
 category: Career
 tags:
@@ -53,7 +53,7 @@ The essence of technical growth is upgrading the object of work: from a piece of
 The following diagram shows the five-stage growth path from junior to architect, along with the core transformation required at each leap:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Stage1["Junior"]
         S1["Work Object: A Piece of Code<br/>Value: Complete Tasks"]
@@ -103,7 +103,7 @@ First, understand a counterintuitive fact: **technical capability and years of e
 If capability is on the vertical axis and years of experience on the horizontal axis, the real curve looks more like this:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1((Starting Point))
     P2["Plateau 1<br/>Can Write Code"]
@@ -599,7 +599,7 @@ The previous four sections discussed "leaps," but leaps do not fall from the sky
 The compounding effect of technical growth comes from a closed loop of three links:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     I["Input<br/>Learn New Knowledge"]
     P["Practice<br/>Apply to Real Problems"]

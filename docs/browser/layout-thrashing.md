@@ -1,5 +1,5 @@
 ---
-title: 布局抖动的真相：Layout Thrashing 如何搞垮你的动画
+title: "布局抖动的真相：Layout Thrashing 如何搞垮你的动画"
 description: 从强制同步布局到布局抖动，深入剖析读写交替的代价、rAF 的正确用法与 Layout 阶段优化策略
 category: Browser
 tags:
@@ -86,7 +86,7 @@ console.log(element.offsetWidth)  // 触发强制同步布局
 - **布局抖动（Layout Thrashing）**：在循环里反复"写-读-写-读"，触发 N 次提前 Layout，造成性能坍塌
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
 flowchart TB
     subgraph Normal[正常节奏]
         direction LR
@@ -227,7 +227,7 @@ updateWidthsGood(items)
 ### 3. 对比 Mermaid 图
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
 flowchart TB
     subgraph Bad["坏例子：N 次强制 Layout"]
         direction TB

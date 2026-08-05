@@ -1,5 +1,5 @@
 ---
-title: 'Async Programming Evolution: From Callback Hell to async/await'
+title: "Async Programming Evolution: From Callback Hell to async/await"
 description: A deep dive from single-threaded event loops, macro/micro task scheduling, callback trust issues, Promise state machines, to the async/await execution model.
 category: JavaScript
 tags:
@@ -73,7 +73,7 @@ The event loop relies on several key parts:
 4. **Event Loop**: constantly checks whether "the call stack is empty" and "whether there are tasks in the queue," pushing ready tasks onto the call stack.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph JS["JS Main Thread"]
         Stack["Call Stack<br/>Synchronous code execution"]
@@ -119,17 +119,17 @@ Each tick of the event loop roughly does the following:
 4. Return to step 1 and take the next macro task.
 
 ```javascript
-console.log('1. 同步开始')
+console.log('1. Sync start')
 
 setTimeout(() => {
-  console.log('4. 宏任务 setTimeout')
+  console.log('4. Macro task setTimeout')
 }, 0)
 
 Promise.resolve().then(() => {
-  console.log('3. 微任务 Promise')
+  console.log('3. Microtask Promise')
 })
 
-console.log('2. 同步结束')
+console.log('2. Sync end')
 
 // Output order: 1 → 2 → 3 → 4
 ```
@@ -161,20 +161,20 @@ The most easily overlooked rule is: **after each macro task completes, the engin
 
 ```javascript
 setTimeout(() => {
-  console.log('宏任务 A')
-  Promise.resolve().then(() => console.log('  微任务 A1'))
+  console.log('Macro task A')
+  Promise.resolve().then(() => console.log('  Microtask A1'))
 }, 0)
 
 setTimeout(() => {
-  console.log('宏任务 B')
-  Promise.resolve().then(() => console.log('  微任务 B1'))
+  console.log('Macro task B')
+  Promise.resolve().then(() => console.log('  Microtask B1'))
 }, 0)
 
 // Output:
-// 宏任务 A
-//   微任务 A1
-// 宏任务 B
-//   微任务 B1
+// Macro task A
+//   Microtask A1
+// Macro task B
+//   Microtask B1
 ```
 
 After each macro task, the microtasks it produced are cleared before the next macro task is fetched. Microtasks never "accumulate" between macro tasks.
@@ -277,7 +277,7 @@ The transition rules are very strict:
 2. Settlement can happen **only once**. A second resolve / reject is silently ignored.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 stateDiagram-v2
     [*] --> pending: "new Promise(executor)"
     pending --> fulfilled: "resolve(value)"
@@ -328,7 +328,7 @@ Promise.resolve(1)
   .then((n) => n + 1)                       // Returns 2 (ordinary value)
   .then((n) => Promise.resolve(n * 10))     // Returns a Promise, waits for it to settle as 20
   .then((n) => { throw new Error('boom') }) // Enters rejected
-  .then((n) => console.log('不会执行'))      // Skipped
+  .then((n) => console.log('not executed'))      // Skipped
   .catch((err) => console.log(err.message)) // 'boom'
 ```
 
@@ -365,7 +365,7 @@ This code reads like synchronous code, but execution is asynchronous — at ever
 ### 2. The Execution Timing of `await`
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 sequenceDiagram
     participant Main as "Main Thread"
     participant AF as "async function"
@@ -427,8 +427,8 @@ async function load() {
     const data = await fetch('/api/data').then((r) => r.json())
     return data
   } catch (err) {
-    console.error('加载失败', err)
-    notifyUser('加载失败，请重试')
+    console.error('Load failed', err)
+    notifyUser('Load failed, please retry')
     return null
   }
 }
@@ -450,7 +450,7 @@ If you really need to "ignore" an error, at least log it or convert it to a sema
 
 ```javascript
 someAsync().catch((err) => {
-  logger.warn('非关键操作失败', err)
+  logger.warn('Non-critical operation failed', err)
   return null
 })
 ```

@@ -1,5 +1,5 @@
 ---
-title: Vibe Coder 与软件工程师：AI 时代的责任分界线
+title: "Vibe Coder 与软件工程师：AI 时代的责任分界线"
 description: 从 vibe coding、AI 辅助开发到软件工程责任、审查成本、所有权与交付纪律
 category: Career
 tags:
@@ -176,7 +176,7 @@ vibe coder 与软件工程师不是两种人，而是两种模式。识别当前
 前文从衡量指标、工作单位、所有权、上下文边界、阶段适用性与学徒制六个角度展开了讨论。它们可以归并为一个统一模型：以“责任归属”为主轴，区分创意验证的探索阶段与可追责交付的工程阶段。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph CORE["核心问题"]
         direction TB

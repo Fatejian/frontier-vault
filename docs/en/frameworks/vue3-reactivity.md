@@ -1,5 +1,5 @@
 ---
-title: 'Vue 3 Reactivity System: The Complete Implementation of Proxy and Dependency Collection'
+title: "Vue 3 Reactivity System: The Complete Implementation of Proxy and Dependency Collection"
 description: From Object.defineProperty to Proxy — a deep dive into the dependency collection mechanisms of reactive, ref, computed, and effect.
 category: Frameworks
 tags:
@@ -425,7 +425,7 @@ function trigger(target, key) {
 This structure is illustrated below:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     TM["targetMap<br/>WeakMap"]
 
@@ -625,7 +625,7 @@ export function nextTick(cb) {
 Execution flow:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 sequenceDiagram
     participant Code as App Code
     participant T as trigger
@@ -642,7 +642,7 @@ sequenceDiagram
     Code->>T: state.count = 2
     T->>S: dep.forEach(run scheduler)
     S->>Q: queueJob(update)
-    Note over Q: already exists, deduplicated
+    Note over Q: already exists / deduplicated
 
     Code->>T: state.name = 'x'
     T->>S: another dep
@@ -685,7 +685,7 @@ Vue's reactivity system and React's state update mechanism are two completely di
 ### 1. Push vs Pull
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Vue["Vue: Push Model"]
         V1["state.count = 1"]

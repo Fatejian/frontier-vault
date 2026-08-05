@@ -176,7 +176,7 @@ Vibe coder and software engineer are not two kinds of people; they are two modes
 The previous sections examined six angles: metric, unit of work, ownership, context boundary, stage fit, and apprenticeship. They can be unified into one model: a spectrum along "accountability," separating the idea-validation exploration phase from the accountable-delivery engineering phase.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph CORE["Core Question"]
         direction TB
@@ -193,13 +193,13 @@ flowchart TB
     subgraph DELIVER["Delivery: Accountable Result"]
         direction TB
         D1["Metric: Time to safe merge"]
-        D2["Requires reviewability, rollback, maintainability"]
+        D2["Requires reviewability / rollback / maintainability"]
         D3["Mode: software engineer"]
     end
 
     subgraph BOUNDARY["Responsibility Boundary"]
         direction TB
-        B1["Ownership: I own it, not the model"]
+        B1["Ownership: I own it / not the model"]
         B2["Context: Beyond code lies system / team / history"]
         B3["Constraint: Split unbounded goals into bounded tasks"]
     end

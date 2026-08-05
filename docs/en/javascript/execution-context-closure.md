@@ -1,5 +1,5 @@
 ---
-title: 'Execution Context & Scope Chain: Understanding Closures from the V8 Perspective'
+title: "Execution Context & Scope Chain: Understanding Closures from the V8 Perspective"
 description: A deep dive from execution context lifecycle, variable and lexical environments, scope-chain construction to the closure memory model and memory leaks.
 category: JavaScript
 tags:
@@ -70,7 +70,7 @@ There are three kinds of execution contexts in JavaScript:
 JavaScript is single-threaded; at any moment only one execution context can be running. The engine manages them with an **Execution Context Stack (ECS)**:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Stack["Execution Context Stack - Time from bottom to top"]
         direction TB
@@ -233,7 +233,7 @@ fn() // still 'inner', even though only 'outer' is around the call site
 The diagram below shows the structure of the scope chain during nested function execution. Note that the `outer` pointers point from the inside out, and they are fixed at the moment the function is **created**:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Inner["inner function execution context"]
         IE["function lexical environment<br/>bindings: none"]
@@ -316,7 +316,7 @@ In this example, although the large array `huge` is defined inside `makeCounter`
 ### 3. Closure Memory Model Diagram
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Heap["Heap Memory - Still Alive After Closure Returns"]
         direction TB

@@ -1,5 +1,5 @@
 ---
-title: 'Building Technical Influence: From Code Contribution to Technical Leadership'
+title: "Building Technical Influence: From Code Contribution to Technical Leadership"
 description: Four-layer influence model, building paths at the code/team/organization/industry levels, the nature of technical leadership, and transition traps
 category: Career
 tags:
@@ -53,7 +53,7 @@ The essence of technical influence is making the value produced by your capabili
 The diagram below shows the four-layer model of technical influence and the core capabilities corresponding to each layer:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     Core((Technical Influence))
 
@@ -363,7 +363,7 @@ The essence of architecture decisions is "making trade-offs across multiple unce
 An effective architecture decision process:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1["Identify the Problem<br/>Not every problem needs an architecture decision"]
     P2["Gather Options<br/>At least 2-3 viable solutions"]

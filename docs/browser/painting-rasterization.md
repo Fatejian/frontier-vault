@@ -1,5 +1,5 @@
 ---
-title: 绘制与光栅化：从图层合成到屏幕显示
+title: "绘制与光栅化：从图层合成到屏幕显示"
 description: 从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，深入解析 transform/opacity 为何不触发 Layout
 category: Browser
 tags:
@@ -171,7 +171,7 @@ Paint 产生绘制指令而非像素，按图层组织。最贵的 Paint 操作�
 - **重绘成本**：合成层内容变化时，要重新光栅化整个图层
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([页面 DOM]) --> Stack[分析层叠上下文]
     Stack --> PaintLayer[划分 Paint Layer]
@@ -310,7 +310,7 @@ Chromium 的合成分两步：
 当用户滚动时，合成器线程可以直接更新滚动位置并重新合成，**不需要主线程参与**——这就是"非主线程滚动"的基础。前提是滚动容器没有 `scroll` 事件监听器，或者监听器用了 `passive: true`。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Main[主线程]
         direction TB
@@ -405,7 +405,7 @@ Layout（不变） → Paint（不变） → Raster（不变） → Composite（
 ### 4. 完整对比
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Width["改 width/height"]
         direction LR

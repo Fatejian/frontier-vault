@@ -91,7 +91,7 @@ LLM (Large Language Model) is the capability foundation of AI Agents. An Agent's
 The diagram below shows the key constraint chain of LLMs that needs attention in engineering practice:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Input["Input text<br/>Prompt + Context"]
     Token["Tokenization<br/>Splitting and encoding"]
@@ -126,7 +126,7 @@ The smallest unit an LLM processes is not a character, but a Token. A Token can 
 - **Cost**: API billing is usually calculated by Token count;
 - **Context occupation**: the more Tokens, the faster the context window limit is reached.
 
-For example, the phrase "个人所得税申报" (individual income tax declaration) may be split into "个人 / 所得 / 税 / 申报" or "个人 / 所得税 / 申报" by different tokenizers. In engineering, you need to confirm the Token counting method during selection, to avoid estimating by character count and causing cost and window overruns.
+For example, the phrase "individual income tax declaration" may be split into "individual / income / tax / declaration" or "individual / income tax / declaration" by different tokenizers. In engineering, you need to confirm the Token counting method during selection, to avoid estimating by character count and causing cost and window overruns.
 
 ### 2. Context Window
 
@@ -195,7 +195,7 @@ The core idea of RAG is: instead of relying on model memory in the generation st
 The diagram below shows the complete RAG pipeline:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Doc["Raw document<br/>PDF / HTML / Markdown"]
     Chunk["Chunking<br/>Fixed length / semantic / recursive"]
@@ -333,7 +333,7 @@ Complex tasks can be split among multiple specialized Agents collaborating. Comm
 The diagram below shows the core execution loop of an Agent:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Perceive["Perceive<br/>Receive task and environment"]
     Plan["Plan<br/>Decompose steps and select tools"]
@@ -564,7 +564,7 @@ Robustness is the ability of an AI system to maintain stable output when facing 
 
 Different expressions of the same intent should not cause significant differences in results. Perturbation types to test:
 
-- **Synonymous paraphrasing**: change "查询订单状态" (query order status) to "看看我的订单到哪了" (see where my order is);
+- **Synonymous paraphrasing**: change "query order status" to "see where my order is";
 - **Format changes**: plain text vs Markdown vs JSON wrapping;
 - **Spelling errors**: typos, missing characters, extra spaces;
 - **Multilingual**: mixed Chinese and English, dialect expressions, minor languages.
@@ -619,7 +619,7 @@ AI security is the most easily overlooked yet most consequential part of AI engi
 The diagram below shows the matrix structure of AI security testing:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Core["AI Security Testing Matrix"]
 

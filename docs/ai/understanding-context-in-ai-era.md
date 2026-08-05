@@ -98,7 +98,7 @@ AI 编程质量越来越不只取决于"怎么写 Prompt"，而取决于"给 AI 
 下图展示了这六个维度的整体关系：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["上下文六维度模型"]
 
@@ -503,7 +503,7 @@ AI 编程质量是乘法关系，上下文质量趋零则整体趋零。模型�
 理解了上下文的概念和质量问题后，关键在于如何把认知转化为可落地的转型路径。AI 编程转型通常分为三层，逐层递进：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["AI 编程转型三层模型"]
 
@@ -742,7 +742,7 @@ AI 提高了对工程判断力的要求，而非降低。核心能力从"亲手�
 下图将全文散落的上下文概念汇总为统一模型。核心节点是上下文工程，它连接六个维度的上下文，并最终服务于 AI 编程转型的三层路径：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["上下文工程<br/>给 AI 正确的信息环境"]
 

@@ -1,5 +1,5 @@
 ---
-title: 负载测试工程实践：从测试计划到瓶颈定位的全流程方法论
+title: "负载测试工程实践：从测试计划到瓶颈定位的全流程方法论"
 description: 从测试目标、负载模型、JMeter 脚本参数化到 TPS、95% 百分位响应时间、瓶颈诊断与降级熔断验证
 category: Testing
 tags:
@@ -67,7 +67,7 @@ outline: deep
 理解这三组问题，需要先建立负载测试的完整流程认知。下图展示了从需求分析到瓶颈定位的五段链路，每一段都对应具体的工程产物：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Start([业务场景与性能指标])
 
@@ -172,7 +172,7 @@ flowchart LR
 - **数据库连接耗尽**：连接池配置过小，成为最先到达的瓶颈。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Core[负载测试三组问题]
 
@@ -339,7 +339,7 @@ flowchart TB
 - **中间件层**：缓存命中率、消息队列堆积、连接数。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Monitor[监控四层]
         direction TB
@@ -438,7 +438,7 @@ OCP（OpenShift Container Platform）和 Grafana 是云原生环境下常用的�
 瓶颈诊断要分层进行，避免"看到 CPU 高就优化代码"的跳跃式归因：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([响应时间劣化 / 错误率上升])
 
@@ -582,7 +582,7 @@ TPS 在 200 并发到达拐点（600→580→420）
 把前面散落的观点归并为统一框架，负载测试的所有现象都可以映射到三组问题：等待、阻塞、资源耗尽。下图汇总了三组问题的具体表现、递进关系与对应策略：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Core[负载测试三组问题<br/>等待 · 阻塞 · 资源耗尽]
 

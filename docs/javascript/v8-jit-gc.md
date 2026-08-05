@@ -1,5 +1,5 @@
 ---
-title: V8 引擎揭秘：JIT 编译与垃圾回收机制
+title: "V8 引擎揭秘：JIT 编译与垃圾回收机制"
 description: 从 V8 编译流水线、Ignition/Sparkplug/Maglev/TurboFan 分层 JIT、隐藏类与内联缓存到分代垃圾回收与 Orinoco 算法的深度解析
 category: JavaScript
 tags:
@@ -66,7 +66,7 @@ V8 是 Google 开发的 JavaScript 与 WebAssembly 引擎，用于 Chrome、Node
 ### 1. 核心阶段
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     Src[JavaScript 源码] --> Parser[Parser 解析器<br/>源码 → AST]
     Parser --> AST[抽象语法树 AST]
@@ -156,7 +156,7 @@ Ignition 在执行时把这些观察写进**反馈向量（Feedback Vector）**�
 乐观特化意味着假设。一旦假设被打破，V8 必须**去优化**——丢弃机器码，回到字节码继续执行。去优化保证了语义正确，但代价是性能骤降（一次去优化可能让热点函数瞬间慢几倍），之后 V8 会重新收集反馈并尝试再次优化。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     A["整数调用<br/>收集反馈: int+int"] --> B["TurboFan 优化<br/>整数加法机器码"]
     B --> C[持续整数调用<br/>高速执行]
@@ -215,7 +215,7 @@ const p2 = new Point(3, 4)
 每次给对象**新增属性**时，V8 不会原地修改隐藏类，而是沿着"转换链（transition chain）"创建一个新隐藏类：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     C0["隐藏类 C0<br/>空对象"] -- "添加 x" --> C1["隐藏类 C1<br/>shape: x"]
     C1 -- "添加 y" --> C2["隐藏类 C2<br/>shape: x, y"]
@@ -373,7 +373,7 @@ V8 的**垃圾回收（Garbage Collection，GC）** 基于"分代假说"：**大
 早期 GC 是"全停顿（stop-the-world）"的——回收时主线程完全暂停，大对象多时停顿可达几十毫秒，造成卡顿。**Orinoco** 是 V8 的渐进式 GC 项目，通过并发和并行把停顿压到毫秒级：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Young[新生代 - Scavenge]
         Y1[From 空间] -- 复制存活对象 --> Y2[To 空间]

@@ -1,5 +1,5 @@
 ---
-title: 'V8 Engine Deep Dive: JIT Compilation and Garbage Collection'
+title: "V8 Engine Deep Dive: JIT Compilation and Garbage Collection"
 description: A deep dive into the V8 compilation pipeline, tiered JIT with Ignition/Sparkplug/Maglev/TurboFan, hidden classes, inline caching, generational garbage collection, and the Orinoco algorithm.
 category: JavaScript
 tags:
@@ -64,7 +64,7 @@ V8 is Google's JavaScript and WebAssembly engine, used by Chrome, Node.js, Deno,
 ### 1. Core Stages
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     Src["JavaScript Source"] --> Parser["Parser<br/>Source → AST"]
     Parser --> AST["Abstract Syntax Tree AST"]
@@ -150,7 +150,7 @@ As it executes, Ignition writes these observations into the **feedback vector** 
 Optimistic specialization means assumptions. Once an assumption is broken, V8 must **deoptimize** — discard the machine code and return to bytecode execution. Deoptimization guarantees semantic correctness, but the performance cost is steep (a single deoptimization can make a hot function several times slower). Afterward, V8 re-collects feedback and tries to optimize again.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     A["Integer calls<br/>Collect feedback: int+int"] --> B["TurboFan optimization<br/>Integer-addition machine code"]
     B --> C["Continued integer calls<br/>High-speed execution"]
@@ -205,13 +205,13 @@ const p2 = new Point(3, 4)
 Every time you **add a property** to an object, V8 does not modify the hidden class in place. Instead, it creates a new hidden class along a "transition chain":
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     C0["Hidden Class C0<br/>Empty object"] -- "Add x" --> C1["Hidden Class C1<br/>shape: x"]
-    C1 -- "Add y" --> C2["Hidden Class C2<br/>shape: x, y"]
+    C1 -- "Add y" --> C2["Hidden Class C2<br/>shape: x / y"]
 
     C0a["Hidden Class C0<br/>Empty object"] -- "Add y" --> C1a["Hidden Class C1'<br/>shape: y"]
-    C1a -- "Add x" --> C2a["Hidden Class C2'<br/>shape: y, x"]
+    C1a -- "Add x" --> C2a["Hidden Class C2'<br/>shape: y / x"]
 
     Note1["Same order x→y<br/>Shares the same transition chain<br/>Ends at C2"]
     Note2["Different order y→x<br/>Takes another transition chain<br/>Results in C2' ≠ C2"]
@@ -355,7 +355,7 @@ The old generation holds long-lived objects and is large. Copying is not cost-ef
 Early GC was "stop-the-world" — the main thread was completely paused during collection, and with many large objects, pauses could reach tens of milliseconds, causing jank. **Orinoco** is V8's incremental GC project; it reduces pauses to the millisecond level through concurrency and parallelism:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Young["Young Generation - Scavenge"]
         Y1["From space"] -- "Copy live objects" --> Y2["To space"]

@@ -1,5 +1,5 @@
 ---
-title: 'Frontend Engineer Capability Model: A Growth Framework from T-Shaped to π-Shaped Talent'
+title: "Frontend Engineer Capability Model: A Growth Framework from T-Shaped to π-Shaped Talent"
 description: Capability dimension division, five-level grading standards, T-shaped limitations and π-shaped construction, and radar-chart self-assessment methods.
 category: Career
 tags:
@@ -57,7 +57,7 @@ This article tries to build a truly usable capability model for frontend enginee
 The following diagram shows the complete framework from capability dimensions to grading, and then to T-shaped / π-shaped evolution:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     Core(("Frontend Capability Model"))
 
@@ -83,8 +83,8 @@ flowchart TB
     subgraph Shape["Capability Shape Evolution"]
         direction LR
         S1["I-shaped: single point"]
-        S2["T-shaped: one deep, one broad"]
-        S3["π-shaped: two deep, one broad"]
+        S2["T-shaped: one deep / one broad"]
+        S3["π-shaped: two deep / one broad"]
         S1 --> S2 --> S3
     end
 
@@ -213,7 +213,7 @@ The five dimensions are relatively independent: a person can be strong in one di
 Combining the five dimensions, we can establish a five-level capability grading system. Each level is summarized in one sentence: **at what complexity can a person at this level independently complete what.**
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFF7E6', 'primaryTextColor': '#172033', 'primaryBorderColor': '#F59E0B', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFF7E6', 'primaryTextColor': '#172033', 'primaryBorderColor': '#F59E0B', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph L1["L1 Junior (0-2 years)"]
         L1A["Can complete explicit<br/>tasks under guidance"]
@@ -411,7 +411,7 @@ The choice of the second pillar should not follow trends; it should be based on 
 Building π-shaped talent is not "make A top-level first, then start B." It is a more complex iterative process:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1["Phase 1<br/>I-shaped<br/>Build the first pillar"]
     P2["Phase 2<br/>T-shaped<br/>Expand breadth"]

@@ -1,5 +1,5 @@
 ---
-title: 'The Truth About Layout Thrashing: How It Wrecks Your Animations'
+title: "The Truth About Layout Thrashing: How It Wrecks Your Animations"
 description: 'From forced synchronous layout to layout thrashing, a deep dive into the cost of interleaved reads/writes, the correct use of rAF, and Layout-stage optimization strategies.'
 category: Browser
 tags:
@@ -85,7 +85,7 @@ The two terms are often conflated, but they differ:
 - **Layout Thrashing**: repeatedly write-read-write-read inside a loop, triggering N early Layouts and causing performance collapse.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
 flowchart TB
     subgraph Normal[Normal rhythm]
         direction LR
@@ -223,7 +223,7 @@ This code triggers only 1 Layout (on the first read of the first iteration; all 
 ### 3. Comparison Mermaid diagram
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
 flowchart TB
     subgraph Bad["Bad example: N forced Layouts"]
         direction TB
@@ -238,7 +238,7 @@ flowchart TB
     subgraph Good["Good example: 1 Layout"]
         direction TB
         G1[Batch read phase] --> G2[Read offsetWidth #1]
-        G2 --> G3["Read offsetWidth #2...N<br/>using cached values, free"]
+        G2 --> G3["Read offsetWidth #2...N<br/>using cached values / free"]
         G3 --> G4[Batch write phase]
         G4 --> G5[Write style.width #1...N]
         G5 --> G6[Single Layout at end of frame]

@@ -171,7 +171,7 @@ More compositing layers is not always better. Each compositing layer brings:
 - **Repaint cost**: when a compositing layer's content changes, the entire layer must be re-rasterized
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([Page DOM]) --> Stack[Analyze stacking contexts]
     Stack --> PaintLayer[Divide Paint Layers]
@@ -310,7 +310,7 @@ Compositing happens per frame; 60fps means one compositing every 16.6ms. Even wh
 When the user scrolls, the compositor thread can directly update the scroll position and re-composite, **without main-thread involvement** — this is the basis of "non-main-thread scrolling." The precondition is that the scrolling container has no `scroll` event listener, or the listener uses `passive: true`.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Main[Main thread]
         direction TB
@@ -405,7 +405,7 @@ Composited output pixel = original pixel × opacity + pixel below × (1 - opacit
 ### 5.4 Full Comparison
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Width["Change width/height"]
         direction LR

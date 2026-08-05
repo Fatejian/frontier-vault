@@ -1,5 +1,5 @@
 ---
-title: 技术成长路径：从初级到架构师的能力跃迁
+title: "技术成长路径：从初级到架构师的能力跃迁"
 description: 五个阶段的核心特征、四次关键跃迁、转折点与瓶颈、复利效应
 category: Career
 tags:
@@ -53,7 +53,7 @@ outline: deep
 下图展示了从初级到架构师的五阶段成长路径，以及每次跃迁需要完成的核心转变：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Stage1["初级"]
         S1["工作对象: 一段代码<br/>价值: 完成任务"]
@@ -103,7 +103,7 @@ flowchart LR
 如果把能力画在纵轴，年限画在横轴，真实的曲线更像下面这样：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     P1((起点))
     P2["平台期1<br/>能写代码"]
@@ -599,7 +599,7 @@ async function handleSubmit(values: FormValues) {
 技术成长的复利来自三个环节的闭环：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     I["输入<br/>学习新知识"]
     P["实践<br/>应用到真实问题"]

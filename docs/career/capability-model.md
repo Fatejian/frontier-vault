@@ -1,5 +1,5 @@
 ---
-title: 前端工程师能力模型：从 T 型到 π 型人才的进阶框架
+title: "前端工程师能力模型：从 T 型到 π 型人才的进阶框架"
 description: 能力维度划分、五级分级标准、T 型局限与 π 型构建、雷达图自评方法
 category: Career
 tags:
@@ -57,7 +57,7 @@ outline: deep
 下图展示了从能力维度到分级、再到 T 型/π 型演进的完整框架：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     Core((前端能力模型))
 
@@ -216,7 +216,7 @@ flowchart TB
 把五个维度组合起来，可以建立五级能力分级。每级的核心特征用一句话概括：**这一级的人能在什么复杂度下独立完成什么**。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFF7E6', 'primaryTextColor': '#172033', 'primaryBorderColor': '#F59E0B', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFF7E6', 'primaryTextColor': '#172033', 'primaryBorderColor': '#F59E0B', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph L1["L1 初级 0-2 年"]
         L1A["能在指导下<br/>完成明确任务"]
@@ -417,7 +417,7 @@ T 型模型在 2015 年足够，但在今天，单一深度支柱已经无法支
 构建 π 型不是"先把 A 做到顶级，再开始 B"，而是更复杂的迭代过程：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1["阶段1<br/>I 型<br/>建立第一支柱"]
     P2["阶段2<br/>T 型<br/>扩展广度"]

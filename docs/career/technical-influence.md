@@ -1,5 +1,5 @@
 ---
-title: 技术影响力构建：从代码贡献到技术领导力
+title: "技术影响力构建：从代码贡献到技术领导力"
 description: 四层影响力模型、代码/团队/组织/行业层面的构建路径、技术领导力本质与转型陷阱
 category: Career
 tags:
@@ -53,7 +53,7 @@ outline: deep
 下图展示了技术影响力的四层模型，以及每一层对应的核心能力：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     Core((技术影响力))
 
@@ -367,7 +367,7 @@ L3 影响力的核心是**让多个团队朝同一个方向走**。
 一个有效的架构决策过程：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     P1[识别问题<br/>不是所有问题都需要架构决策]
     P2[收集选项<br/>至少 2-3 个可行方案]

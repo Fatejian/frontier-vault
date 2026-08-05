@@ -1,5 +1,5 @@
 ---
-title: 'Load Testing Engineering Practice: A Full-Stack Methodology from Test Plan to Bottleneck Localization'
+title: "Load Testing Engineering Practice: A Full-Stack Methodology from Test Plan to Bottleneck Localization"
 description: From test objectives, load models, and JMeter script parameterization to TPS, 95th-percentile response time, bottleneck diagnosis, and degradation/circuit-breaker validation.
 category: Testing
 tags:
@@ -67,7 +67,7 @@ This main thread decomposes into three groups of problems:
 Understanding these three groups requires establishing a complete process view of load testing. The following diagram shows the five-stage chain from requirements analysis to bottleneck localization, each stage producing concrete engineering artifacts:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart LR
     Start(["Business Scenarios & Performance Metrics"])
 
@@ -172,7 +172,7 @@ Resource exhaustion is the physical root cause of blocking:
 - **Database connection exhaustion**: Connection pool configuration is too small, becoming the first bottleneck reached.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["Three Groups of Load Testing Problems"]
 
@@ -339,7 +339,7 @@ After the load pattern is determined, resource monitoring must be configured syn
 - **Middleware layer**: Cache hit rate, message queue backlog, connection count.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Monitor["Four Layers of Monitoring"]
         direction TB
@@ -438,7 +438,7 @@ Chart analysis should focus on two correlations:
 Bottleneck diagnosis should be layered to avoid the leapfrog attribution of "CPU is high, so optimize code":
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Start(["Response Time Degradation / Error Rate Rise"])
 
@@ -582,7 +582,7 @@ Third-party dependency pressure validation must answer two questions: when the t
 Consolidating the scattered views into a unified framework, all load testing phenomena can be mapped to three groups of problems: waiting, blocking, and resource exhaustion. The following diagram summarizes the specific manifestations, progressive relationships, and corresponding strategies of the three groups:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["Three Groups of Load Testing Problems<br/>Waiting · Blocking · Resource Exhaustion"]
 

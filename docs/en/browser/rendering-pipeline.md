@@ -1,5 +1,5 @@
 ---
-title: 'Rendering Pipeline: From HTML to Pixels'
+title: "Rendering Pipeline: From HTML to Pixels"
 description: A deep dive into the complete browser pipeline from HTML streaming parsing, CSSOM construction, render-tree synthesis, layout, paint layering, to GPU compositing.
 category: Browser
 tags:
@@ -63,7 +63,7 @@ The core of the rendering pipeline is not memorizing the names of five stages, b
 The modern browser rendering pipeline (using Chromium as reference) can be simplified into six stages:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Parse["① Parse"]
         direction TB
@@ -187,7 +187,7 @@ There are two main blocking points during HTML parsing:
 - **CSS blocks JS execution**: if a script queries element styles, CSS must be loaded first. So CSS does not block HTML parsing, but may block JS execution.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([HTML Arrives]) --> Parse[Main parser streams DOM]
     Parse --> MeetCSS{CSS Link?}
@@ -515,7 +515,7 @@ The essence of bottleneck localization is answering: "Which pipeline stages does
 This is the most practical knowledge about the rendering pipeline: **modifying different CSS properties triggers different lengths of the pipeline**.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([Modify CSS Property]) --> Class{Property Category}
 

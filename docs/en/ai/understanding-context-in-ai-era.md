@@ -259,7 +259,7 @@ You can think of AI as a very capable, fast-learning engineer who just joined th
 If you do not give it context, it fills the gaps with general experience. And that gap-filling process is the source of many errors and "hallucinations."
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core["AI Output<br/>Not determined by last prompt alone"]
 
@@ -416,7 +416,7 @@ Acceptance criteria:
 The last example is not just "more detailed writing." It builds an executable information environment.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart LR
     CE["Context Engineering<br/>Decides what AI sees"]
 
@@ -972,7 +972,7 @@ Assuming "AI will handle testing, so QA can shrink." In practice, QA expands int
 The diagram below summarizes the six dimensions of context from earlier chapters into a unified model. Each layer feeds the AI's understanding of the current task, and skipping any layer creates a gap that the model fills with general experience.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
     Core(("AI Programming Outcome<br/>Determined by Six-Layer Context"))
 

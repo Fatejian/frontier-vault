@@ -1,5 +1,5 @@
 ---
-title: 渲染性能避坑指南：从 Layout、Paint 到 Composite 的常见陷阱与解法
+title: "渲染性能避坑指南：从 Layout、Paint 到 Composite 的常见陷阱与解法"
 description: 从布局抖动、强制同步布局、大面积重绘、合成层爆炸到 will-change 滥用
 category: Performance
 tags:
@@ -68,7 +68,7 @@ outline: deep
 理解这三组问题，需要先回顾现代浏览器渲染管线的完整路径。下图展示了从 Style 到 Composite 的五段链路，每一段都可能出现等待、阻塞或重复工作：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Start([样式或 DOM 变更])
 
@@ -121,7 +121,7 @@ flowchart LR
 - 改 `transform` / `opacity`：多数情况下只触发 **Composite**
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Change{CSS 属性改动}
 
@@ -749,7 +749,7 @@ document.addEventListener(
 下图把全文的渲染性能陷阱汇总为统一模型，归入"等待、阻塞、重复工作"三组：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8, 'fontSize': '13px'}}}%%
 flowchart TB
     Core((渲染性能优化<br/>管线工作管理))
 

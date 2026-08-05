@@ -1,5 +1,5 @@
 ---
-title: 执行上下文与作用域链：从 V8 视角理解闭包本质
+title: "执行上下文与作用域链：从 V8 视角理解闭包本质"
 description: 从执行上下文生命周期、变量环境与词法环境、作用域链构建到闭包内存模型与内存泄漏的深度解析
 category: JavaScript
 tags:
@@ -70,7 +70,7 @@ JavaScript 中有三种执行上下文：
 JavaScript 是单线程的，同一时刻只能执行一个执行上下文。引擎用一个**执行上下文栈（Execution Context Stack，ECS）** 来管理：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Stack["执行上下文栈 - 时间从下到上"]
         direction TB
@@ -233,7 +233,7 @@ fn() // 仍然是 'inner'，尽管调用处周围只有 'outer'
 下图展示了嵌套函数执行时作用域链的结构。注意 `outer` 指针是从内指向外的，它是在函数**创建**时就被固定下来的：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Inner["inner 函数执行上下文"]
         IE["函数词法环境<br/>绑定: 无"]
@@ -316,7 +316,7 @@ const counter = makeCounter()
 ### 3. 闭包的内存模型图
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Heap["堆内存 - 闭包返回后仍然存活"]
         direction TB

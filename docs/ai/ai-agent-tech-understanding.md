@@ -91,7 +91,7 @@ LLM（Large Language Model，大语言模型）是 AI Agent 的能力底座。Ag
 下图展示了 LLM 在工程实践中需要关注的关键约束链路：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Input["输入文本<br/>Prompt + 上下文"]
     Token["Tokenization<br/>分词与编码"]
@@ -195,7 +195,7 @@ RAG 的核心思想是：不在生成阶段依赖模型记忆，而是在生成�
 下图展示了 RAG 的完整流水线：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Doc["原始文档<br/>PDF / HTML / Markdown"]
     Chunk["切片<br/>固定长度 / 语义 / 递归"]
@@ -333,7 +333,7 @@ LLM 本身是一个"接收文本、输出文本"的模型。Agent 是在 LLM 之
 下图展示了 Agent 的核心执行循环：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Perceive["感知<br/>接收任务与环境"]
     Plan["规划<br/>分解步骤与选择工具"]
@@ -619,7 +619,7 @@ AI 安全是 AI 工程化中最容易被忽视、却后果最严重的环节。A
 下图展示了 AI 安全测试的矩阵结构：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Core["AI 安全测试矩阵"]
 

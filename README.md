@@ -17,6 +17,7 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English ·
 - **数据驱动 i18n**：所有语言元数据、模块名、UI 文案集中管理在单一数据源，通过代码生成 `config.js`，新增语言无需修改任何硬编码
 - **自定义首页组件**：`HomePage.vue` 支持模块卡片图标、可点击链接跳转、hover 缩放动画效果
 - **Mermaid 渲染优化**：代码块预隐藏（`visibility:hidden + height:0`）避免渲染闪烁，点击放大 + 明暗切换 + autoTextColor 自动对比度
+- **技能资产自包含**：15 个 AI 技能（2 个项目自研 + 13 个第三方）以 `skills/` 目录随仓库版本化，克隆即得，与 `.agents/skills/` 运行时副本职责分离
 
 ## 技术栈
 
@@ -29,6 +30,7 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual: 中文 / English ·
 | i18n 架构 | 数据驱动单一数据源（`i18n/`）+ 代码生成（`generate-sidebar.js`） |
 | CI/CD | GitHub Actions：push 到 master 自动构建并双路部署 |
 | 自定义组件 | Vue 3 单文件组件（`HomePage.vue`），支持图标、链接、hover 动画 |
+| AI 技能资产 | `skills/` 目录自包含版本化（15 个 Skill），`.agents/skills/` 为 IDE 运行时副本（由 `skills-lock.json` 管理） |
 
 ## 架构设计
 
@@ -127,6 +129,12 @@ frontier-vault/
 │   ├── generate-sidebar.js        # 数据驱动生成 config.js + 翻译检查 + 首页校验
 │   ├── extract-headings.js        # 标题提取工具
 │   └── vite-plugin-auto-sidebar.js  # Vite 插件（开发期辅助）
+├── skills/                        # AI 技能资产（权威副本，Git 跟踪，克隆即得）
+│   ├── README.md                  # 技能总览 + 使用指南 + 同步维护流程
+│   ├── project/                   # 项目自研技能（权威源）
+│   │   ├── frontier-vault-article-style/   # 高级技术长文写作风格规范（8 子 Skill）
+│   │   └── svg-color-contrast-debug/       # SVG 颜色对比度调试与修复方法论
+│   └── third-party/               # 第三方技能自包含副本（13 个，源自 Leonxlnx/taste-skill）
 ├── .github/workflows/deploy.yml   # GitHub Actions 部署工作流
 ├── CONTRIBUTING-i18n.md           # 译者协作规范
 ├── LICENSE-CODE                   # MIT（代码）
@@ -231,7 +239,7 @@ npm run i18n:home
 
 ## 写作规范
 
-所有知识库文章遵循 `frontier-vault-article-style` 写作规范（详见 `backup/frontier-vault-article-style.skill`），核心要素：
+所有知识库文章遵循 `frontier-vault-article-style` 写作规范（详见 [`skills/project/frontier-vault-article-style/SKILL.md`](skills/project/frontier-vault-article-style/SKILL.md)），核心要素：
 
 - **Frontmatter**：`title` / `description` / `category` / `tags` / `readingTime` / `outline`
 - **开篇三件套**：H1 标题 + blockquote 副标题块 + `::: info 一句话` 核心论点 + 目录
@@ -239,6 +247,31 @@ npm run i18n:home
 - **Mermaid 五色主题**：`wait`（蓝）/ `block`（橙）/ `work`（绿）/ `metric`（紫）/ `core`（深色）
 - **反例/正例对照**：`// 反例：xxx` 与 `// 正例：xxx` 成对呈现
 - **收尾五件套**：统一模型图 → 分组实践清单 → 结语（blockquote 第三次呼应核心论点）→ FAQ → 来源
+
+## AI 技能资产
+
+项目将所有 AI 技能（Skill）集中管理在 [`skills/`](skills/) 目录，作为独立的工程资产层与 `docs/`（内容）、`scripts/`（工具）平级。完整的技能总览、使用指南与同步维护流程详见 [`skills/README.md`](skills/README.md)。
+
+### 三位置职责分离
+
+| 位置 | 职责 | Git 跟踪 |
+| --- | --- | --- |
+| `skills/` | **权威副本**：自包含、可读、随仓库版本化 | ✅ 跟踪 |
+| `.agents/skills/` | **运行时副本**：Trae IDE agent 实际加载位置，由 `skills-lock.json` 管理安装/更新 | ❌ 忽略 |
+| `backup/archive/` | **历史归档**：项目自研技能的原始产出位置 | ❌ 忽略 |
+
+### 技能构成
+
+- **项目自研技能**（`skills/project/`，2 个）：`frontier-vault-article-style`（写作规范，8 子 Skill）、`svg-color-contrast-debug`（SVG 对比度调试方法论）
+- **第三方技能**（`skills/third-party/`，13 个）：源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)，涵盖图像生成、UI 设计风格、工作流三类
+
+### 同步第三方技能
+
+当通过 `skills-lock` 机制更新了 `.agents/skills/` 后，同步权威副本：
+
+```powershell
+Copy-Item -Path .agents\skills\* -Destination skills\third-party -Recurse -Force
+```
 
 ## 部署
 

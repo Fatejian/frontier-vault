@@ -27,7 +27,8 @@ skills/
 │   │   └── SKILL.md
 │   └── svg-color-contrast-debug/      # SVG 颜色对比度调试与修复方法论
 │       └── SKILL.md
-└── third-party/                       # 第三方技能自包含副本（来源：Leonxlnx/taste-skill）
+└── third-party/                       # 第三方技能自包含副本（14 个，多来源）
+    ├── beautify-github-readme/        # README 美化（含 references/ + scripts/，来源：oil-oil）
     ├── brandkit/SKILL.md
     ├── design-taste-frontend/SKILL.md
     ├── design-taste-frontend-v1/SKILL.md
@@ -93,7 +94,7 @@ skills/
 
 ### 二、第三方技能（`third-party/`）
 
-来源：[`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)，经 `skills-lock.json` 锁定版本。按用途分三类：
+来源：[`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)（13 个设计/前端技能）与 [`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)（1 个 README 美化技能）。按用途分四类：
 
 #### 🎨 图像生成类
 
@@ -122,6 +123,12 @@ skills/
 | --- | --- |
 | [full-output-enforcement](third-party/full-output-enforcement/SKILL.md) | 覆盖 LLM 默认截断行为，强制完整代码生成、禁用占位符、处理 token 分割 |
 | [redesign-existing-projects](third-party/redesign-existing-projects/SKILL.md) | 升级现有网站/App 至高端品质，审计设计并应用高端标准而不破坏功能 |
+
+#### 📄 README 美化类
+
+| 技能 | 用途 |
+| --- | --- |
+| [beautify-github-readme](third-party/beautify-github-readme/SKILL.md) | 将 GitHub README 主页重设计为项目原生的视觉故事，或创建 pure SVG / hybrid SVG / GIF 资产；含 8 个 references 设计规范文档与 audit 脚本（来源：[`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)） |
 
 ---
 
@@ -154,6 +161,7 @@ skills/
 | Mermaid 图表文字不可见 | `svg-color-contrast-debug` | 套用科学调试工作流定位根因 |
 | 重设计首页 `HomePage.vue` | `design-taste-frontend` + `redesign-existing-projects` | 先审计再升级，遵守项目「禁用 SaaS 蓝紫渐变」约束 |
 | 为新页面生成设计参考图 | `imagegen-frontend-web` | 每个 section 一张图，再据此实现 |
+| 美化 GitHub README 主页 | `beautify-github-readme` | README mode 重设计信息架构 + pure SVG hero，遵守项目「克制、阅读优先」约束 |
 | 长代码生成被截断 | `full-output-enforcement` | 强制完整输出，禁用占位符 |
 
 > ⚠️ **项目硬约束**：使用设计类技能时，必须遵守项目记忆中的视觉约束 —— **禁用普通 SaaS 蓝紫渐变、过度卡片化、营销网站风格**；保持专业、克制、高级、工程师友好、阅读优先的风格。
@@ -201,4 +209,4 @@ cp -R .agents/skills/* skills/third-party/
 ## 许可说明
 
 - **项目自研技能**（`project/`）：遵循项目内容协议 [CC BY 4.0](../LICENSE-CONTENT)
-- **第三方技能**（`third-party/`）：源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)，遵循其原始许可，版本由 [`skills-lock.json`](../skills-lock.json) 锁定
+- **第三方技能**（`third-party/`）：设计/前端类源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)，README 美化类源自 [`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)，遵循各自原始许可

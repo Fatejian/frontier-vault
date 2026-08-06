@@ -1,8 +1,6 @@
-<div align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="frontier-vault 知识库首屏：项目名称、一句话价值与 7 大模块知识网格">
-</div>
+# frontier-vault
 
-> 面向中高级前端工程师的系统化知识库 —— 从浏览器底层原理到职业成长路径，覆盖 AI 工程实践，构建可落地的工程认知体系
+> 面向中高级前端工程师的系统化深度知识库 —— 从浏览器底层原理到职业成长路径，覆盖 AI 工程实践，构建可落地的工程认知体系
 
 **🌐 在线访问**：<https://www.fatejian.icu/> · Built with [VitePress](https://vitepress.dev/) · Bilingual 中文 / English · GitHub Actions 双路部署（GitHub Pages + Baidu Cloud）
 

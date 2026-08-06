@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="360" viewBox="0 0 1200 360"
+     role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">frontier-vault — 面向中高级前端工程师的系统化深度知识库</title>
+  <desc id="hero-desc">frontier-vault 知识库首屏：左侧为项目名称与一句话价值，右侧为 7 大模块知识网格（browser、javascript、frameworks、performance、testing、ai、career），共 17 篇深度长文。</desc>
+
+  <!-- Background: self-supplied so it reads on GitHub light & dark themes -->
+  <rect width="1200" height="360" rx="20" fill="#0B0E14"/>
+
+  <!-- ============ LEFT: title block ============ -->
+  <g transform="translate(56 52)">
+    <!-- eyebrow -->
+    <text x="0" y="16" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" letter-spacing="2" fill="#E0A458">◆ KNOWLEDGE VAULT</text>
+    <!-- repository name -->
+    <text x="0" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif" font-size="54" font-weight="700" fill="#E6E8EC" letter-spacing="-1">frontier-vault</text>
+    <!-- separator -->
+    <line x1="0" y1="96" x2="72" y2="96" stroke="#30363D" stroke-width="1.5"/>
+    <!-- one-sentence value -->
+    <text x="0" y="130" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif" font-size="20" font-weight="600" fill="#E6E8EC">面向中高级前端工程师的系统化深度知识库</text>
+    <text x="0" y="158" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif" font-size="15" fill="#8B919E">从浏览器底层原理到职业成长路径，覆盖 AI 工程实践</text>
+    <!-- module tags -->
+    <text x="0" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#6E7681">browser · javascript · frameworks · performance</text>
+    <text x="0" y="218" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#6E7681">testing · ai · career</text>
+    <!-- metadata -->
+    <text x="0" y="254" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">VitePress 1.6 · Bilingual 中文 / English · MIT / CC BY 4.0</text>
+  </g>
+
+  <!-- ============ RIGHT: 7-module knowledge grid ============ -->
+  <g transform="translate(760 52)">
+    <!-- section label -->
+    <text x="0" y="14" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" letter-spacing="1.5" fill="#6E7681">7 MODULES · 17 DEEP-DIVE ARTICLES</text>
+    <line x1="0" y1="24" x2="364" y2="24" stroke="#30363D" stroke-width="1"/>
+
+    <!-- Column 1 -->
+    <g transform="translate(0 40)">
+      <!-- browser -->
+      <rect x="0.5" y="0.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="0.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="22" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">browser</text>
+      <text x="16" y="40" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">渲染流水线 · 3</text>
+
+      <!-- javascript -->
+      <rect x="0.5" y="60.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="60.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">javascript</text>
+      <text x="16" y="100" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">执行上下文 · 3</text>
+
+      <!-- frameworks -->
+      <rect x="0.5" y="120.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="120.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="142" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">frameworks</text>
+      <text x="16" y="160" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">React Fiber · 3</text>
+
+      <!-- performance -->
+      <rect x="0.5" y="180.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="180.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="202" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">performance</text>
+      <text x="16" y="220" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">Core Web Vitals · 2</text>
+    </g>
+
+    <!-- Column 2 -->
+    <g transform="translate(194 40)">
+      <!-- testing -->
+      <rect x="0.5" y="0.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="0.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="22" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">testing</text>
+      <text x="16" y="40" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">负载测试 · 1</text>
+
+      <!-- ai -->
+      <rect x="0.5" y="60.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="60.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">ai</text>
+      <text x="16" y="100" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">上下文工程 · 1</text>
+
+      <!-- career -->
+      <rect x="0.5" y="120.5" width="170" height="48" rx="8" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+      <rect x="0.5" y="120.5" width="3" height="47" rx="1.5" fill="#E0A458"/>
+      <text x="16" y="142" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="600" fill="#E6E8EC">career</text>
+      <text x="16" y="160" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6E7681">能力模型 · 4</text>
+
+      <!-- summary cell (no card, editorial negative space) -->
+      <text x="0" y="202" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8B919E">—— 17 articles</text>
+      <text x="0" y="220" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#6E7681">unified writing style</text>
+    </g>
+  </g>
+</svg>

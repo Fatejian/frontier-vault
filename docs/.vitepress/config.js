@@ -23,7 +23,7 @@ export default defineConfig({
     root: {
       label: '中文',
       lang: 'zh-CN',
-      title: 'Frontier Vault',
+      title: '静学轩',
       description: '面向中高级前端工程师的系统化知识库',
       themeConfig: {
         nav: [
@@ -225,7 +225,7 @@ export default defineConfig({
       label: 'English',
       lang: 'en-US',
       link: '/en/',
-      title: 'Frontier Vault',
+      title: '静学轩',
       description: 'A systematic knowledge base for advanced frontend engineers',
       themeConfig: {
         nav: [

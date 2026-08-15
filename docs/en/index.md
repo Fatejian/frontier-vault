@@ -1,7 +1,7 @@
 ---
 layout: home
 hero:
-  name: "Frontier Vault"
+  name: "静学轩"
   text: "Advanced frontend knowledge base & career system"
   tagline: A systematic knowledge base for advanced frontend engineers — from browser internals and JavaScript runtimes to framework ecosystems, performance optimization, and career growth. Build a practical engineering mental model.
   actions:

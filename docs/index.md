@@ -1,7 +1,7 @@
 ---
 layout: home
 hero:
-  name: "Frontier Vault"
+  name: "静学轩"
   text: "Advanced frontend knowledge base & career system"
   tagline: 面向中高级前端工程师的系统化知识库 — 从浏览器底层原理、JavaScript 运行时、框架生态到性能优化与职业成长，构建可落地的工程认知体系
   actions:

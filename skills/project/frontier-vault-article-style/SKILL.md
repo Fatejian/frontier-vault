@@ -1,7 +1,7 @@
 ---
 name: frontier-vault-article-style
 display_name: Frontier Vault 高级技术长文写作风格 Skill
-version: 1.0.0
+version: 1.2.0
 language: zh-CN
 description: >
   从《现代前端性能的底层链路：如何减少关键路径上的等待、阻塞与重复工作》一文提炼的可复用写作风格规范，
@@ -67,7 +67,7 @@ skills:
     input_requirements:
       - 文章标题
       - 文章主题范围
-      - 文章分类（Performance / Browser / JavaScript / Frameworks / Career）
+      - 文章分类（Performance / Browser / JavaScript / Frameworks / Testing / AI / Career）
     output_requirements:
       - 完整的 frontmatter YAML 块
       - 字段顺序与示例一致
@@ -78,7 +78,7 @@ skills:
       1. 字段顺序固定：title / description / category / tags / readingTime / outline。
       2. title 使用中文完整标题，可带冒号副标题。
       3. description 用一句话概括技术范围，列出关键术语（如 TTFB、LCP、Hydration、JIT、GC 等）。
-      4. category 取值：Performance / Browser / JavaScript / Frameworks / Career。
+      4. category 取值：Performance / Browser / JavaScript / Frameworks / Testing / AI / Career。
       5. tags 使用英文数组，3-6 个，覆盖主题域（如 Frontend Performance / Browser Internals / LCP）。
       6. readingTime 形如 "25 min"。
       7. outline 固定为 deep。

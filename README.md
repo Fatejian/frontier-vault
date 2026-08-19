@@ -8,7 +8,7 @@
 
 ## 模块总览
 
-知识库按七大模块组织，每个模块围绕一个核心主题建立完整心智模型，共 17 篇 20+ 分钟深度长文：
+知识库按七大模块组织，每个模块围绕一个核心主题建立完整心智模型，每个语言 20 篇 20+ 分钟深度长文（中英双语一一对应，合计 40 篇）：
 
 | 模块 | 路径 | 核心主题 |
 | --- | --- | --- |
@@ -17,7 +17,7 @@
 | 框架生态 | `docs/frameworks/` | React Fiber 链式可中断渲染、Vue 3 Proxy 响应式、状态管理从 Flux 到 Zustand 的设计演进 |
 | 性能优化 | `docs/performance/` | Core Web Vitals（LCP / INP / CLS）、关键路径、渲染管线、运行时性能 |
 | 测试工程 | `docs/testing/` | 负载测试全流程方法论、TPS / P95 指标体系、瓶颈分层诊断、降级与熔断验证 |
-| AI 工程 | `docs/ai/` | 上下文工程、上下文窗口、短期 / 长期 / 检索 / 工具上下文、AI 编程转型、角色能力迁移 |
+| AI 工程 | `docs/ai/` | 上下文工程与 AI 编程转型、LLM / RAG / Agent 架构与 AI 测试体系、Agent 工程五阶段学习路线 |
 | 职业体系 | `docs/career/` | T 型到 π 型能力模型、初级到架构师成长路径、技术影响力构建、Vibe Coder vs Software Engineer |
 
 > English 版本位于 `docs/en/`，与中文一一对应，文件名（slug）完全一致。
@@ -67,6 +67,8 @@ npm run i18n:check     # 检查翻译完整性（对比 slug 与模块目录集�
 npm run i18n:home      # 校验各语言 index.md 首页 frontmatter 与 home.js 一致
 ```
 
+> 开发模式下无需手动执行：`npm run docs:dev` 启动后，`vite.config.js` 中的 `vite-plugin-auto-sidebar.js` 插件会监听 `docs/**/*.md` 的增删改，自动重跑 `sidebar:gen` 重新生成 `config.js`。
+
 > 译者协作规范（翻译规则、Mermaid 标签转义、`:::` 指令、内链/外链更新、缺翻译策略、新增语言完整步骤等）详见 [`CONTRIBUTING-i18n.md`](CONTRIBUTING-i18n.md)。
 
 ## 技术栈
@@ -80,7 +82,7 @@ npm run i18n:home      # 校验各语言 index.md 首页 frontmatter 与 home.js
 | i18n 架构 | 数据驱动单一数据源（`i18n/`）+ 代码生成（`generate-sidebar.js`） |
 | CI/CD | GitHub Actions：push 到 master 自动构建并双路部署 |
 | 自定义组件 | Vue 3 单文件组件（`HomePage.vue`），支持图标、链接、hover 动画 |
-| AI 技能资产 | `skills/` 目录自包含版本化（15 个 Skill），`.agents/skills/` 为 IDE 运行时副本 |
+| AI 技能资产 | `skills/` 目录自包含版本化（16 个 Skill），`.agents/skills/` 为 IDE 运行时副本 |
 
 ## 项目结构
 
@@ -96,9 +98,10 @@ frontier-vault/
 │   ├── public/                # 静态资源（favicon 等）
 │   └── index.md               # 中文站点首页
 ├── assets/readme/             # README 视觉资产（hero.svg）
-├── scripts/                   # generate-sidebar.js 等工具脚本
+├── scripts/                   # 工具脚本（generate-sidebar / vite-plugin-auto-sidebar / audit-articles / extract-headings）
 ├── skills/                    # AI 技能资产（自包含、Git 跟踪，克隆即得）
 ├── .github/workflows/deploy.yml
+├── vite.config.js             # Vite 配置（dev 时 auto-sidebar 插件入口）
 ├── CONTRIBUTING-i18n.md       # 译者协作规范
 ├── LICENSE-CODE / LICENSE-CONTENT
 └── package.json
@@ -119,7 +122,7 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 所有 AI 技能集中管理在 [`skills/`](skills/) 目录，与 `docs/`（内容）、`scripts/`（工具）平级，作为独立的工程资产层随仓库版本化，克隆即得：
 
 - **项目自研**（`skills/project/`，2 个）：`frontier-vault-article-style`（写作规范，8 子 Skill）、`svg-color-contrast-debug`（SVG 对比度调试方法论）
-- **第三方技能**（`skills/third-party/`，13 个）：源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) 与 [`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)，涵盖图像生成、UI 设计、README 美化、工作流四类
+- **第三方技能**（`skills/third-party/`，14 个）：源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) 与 [`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)，涵盖图像生成、UI 设计、README 美化、工作流四类
 - **运行时副本**：`.agents/skills/` 由 `skills-lock.json` 管理安装/更新，与 `skills/` 权威副本职责分离
 
 > 完整技能总览、使用指南与同步维护流程详见 [`skills/README.md`](skills/README.md)。

@@ -14,15 +14,19 @@
 
    包含字段：`code` / `label` / `lang` / `isDefault: false` / `dir` / `description` / `title`。
 
-2. **在 `docs/.vitepress/i18n/modules.js` 补该语言的 6 个模块显示名**
+2. **在 `docs/.vitepress/i18n/modules.js` 补该语言的 7 个模块显示名**
 
-   按模块顺序填写：browser / javascript / frameworks / performance / testing / career。
+   按模块顺序填写：browser / javascript / frameworks / performance / testing / ai / career。
 
 3. **在 `docs/.vitepress/i18n/ui.js` 补该语言的 nav / search / footer / 概述文案**
 
+   footer 需包含 `message` / `copyright` / `icp` / `icpLink` 字段（`icp` / `icpLink` 用于页脚展示 ICP 备案号链接，缺失将不显示）。
+
 4. **在 `docs/.vitepress/i18n/home.js` 补该语言的 hero / features**
 
-5. **创建 `docs/<code>/` 目录**，按模块顺序建立 6 个子目录，并创建 `index.md`（站点首页）。
+5. **创建 `docs/<code>/` 目录**，按模块顺序建立 7 个子目录，并创建 `index.md`（站点首页）。
+
+   每个模块子目录也必须包含 `index.md`（模块概述页），缺失会导致模块根 URL 404。
 
 6. **复制默认语言的文章结构**，逐篇翻译。
 
@@ -116,7 +120,7 @@
 
 ## 6. 模块顺序
 
-下列 6 个模块及其规范顺序与 `docs/.vitepress/i18n/modules.js` 的 `order` 数组一致。sidebar 排列与翻译检查均以此顺序为准。
+下列 7 个模块及其规范顺序与 `docs/.vitepress/i18n/modules.js` 的 `order` 数组一致。sidebar 排列与翻译检查均以此顺序为准。
 
 | 顺序 | 模块 | slug |
 | --- | --- | --- |
@@ -125,4 +129,5 @@
 | 3 | 框架（frameworks） | `frameworks` |
 | 4 | 性能（performance） | `performance` |
 | 5 | 测试（testing） | `testing` |
-| 6 | 职业（career） | `career` |
+| 6 | AI 工程（ai） | `ai` |
+| 7 | 职业（career） | `career` |

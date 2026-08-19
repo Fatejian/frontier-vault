@@ -29,27 +29,27 @@
 
 | 文件 | 修复前 | 修复后 |
 |---|---|---|
-| [critical-path.md](file:///c:/project/Personal_Projects/frontier-vault/docs/performance/critical-path.md) | `title: 现代前端性能的底层链路：如何...` | `title: "现代前端性能的底层链路：如何..."` |
-| [rendering-pitfalls.md](file:///c:/project/Personal_Projects/frontier-vault/docs/performance/rendering-pitfalls.md) | `title: 渲染性能避坑指南：从 Layout...` | `title: "渲染性能避坑指南：从 Layout..."` |
-| [layout-thrashing.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/layout-thrashing.md) | `title: 布局抖动的真相：Layout Thrashing...` | `title: "布局抖动的真相：Layout Thrashing..."` |
-| [painting-rasterization.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/painting-rasterization.md) | `title: 绘制与光栅化：从图层合成到屏幕显示` | `title: "绘制与光栅化：从图层合成到屏幕显示"` |
-| [rendering-pipeline.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/rendering-pipeline.md) | `title: 渲染流水线：从 HTML 到像素` | `title: "渲染流水线：从 HTML 到像素"` |
-| [async-evolution.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/async-evolution.md) | `title: 异步编程的演进：从回调地狱到 async/await` | `title: "异步编程的演进：从回调地狱到 async/await"` |
-| [execution-context-closure.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/execution-context-closure.md) | `title: 执行上下文与作用域链：从 V8 视角...` | `title: "执行上下文与作用域链：从 V8 视角..."` |
-| [v8-jit-gc.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/v8-jit-gc.md) | `title: V8 引擎揭秘：JIT 编译与垃圾回收机制` | `title: "V8 引擎揭秘：JIT 编译与垃圾回收机制"` |
-| [react-fiber.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/react-fiber.md) | `title: React Fiber 架构：从栈调度到链式...` | `title: "React Fiber 架构：从栈调度到链式..."` |
-| [state-management.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/state-management.md) | `title: 现代状态管理演进：从 Flux 到 Zustand...` | `title: "现代状态管理演进：从 Flux 到 Zustand..."` |
-| [vue3-reactivity.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/vue3-reactivity.md) | `title: Vue 3 响应式系统：Proxy 与依赖收集...` | `title: "Vue 3 响应式系统：Proxy 与依赖收集..."` |
-| [capability-model.md](file:///c:/project/Personal_Projects/frontier-vault/docs/career/capability-model.md) | `title: 前端工程师能力模型：从 T 型到 π 型...` | `title: "前端工程师能力模型：从 T 型到 π 型..."` |
+| [critical-path.md](../docs/performance/critical-path.md) | `title: 现代前端性能的底层链路：如何...` | `title: "现代前端性能的底层链路：如何..."` |
+| [rendering-pitfalls.md](../docs/performance/rendering-pitfalls.md) | `title: 渲染性能避坑指南：从 Layout...` | `title: "渲染性能避坑指南：从 Layout..."` |
+| [layout-thrashing.md](../docs/browser/layout-thrashing.md) | `title: 布局抖动的真相：Layout Thrashing...` | `title: "布局抖动的真相：Layout Thrashing..."` |
+| [painting-rasterization.md](../docs/browser/painting-rasterization.md) | `title: 绘制与光栅化：从图层合成到屏幕显示` | `title: "绘制与光栅化：从图层合成到屏幕显示"` |
+| [rendering-pipeline.md](../docs/browser/rendering-pipeline.md) | `title: 渲染流水线：从 HTML 到像素` | `title: "渲染流水线：从 HTML 到像素"` |
+| [async-evolution.md](../docs/javascript/async-evolution.md) | `title: 异步编程的演进：从回调地狱到 async/await` | `title: "异步编程的演进：从回调地狱到 async/await"` |
+| [execution-context-closure.md](../docs/javascript/execution-context-closure.md) | `title: 执行上下文与作用域链：从 V8 视角...` | `title: "执行上下文与作用域链：从 V8 视角..."` |
+| [v8-jit-gc.md](../docs/javascript/v8-jit-gc.md) | `title: V8 引擎揭秘：JIT 编译与垃圾回收机制` | `title: "V8 引擎揭秘：JIT 编译与垃圾回收机制"` |
+| [react-fiber.md](../docs/frameworks/react-fiber.md) | `title: React Fiber 架构：从栈调度到链式...` | `title: "React Fiber 架构：从栈调度到链式..."` |
+| [state-management.md](../docs/frameworks/state-management.md) | `title: 现代状态管理演进：从 Flux 到 Zustand...` | `title: "现代状态管理演进：从 Flux 到 Zustand..."` |
+| [vue3-reactivity.md](../docs/frameworks/vue3-reactivity.md) | `title: Vue 3 响应式系统：Proxy 与依赖收集...` | `title: "Vue 3 响应式系统：Proxy 与依赖收集..."` |
+| [capability-model.md](../docs/career/capability-model.md) | `title: 前端工程师能力模型：从 T 型到 π 型...` | `title: "前端工程师能力模型：从 T 型到 π 型..."` |
 
 #### 英文文章（4 篇，单引号 → 双引号）
 
 | 文件 | 修复前 | 修复后 |
 |---|---|---|
-| [rendering-pitfalls.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/performance/rendering-pitfalls.md) | `title: 'Rendering Performance Pitfalls: ...'` | `title: "Rendering Performance Pitfalls: ..."` |
-| [layout-thrashing.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/browser/layout-thrashing.md) | `title: 'The Truth About Layout Thrashing: ...'` | `title: "The Truth About Layout Thrashing: ..."` |
-| [rendering-pipeline.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/browser/rendering-pipeline.md) | `title: 'Rendering Pipeline: From HTML to Pixels'` | `title: "Rendering Pipeline: From HTML to Pixels"` |
-| [vibe-coder-vs-software-engineer.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/career/vibe-coder-vs-software-engineer.md) | `title: 'Vibe Coder vs Software Engineer: ...'` | `title: "Vibe Coder vs Software Engineer: ..."` |
+| [rendering-pitfalls.md](../docs/en/performance/rendering-pitfalls.md) | `title: 'Rendering Performance Pitfalls: ...'` | `title: "Rendering Performance Pitfalls: ..."` |
+| [layout-thrashing.md](../docs/en/browser/layout-thrashing.md) | `title: 'The Truth About Layout Thrashing: ...'` | `title: "The Truth About Layout Thrashing: ..."` |
+| [rendering-pipeline.md](../docs/en/browser/rendering-pipeline.md) | `title: 'Rendering Pipeline: From HTML to Pixels'` | `title: "Rendering Pipeline: From HTML to Pixels"` |
+| [vibe-coder-vs-software-engineer.md](../docs/en/career/vibe-coder-vs-software-engineer.md) | `title: 'Vibe Coder vs Software Engineer: ...'` | `title: "Vibe Coder vs Software Engineer: ..."` |
 
 ---
 
@@ -75,24 +75,24 @@ $newContent = $content -replace "'\}\}\}%%", ", 'fontSize': '13px'}}}%%"
 
 | 文件 | Mermaid 块数 | 已修复数 |
 |---|---|---|
-| [critical-path.md](file:///c:/project/Personal_Projects/frontier-vault/docs/performance/critical-path.md)（中英各 3） | 3+3 | 6 |
-| [rendering-pitfalls.md](file:///c:/project/Personal_Projects/frontier-vault/docs/performance/rendering-pitfalls.md)（中英各 3） | 3+3 | 6 |
-| [layout-thrashing.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/layout-thrashing.md)（中英各 2） | 2+2 | 4 |
-| [painting-rasterization.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/painting-rasterization.md)（中英各 3） | 3+3 | 6 |
-| [rendering-pipeline.md](file:///c:/project/Personal_Projects/frontier-vault/docs/browser/rendering-pipeline.md)（中英各 3） | 3+3 | 6 |
-| [async-evolution.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/async-evolution.md)（中英各 3） | 3+3 | 6 |
-| [execution-context-closure.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/execution-context-closure.md)（中英各 3） | 3+3 | 6 |
-| [v8-jit-gc.md](file:///c:/project/Personal_Projects/frontier-vault/docs/javascript/v8-jit-gc.md)（中英各 4） | 4+4 | 8 |
-| [react-fiber.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/react-fiber.md)（中英各 7） | 7+7 | 14 |
-| [vue3-reactivity.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/vue3-reactivity.md)（中英各 3） | 3+3 | 6 |
-| [state-management.md](file:///c:/project/Personal_Projects/frontier-vault/docs/frameworks/state-management.md)（中英各 6） | 6+6 | 12 |
-| [ai-agent-tech-understanding.md](file:///c:/project/Personal_Projects/frontier-vault/docs/ai/ai-agent-tech-understanding.md)（中英各 4） | 4+4 | 8 |
-| [understanding-context-in-ai-era.md](file:///c:/project/Personal_Projects/frontier-vault/docs/ai/understanding-context-in-ai-era.md)（中英各 3） | 3+3 | 6 |
-| [capability-model.md](file:///c:/project/Personal_Projects/frontier-vault/docs/career/capability-model.md)（中英各 3） | 3+3 | 6 |
-| [growth-path.md](file:///c:/project/Personal_Projects/frontier-vault/docs/career/growth-path.md)（中英各 3） | 3+3 | 6 |
-| [technical-influence.md](file:///c:/project/Personal_Projects/frontier-vault/docs/career/technical-influence.md)（中英各 2） | 2+2 | 4 |
-| [vibe-coder-vs-software-engineer.md](file:///c:/project/Personal_Projects/frontier-vault/docs/career/vibe-coder-vs-software-engineer.md)（中英各 1） | 1+1 | 2 |
-| [load-testing-practice.md](file:///c:/project/Personal_Projects/frontier-vault/docs/testing/load-testing-practice.md)（中英各 5） | 5+5 | 10 |
+| [critical-path.md](../docs/performance/critical-path.md)（中英各 3） | 3+3 | 6 |
+| [rendering-pitfalls.md](../docs/performance/rendering-pitfalls.md)（中英各 3） | 3+3 | 6 |
+| [layout-thrashing.md](../docs/browser/layout-thrashing.md)（中英各 2） | 2+2 | 4 |
+| [painting-rasterization.md](../docs/browser/painting-rasterization.md)（中英各 3） | 3+3 | 6 |
+| [rendering-pipeline.md](../docs/browser/rendering-pipeline.md)（中英各 3） | 3+3 | 6 |
+| [async-evolution.md](../docs/javascript/async-evolution.md)（中英各 3） | 3+3 | 6 |
+| [execution-context-closure.md](../docs/javascript/execution-context-closure.md)（中英各 3） | 3+3 | 6 |
+| [v8-jit-gc.md](../docs/javascript/v8-jit-gc.md)（中英各 4） | 4+4 | 8 |
+| [react-fiber.md](../docs/frameworks/react-fiber.md)（中英各 7） | 7+7 | 14 |
+| [vue3-reactivity.md](../docs/frameworks/vue3-reactivity.md)（中英各 3） | 3+3 | 6 |
+| [state-management.md](../docs/frameworks/state-management.md)（中英各 6） | 6+6 | 12 |
+| [ai-agent-tech-understanding.md](../docs/ai/ai-agent-tech-understanding.md)（中英各 4） | 4+4 | 8 |
+| [understanding-context-in-ai-era.md](../docs/ai/understanding-context-in-ai-era.md)（中英各 3） | 3+3 | 6 |
+| [capability-model.md](../docs/career/capability-model.md)（中英各 3） | 3+3 | 6 |
+| [growth-path.md](../docs/career/growth-path.md)（中英各 3） | 3+3 | 6 |
+| [technical-influence.md](../docs/career/technical-influence.md)（中英各 2） | 2+2 | 4 |
+| [vibe-coder-vs-software-engineer.md](../docs/career/vibe-coder-vs-software-engineer.md)（中英各 1） | 1+1 | 2 |
+| [load-testing-practice.md](../docs/testing/load-testing-practice.md)（中英各 5） | 5+5 | 10 |
 
 ---
 
@@ -102,11 +102,11 @@ $newContent = $content -replace "'\}\}\}%%", ", 'fontSize': '13px'}}}%%"
 
 | 文件 | 修复前 | 修复后 |
 |---|---|---|
-| [layout-thrashing.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/browser/layout-thrashing.md) | `using cached values, free` | `using cached values / free` |
-| [v8-jit-gc.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/javascript/v8-jit-gc.md) | `shape: x, y` | `shape: x / y` |
-| [vue3-reactivity.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/frameworks/vue3-reactivity.md) | `already exists, deduplicated` | `already exists / deduplicated` |
-| [capability-model.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/career/capability-model.md) | `T-shaped: one deep, one broad` | `T-shaped: one deep / one broad` |
-| [vibe-coder-vs-software-engineer.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/career/vibe-coder-vs-software-engineer.md) | `reviewability, rollback, maintainability` | `reviewability / rollback / maintainability` |
+| [layout-thrashing.md](../docs/en/browser/layout-thrashing.md) | `using cached values, free` | `using cached values / free` |
+| [v8-jit-gc.md](../docs/en/javascript/v8-jit-gc.md) | `shape: x, y` | `shape: x / y` |
+| [vue3-reactivity.md](../docs/en/frameworks/vue3-reactivity.md) | `already exists, deduplicated` | `already exists / deduplicated` |
+| [capability-model.md](../docs/en/career/capability-model.md) | `T-shaped: one deep, one broad` | `T-shaped: one deep / one broad` |
+| [vibe-coder-vs-software-engineer.md](../docs/en/career/vibe-coder-vs-software-engineer.md) | `reviewability, rollback, maintainability` | `reviewability / rollback / maintainability` |
 
 **保留未修复的 3 处代码语法逗号**（在双引号内安全，不会导致 Mermaid 解析问题）：
 - `{type, payload}` — JS 对象语法
@@ -117,7 +117,7 @@ $newContent = $content -replace "'\}\}\}%%", ", 'fontSize': '13px'}}}%%"
 
 ### 2.4 中文残留翻译（2 篇 / 96 字符）
 
-#### [en/javascript/async-evolution.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/javascript/async-evolution.md)（60 字符）
+#### [en/javascript/async-evolution.md](../docs/en/javascript/async-evolution.md)（60 字符）
 
 | 位置 | 修复前 | 修复后 |
 |---|---|---|
@@ -132,7 +132,7 @@ $newContent = $content -replace "'\}\}\}%%", ", 'fontSize': '13px'}}}%%"
 | Mermaid 节点 | `'加载失败，请重试'` | `'Load failed, please retry'` |
 | Mermaid 节点 | `'非关键操作失败'` | `'Non-critical operation failed'` |
 
-#### [en/ai/ai-agent-tech-understanding.md](file:///c:/project/Personal_Projects/frontier-vault/docs/en/ai/ai-agent-tech-understanding.md)（36 字符）
+#### [en/ai/ai-agent-tech-understanding.md](../docs/en/ai/ai-agent-tech-understanding.md)（36 字符）
 
 | 位置 | 修复前 | 修复后 |
 |---|---|---|
@@ -147,7 +147,7 @@ $newContent = $content -replace "'\}\}\}%%", ", 'fontSize': '13px'}}}%%"
 
 ### 3.1 审计脚本（audit-articles.ps1）
 
-保存路径：[scripts/audit-articles.ps1](file:///c:/project/Personal_Projects/frontier-vault/scripts/audit-articles.ps1)
+保存路径：[scripts/audit-articles.ps1](audit-articles.ps1)
 
 #### 修复的脚本问题
 

@@ -27,24 +27,24 @@ Understanding AI technical principles is the prerequisite for doing AI testing w
 
 ## Table of Contents
 
-- [One. Why You Need a Systematic Understanding of AI Agent Technology](#one-why-you-need-a-systematic-understanding-of-ai-agent-technology)
-- [Two. LLM: The Capability Foundation of AI Agents](#two-llm-the-capability-foundation-of-ai-agents)
-- [Three. RAG: Giving AI Private Knowledge](#three-rag-giving-ai-private-knowledge)
-- [Four. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution](#four-ai-agent-architecture-from-single-turn-dialogue-to-autonomous-execution)
-- [Five. AI Functional Testing](#five-ai-functional-testing)
-- [Six. AI Effectiveness Evaluation](#six-ai-effectiveness-evaluation)
-- [Seven. Robustness Testing](#seven-robustness-testing)
-- [Eight. AI Security Testing](#eight-ai-security-testing)
-- [Nine. AI Model Effectiveness Evaluation Methods](#nine-ai-model-effectiveness-evaluation-methods)
-- [Ten. Using AI Testing Methods to Improve R&D and Testing Efficiency](#ten-using-ai-testing-methods-to-improve-rd-and-testing-efficiency)
-- [Eleven. AI Testing Practice Checklist](#eleven-ai-testing-practice-checklist)
+- [1. Why You Need a Systematic Understanding of AI Agent Technology](#1-why-you-need-a-systematic-understanding-of-ai-agent-technology)
+- [2. LLM: The Capability Foundation of AI Agents](#2-llm-the-capability-foundation-of-ai-agents)
+- [3. RAG: Giving AI Private Knowledge](#3-rag-giving-ai-private-knowledge)
+- [4. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution](#4-ai-agent-architecture-from-single-turn-dialogue-to-autonomous-execution)
+- [5. AI Functional Testing](#5-ai-functional-testing)
+- [6. AI Effectiveness Evaluation](#6-ai-effectiveness-evaluation)
+- [7. Robustness Testing](#7-robustness-testing)
+- [8. AI Security Testing](#8-ai-security-testing)
+- [9. AI Model Effectiveness Evaluation Methods](#9-ai-model-effectiveness-evaluation-methods)
+- [10. Using AI Testing Methods to Improve R&D and Testing Efficiency](#10-using-ai-testing-methods-to-improve-r-d-and-testing-efficiency)
+- [11. AI Testing Practice Checklist](#11-ai-testing-practice-checklist)
 - [Conclusion: From Technical Understanding to Engineering Practice](#conclusion-from-technical-understanding-to-engineering-practice)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ---
 
-## One. Why You Need a Systematic Understanding of AI Agent Technology
+## 1. Why You Need a Systematic Understanding of AI Agent Technology
 
 When pushing AI engineering forward, many teams write capability requirements directly into job descriptions:
 
@@ -57,26 +57,26 @@ The result is two common problems:
 - Engineers can build a RAG pipeline, but do not know how to systematically validate retrieval quality, how to measure hallucination rates, or how to design adversarial samples;
 - Test engineers can write traditional functional cases, but facing the probabilistic output of LLMs, they still test with the "input → expected output exact match" mindset, achieving very low coverage that does not reflect real quality.
 
-AI testing is fundamentally different from traditional software testing. Traditional software is "input + fixed program = deterministic output", while an AI system is "input + context + probabilistic model = probabilistic output". This means:
+AI testing is fundamentally different from traditional software testing. Traditional software is "input + fixed program = deterministic output", while an AI system is "input + context + probabilistic model = probabilistic output":
 
 ```text
 Traditional testing: validate "whether the program executes by the rules"
 AI testing: validate "whether the model stably produces expected results within its capability boundary"
 ```
 
-Therefore, understanding AI technical principles is not an "add-on skill" for testers, but a prerequisite for doing AI testing well. Only by understanding Token, the context window, sampling parameters, and the sources of hallucinations can you design truly effective test cases; only by understanding RAG's retrieval and reranking mechanisms can you locate whether the root cause of a "wrong answer" is insufficient retrieval recall or distortion in the generation stage.
+Therefore, understanding AI technical principles is not an "add-on skill" for testers, but a prerequisite for doing AI testing well. Only by understanding Token, the context window, sampling parameters, and the sources of hallucinations can you design test cases that actually catch problems; only by understanding RAG's retrieval and reranking mechanisms can you locate whether the root cause of a "wrong answer" is insufficient retrieval recall or distortion in the generation stage.
 
-Conversely, a systematic AI testing methodology also improves R&D efficiency. It moves the team from "tuning prompts by feel" to "iterating driven by metrics", and from "discovering problems after launch" to "intercepting regressions on the evaluation set in advance".
+Conversely, a systematic AI testing methodology also benefits R&D. It moves the team from "tuning prompts by feel" to "iterating driven by metrics", and from "discovering problems after launch" to "intercepting regressions on the evaluation set in advance".
 
 This article follows the main line of "technical principles → testing methods → efficiency improvement", systematically covering the core principles of LLM, RAG, and AI Agent, as well as the engineering essentials of AI functional testing, effectiveness evaluation, robustness testing, and security testing.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
-Understanding AI technical principles is the prerequisite for doing AI testing well, and a systematic AI testing methodology is the guarantee for landing AI capabilities stably in real engineering. The two must work together from a dual perspective; neither can be omitted.
+Understanding AI technical principles is the prerequisite for doing AI testing well, and a systematic AI testing methodology is the guarantee for landing AI capabilities stably in real engineering. Both sides must be tackled together; neither can be omitted.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Equating AI testing with "writing a few more prompts and trying them out". The probabilistic output of AI systems means they cannot be tested with deterministic assertions; they require a metric system, an evaluation set, and a regression baseline.
 
@@ -84,9 +84,9 @@ Equating AI testing with "writing a few more prompts and trying them out". The p
 
 ---
 
-## Two. LLM: The Capability Foundation of AI Agents
+## 2. LLM: The Capability Foundation of AI Agents
 
-LLM (Large Language Model) is the capability foundation of AI Agents. An Agent's planning, tool calling, and reflection capabilities are all essentially built on the LLM's text understanding and generation ability. Without understanding how an LLM works, you cannot understand an Agent's capability boundary and failure modes.
+LLM (Large Language Model) is the capability foundation of AI Agents. An Agent's planning, tool calling, and reflection capabilities are all built on the LLM's text understanding and generation ability. Without understanding how an LLM works, you cannot understand an Agent's capability boundary and failure modes.
 
 The diagram below shows the key constraint chain of LLMs that needs attention in engineering practice:
 
@@ -126,13 +126,13 @@ The smallest unit an LLM processes is not a character, but a Token. A Token can 
 - **Cost**: API billing is usually calculated by Token count;
 - **Context occupation**: the more Tokens, the faster the context window limit is reached.
 
-For example, the phrase "individual income tax declaration" may be split into "individual / income / tax / declaration" or "individual / income tax / declaration" by different tokenizers. In engineering, you need to confirm the Token counting method during selection, to avoid estimating by character count and causing cost and window overruns.
+For example, the phrase "individual income tax declaration" may be split into "individual / income / tax / declaration" or "individual / income tax / declaration" by different tokenizers. When selecting a tokenizer, confirm the Token counting method; estimating by character count will cause cost and window overruns.
 
 ### 2. Context Window
 
 The context window is the maximum number of Tokens a model can process at once, including both input and output. It determines the information capacity that AI can "place on the workbench" at one time.
 
-The context window has several engineering implications:
+Several engineering implications:
 
 - Content beyond the window will be truncated or forgotten, causing "constraints stated earlier to be ignored later";
 - A larger window does not mean better results; too much irrelevant information dilutes attention and lowers the weight of key information;
@@ -140,7 +140,7 @@ The context window has several engineering implications:
 
 ### 3. Sampling Parameters
 
-LLM output is not deterministic, but generated through sampling from a probability distribution. Sampling parameters directly control the randomness and diversity of output:
+LLM output is not deterministic, but generated through sampling. Sampling parameters directly control the randomness and diversity of output:
 
 - **temperature**: controls the "sharpness" of the probability distribution. A lower value makes the model tend to choose the highest-probability Token, with more stable but more conservative output; a higher value makes output more diverse but more easily off-track. Code generation usually uses 0 to 0.3, creative writing uses 0.7 to 1.0.
 - **top-p (nucleus sampling)**: samples only from the set of Tokens whose cumulative probability exceeds p; p is usually set to 0.9 to 1.0.
@@ -168,29 +168,29 @@ The capability boundary of an LLM at least includes:
 - Tool awareness: the LLM itself cannot call external tools and needs an Agent framework extension;
 - Real-time capability: the LLM is a static model and cannot actively fetch the latest information.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The LLM engineering constraint chain is: input → tokenization → context window → sampling parameters → output. Understanding Token, the context window, sampling parameters, and hallucination types is the foundation for designing AI test cases and locating failure root causes.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
-Simply attributing hallucination to "the model is not strong enough". In fact, hallucinations come in multiple types; factuality and faithfulness hallucinations have completely different root causes and testing methods and must be handled separately.
+Simply attributing hallucination to "the model is not strong enough". Hallucinations come in multiple types; factuality and faithfulness hallucinations have completely different root causes and testing methods and must be handled separately.
 
 :::
 
 ---
 
-## Three. RAG: Giving AI Private Knowledge
+## 3. RAG: Giving AI Private Knowledge
 
-RAG (Retrieval-Augmented Generation) is the core solution for giving LLMs private knowledge, time-sensitive information, and domain documents. It solves three inherent limitations of LLMs:
+RAG (Retrieval-Augmented Generation) is the mainstream solution for giving LLMs private knowledge, time-sensitive information, and domain documents. It solves three inherent limitations of LLMs:
 
 - **Knowledge cutoff**: model training data has a time boundary and cannot answer the latest events;
 - **Private knowledge**: enterprise internal documents, business rules, and product manuals do not appear in training data;
 - **Time sensitivity**: policies and configurations change frequently, and model weights cannot be updated in real time.
 
-The core idea of RAG is: instead of relying on model memory in the generation stage, retrieve relevant knowledge before generation and provide it to the model as context.
+The core idea of RAG is straightforward: instead of relying on model memory in the generation stage, retrieve relevant knowledge before generation and provide it to the model as context.
 
 The diagram below shows the complete RAG pipeline:
 
@@ -237,7 +237,7 @@ Documents need to be split into chunks to be effectively retrieved and embedded.
 - **Semantic chunking**: splits by paragraph, heading, or sentence boundaries to preserve semantic integrity. Suitable for structured documents.
 - **Recursive chunking**: first splits by large structure (chapter), then by small structure (paragraph), layer by layer. Balances granularity and semantics, and is the current mainstream solution.
 
-Too-large chunks dilute relevance and occupy the window; too-small chunks lose context. In engineering, tuning is needed based on document type and query scenario.
+Too-large chunks dilute relevance and occupy the window; too-small chunks lose context. How to chunk depends on document type and query scenario; there is no one-size-fits-all parameter.
 
 ### 2. Embedding Model and Vector Database
 
@@ -257,27 +257,27 @@ The vector database is responsible for storing and retrieving vectors; common op
 
 ### 4. Reranking
 
-Initial retrieval usually returns many candidates. The reranking stage uses a more refined model to re-score candidates and put the most relevant chunks first. Reranking models are slower but more accurate than embedding models, so a two-stage architecture of "coarse filtering then fine ranking" is adopted.
+Initial retrieval usually returns many candidates. The reranking stage uses a more refined model to re-score candidates and put the most relevant chunks first. Reranking models are slower than embedding models but more accurate, so a two-stage architecture of "coarse filtering then fine ranking" is generally adopted.
 
 ### 5. Citation and Traceability
 
 RAG answers should support citation traceability, that is, annotating which chunk of which document each conclusion comes from. This not only improves credibility but is also a key basis for locating "hallucination sources" during testing. An answer without citations cannot be judged as model fabrication or based on retrieved content.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
-RAG quality is jointly determined by the four stages of chunking, embedding, retrieval, and reranking. A defect in any stage will cause "not retrieved" or "retrieved but not used". When testing, you need to locate by stage rather than only looking at the final answer.
+RAG quality is jointly determined by the four stages of chunking, embedding, retrieval, and reranking. A defect in any stage will cause "not retrieved" or "retrieved but not used". When testing, locate by stage rather than only looking at the final answer.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
-RAG testing cannot only test the final answer; it must separately measure the retrieval stage (recall, precision) and the generation stage (faithfulness, citation accuracy) to locate the quality bottleneck.
+RAG testing cannot only test the final answer; it must separately measure the retrieval stage (recall, precision) and the generation stage (faithfulness, citation accuracy) to locate the quality bottleneck in each segment.
 
 :::
 
 ---
 
-## Four. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution
+## 4. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution
 
 The LLM itself is a model that "receives text and outputs text". An Agent is a runtime framework built on top of the LLM, enabling AI to perceive the environment, plan tasks, call tools, observe results, reflect and correct, and ultimately autonomously complete multi-step goals.
 
@@ -291,7 +291,7 @@ The LLM itself is a model that "receives text and outputs text". An Agent is a r
 | Failure handling | Directly returns an error | Observes failure → reflects → retries |
 | Goal achievement | Answers questions | Completes tasks |
 
-The core difference: the endpoint of a Chatbot is "give an answer", while the endpoint of an Agent is "complete a task".
+In one sentence: the endpoint of a Chatbot is "give an answer", while the endpoint of an Agent is "complete a task".
 
 ### 2. Planning
 
@@ -305,7 +305,7 @@ Planning is the Agent's ability to decompose a complex goal into executable step
 
 Tool calling (Function Calling / Tool Use) is the Agent's ability to interact with the external world. The model selects the appropriate tool based on the task and generates call parameters, and the framework executes the tool and returns the result to the model.
 
-Key issues in tool calling:
+Key issues:
 
 - **Tool selection accuracy**: whether the model chose the right tool;
 - **Parameter generation correctness**: whether parameter types, formats, and values match the tool signature;
@@ -316,11 +316,11 @@ Key issues in tool calling:
 - **Short-term memory**: context within the current task, including dialogue history, executed steps, and intermediate results. Limited by the context window.
 - **Long-term memory**: information persisted across tasks, usually implemented through a vector database or key-value store, supporting on-demand retrieval.
 
-Memory management is key to Agent stability. Too-long memory causes window overflow and attention dilution; too-short memory causes context loss and repeated execution.
+Memory management is critical to Agent stability. Too-long memory causes window overflow and attention dilution; too-short memory causes context loss and repeated execution.
 
 ### 5. Reflection
 
-Reflection (Self-Critique) is the Agent's ability to evaluate its own execution results and correct them. For example, after a test execution fails, the Agent analyzes the failure cause, judges whether it is an environment issue, a data issue, or a code issue, and then decides the next action. Reflection moves the Agent from "blind execution" to a "closed loop with feedback".
+Reflection (Self-Critique) is the Agent's ability to evaluate its own execution results and correct them. For example, after a test execution fails, the Agent analyzes the failure cause, judges whether it is an environment issue, a data issue, or a code issue, and then decides the next action. Reflection moves the Agent from "blind execution" to "acting while correcting".
 
 ### 6. Multi-Agent Collaboration
 
@@ -368,13 +368,13 @@ flowchart TB
     class Memory metric;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The core of an Agent is the closed loop of "perceive → plan → tool call → observe → reflect → act", with memory running through the whole process. The key to Agent testing is to validate that each step of the loop executes as expected, not just to test the final output.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Believing that "having a tool-calling API makes it an Agent". A real Agent needs planning, reflection, and dynamic adjustment capability; otherwise it is only "a Chatbot with tools".
 
@@ -382,9 +382,9 @@ Believing that "having a tool-calling API makes it an Agent". A real Agent needs
 
 ---
 
-## Five. AI Functional Testing
+## 5. AI Functional Testing
 
-AI functional testing focuses on "whether the system executes by design". Unlike traditional functional testing, AI functional testing must handle probabilistic output, multi-turn state, and the uncertainty of tool calling.
+AI functional testing focuses on "whether the system executes by design". Unlike traditional functional testing, it must handle probabilistic output, multi-turn state, and the uncertainty of tool calling.
 
 ### 1. Input Equivalence Class Partitioning
 
@@ -403,7 +403,7 @@ Although AI output is probabilistic, you can still define an "output contract" t
 - **Schema contract**: whether field names, types, and required fields match the definition;
 - **Content constraints**: whether it contains required information (such as citation sources) and whether forbidden content is triggered.
 
-The output contract is not "exact match" but "structural constraints".
+The output contract is "structural constraints", not "exact match".
 
 ### 3. Tool Calling Correctness
 
@@ -486,13 +486,13 @@ evaluation:
   criteria: "Whether the tool selection is correct and the parameters are complete and valid"
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The core of AI functional testing is "replacing exact match with structured contracts". Through input equivalence class partitioning, output contract validation, tool calling correctness, and multi-turn state validation, probabilistic output is brought into a controllable testing framework.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
 Structuring AI functional test cases (such as the YAML format above) makes them easy to maintain manually and convenient for automated execution and regression. The test case itself is a "machine-consumable context".
 
@@ -500,7 +500,7 @@ Structuring AI functional test cases (such as the YAML format above) makes them 
 
 ---
 
-## Six. AI Effectiveness Evaluation
+## 6. AI Effectiveness Evaluation
 
 Functional testing answers "does it work", while effectiveness evaluation answers "does it work well". The effectiveness of an AI system must be quantified with a metric system, not by subjective feeling.
 
@@ -528,7 +528,7 @@ Manual evaluation is the "gold standard" of effectiveness evaluation, but it is 
 
 ### 3. Automated Evaluation
 
-Automated evaluation is a necessary means for large-scale evaluation:
+Large-scale evaluation requires automated evaluation:
 
 - **LLM-as-a-Judge**: uses a stronger model to judge the output of the tested model, suitable for open-ended tasks. Note the judge model's own bias and capability ceiling.
 - **Pairwise comparison**: lets the judge model choose the better of two candidate answers; more stable than absolute scoring.
@@ -542,13 +542,13 @@ Automated evaluation cannot fully replace manual evaluation, but can serve as an
 - **Private Benchmark**: an evaluation set built from business data, closer to real scenarios, but requires continuous maintenance and prevention of data contamination.
 - **Data contamination**: if evaluation data leaks into training data, evaluation results will be inflated. Use unpublished private datasets or dynamically generated evaluation samples.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 AI effectiveness evaluation requires a layered metric system: manual evaluation sets the baseline, automated evaluation does regression, and private Benchmark fits the business. The three methods complement each other; no single metric can fully reflect effectiveness.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Using only one metric (such as accuracy) to measure AI system effectiveness. Different task dimensions need different metrics; a single metric easily masks shortcomings, leading to "metrics look good but users are unsatisfied".
 
@@ -556,7 +556,7 @@ Using only one metric (such as accuracy) to measure AI system effectiveness. Dif
 
 ---
 
-## Seven. Robustness Testing
+## 7. Robustness Testing
 
 Robustness is the ability of an AI system to maintain stable output when facing unexpected input and environment changes. Robustness testing focuses on "whether the system is still reliable under perturbation".
 
@@ -598,13 +598,13 @@ If a slight paraphrase causes output quality to drop sharply, the system is over
 
 Robustness is closely related to reliability: robustness is "still working correctly under perturbation", while reliability is "continuously working correctly over long operation". Robustness testing is a prerequisite for reliability assurance.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Robustness testing covers five dimensions: Prompt perturbation, boundary input, distribution shift, long-range stability, and stress testing. The goal is to validate that the system maintains acceptable quality under unexpected conditions, not just performs well under "ideal input".
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Believing the system is reliable just because tests pass under "standard input". Real user input varies widely; systems lacking robustness testing often fail frequently in boundary scenarios after launch.
 
@@ -612,7 +612,7 @@ Believing the system is reliable just because tests pass under "standard input".
 
 ---
 
-## Eight. AI Security Testing
+## 8. AI Security Testing
 
 AI security is the most easily overlooked yet most consequential part of AI engineering. The attack surface of an AI system is broader than traditional software, because the model can be manipulated by input and can also leak training data.
 
@@ -691,7 +691,7 @@ Jailbreak is bypassing the model's safety restrictions to induce it to generate 
 - **Bias**: whether the model produces discriminatory output on gender, race, region, etc.;
 - **Harmful content**: whether it generates violent, illegal, or ethically violating content.
 
-Content compliance is not only a technical issue but also a legal and brand issue; different regions and industries have different compliance requirements.
+Content compliance is both a technical issue and a legal and brand issue; different regions and industries have different compliance requirements.
 
 ### 5. Model Supply Chain
 
@@ -699,13 +699,13 @@ Content compliance is not only a technical issue but also a legal and brand issu
 - **Dependency risk**: whether third-party libraries, embedding models, and vector databases have known vulnerabilities;
 - **Update risk**: whether model version upgrades introduce new security regressions.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 AI security testing covers five dimensions: Prompt injection, jailbreak, data leakage, content compliance, and model supply chain. Among them, indirect Prompt injection and data leakage are the risks that need the highest priority attention in RAG and Agent scenarios.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Believing that "the model provider has already done safety alignment, so the application layer does not need to test again". Alignment is a general-level protection; the application layer's business scenarios, retrieved content, and tool permissions all differ, so security testing must be supplemented at the application layer.
 
@@ -713,7 +713,7 @@ Believing that "the model provider has already done safety alignment, so the app
 
 ---
 
-## Nine. AI Model Effectiveness Evaluation Methods
+## 9. AI Model Effectiveness Evaluation Methods
 
 Effectiveness evaluation is not a one-time activity, but a continuous process throughout the model lifecycle. Evaluation methods need to cover three stages: offline, online, and continuous monitoring.
 
@@ -770,13 +770,13 @@ The table below compares the key differences between offline evaluation and onli
 | Representativeness | Depends on evaluation set quality | Real scenarios |
 | Applicable scenarios | Version comparison, regression gate | Effectiveness validation, long-term monitoring |
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
-AI model effectiveness evaluation requires a three-layer closed loop of "offline + online + continuous monitoring". Offline evaluation guards the launch gate, A/B testing validates real effectiveness, and continuous monitoring prevents online regression. All three layers are indispensable.
+AI model effectiveness evaluation requires three layers of "offline + online + continuous monitoring". Offline evaluation guards the launch gate, A/B testing validates real effectiveness, and continuous monitoring prevents online regression. All three layers are indispensable.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
 Integrating the Quality Gate into the CI/CD pipeline, so that every model or Prompt change must pass Golden set evaluation before launch, is the key step to engineering evaluation methods.
 
@@ -784,7 +784,7 @@ Integrating the Quality Gate into the CI/CD pipeline, so that every model or Pro
 
 ---
 
-## Ten. Using AI Testing Methods to Improve R&D and Testing Efficiency
+## 10. Using AI Testing Methods to Improve R&D and Testing Efficiency
 
 The previous sections discussed "how to test AI systems". This section discusses "how to use AI methods to improve testing and R&D efficiency". This is the other side of the value of the AI testing system: testing methods themselves can also be AI-enhanced.
 
@@ -846,15 +846,15 @@ Receive testing task
 → Output test report
 ```
 
-This closed loop is exactly the landing of context engineering in testing: the code, requirements, test results, and tool feedback the Agent obtains at each step all form the context for its next action. Context quality determines the reliability of the Agent testing closed loop.
+This closed loop is the landing of context engineering in testing: the code, requirements, test results, and tool feedback the Agent obtains at each step all form the context for its next action. Context quality determines the reliability of the Agent testing closed loop.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 AI testing methods are not only for "testing AI systems", but can in turn "improve testing and R&D efficiency". From test generation, defect prediction, and regression selection to the Agent-driven testing closed loop, the core logic is to apply the concept of context engineering to the testing process.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
 When building an Agent-driven testing closed loop, the key is not whether the Agent can write test code, but whether the team can provide structured requirements, interfaces, constraints, and acceptance criteria for the Agent. This is exactly the same as the requirements of context engineering.
 
@@ -862,7 +862,7 @@ When building an Agent-driven testing closed loop, the key is not whether the Ag
 
 ---
 
-## Eleven. AI Testing Practice Checklist
+## 11. AI Testing Practice Checklist
 
 ### 1. Technical Principle Understanding
 
@@ -936,7 +936,7 @@ AI functional testing
 
 These two lines are not parallel but mutually supporting: understanding technical principles lets you design effective tests, and systematic testing lets technical capabilities land stably.
 
-A common cognitive bias is: believing that "using the strongest model, quality is naturally guaranteed". But the model determines the capability ceiling, while the testing system determines whether this capability ceiling can be stably reached in real engineering. AI engineering without a testing system is essentially "going live naked".
+A common cognitive bias is: believing that "using the strongest model, quality is naturally guaranteed". But the model determines the capability ceiling, while the testing system determines whether this capability ceiling can be stably reached in real engineering. AI engineering without a testing system is essentially going live naked.
 
 Another cognitive bias is: believing that "AI testing is just running a few more rounds to see if the output is right". But the probabilistic output of AI systems means there must be a metric system, evaluation set, regression baseline, and security testing, otherwise hidden quality and security risks cannot be discovered.
 
@@ -956,7 +956,7 @@ LLM is a probabilistic model that "receives text and outputs text"; it itself ca
 
 ### 2. When should RAG be used, and when should it not be used?
 
-RAG is suitable for scenarios that need private knowledge, time-sensitive information, or domain documents, such as enterprise internal knowledge Q&A, policy and regulation lookup, and product manual retrieval. If the task is entirely within the model's general capability (such as general code generation, general translation, text summarization) and does not rely on the latest or private information, then RAG is not needed; introducing it only adds complexity and failure points. The criterion is: does the model "not know" the key information needed to complete the task — if it does not know and the information is retrievable, use RAG; if it knows or is not retrievable, do not use it.
+RAG is suitable for scenarios that need private knowledge, time-sensitive information, or domain documents, such as enterprise internal knowledge Q&A, policy and regulation lookup, and product manual retrieval. If the task is entirely within the model's general capability (such as general code generation, general translation, text summarization) and does not rely on the latest or private information, then RAG is not needed; introducing it only adds complexity and failure points. The criterion is simple: does the model "not know" the key information needed to complete the task — if it does not know and the information is retrievable, use RAG; if it knows or is not retrievable, do not use it.
 
 ### 3. What is the core difference between AI testing and traditional software testing?
 

@@ -1,6 +1,6 @@
 ---
 title: "V8 Engine Deep Dive: JIT Compilation and Garbage Collection"
-description: A deep dive into the V8 compilation pipeline, tiered JIT with Ignition/Sparkplug/Maglev/TurboFan, hidden classes, inline caching, generational garbage collection, and the Orinoco algorithm.
+description: The V8 compilation pipeline, tiered JIT with Ignition/Sparkplug/Maglev/TurboFan, hidden classes, inline caching, generational garbage collection, and the Orinoco algorithm.
 category: JavaScript
 tags:
   - JavaScript
@@ -51,7 +51,7 @@ This article weaves V8's core mechanisms into a complete model so that you can a
 
 Understanding these will let you write code that "cooperates with V8's fast paths" instead of fighting against it.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 V8's performance comes from the collaboration of tiered JIT (Ignition interpreter + Sparkplug/Maglev/TurboFan compilers), hidden classes (uniform object shape), inline caching (cached property lookup), and generational GC (optimized for short-lived objects). The essence of most "performance anti-patterns" is that they destroy the preconditions these mechanisms rely on: consistent shape, stable types, and short-lived objects.
 :::
 
@@ -105,7 +105,7 @@ This is a classic engineering trade-off:
 - **Pure interpretation** starts fast, but repeatedly interpreting hot code is too slow at runtime.
 - **Tiered JIT** lets code "start running quickly through interpretation, then get progressively optimized as it gets hot," balancing startup speed and runtime performance.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 V8's pipeline is a tiered JIT: "Parse → Ignition bytecode interpretation → Sparkplug → Maglev → TurboFan." The interpreter ensures fast startup, the compilers ensure hot code runs fast, type feedback links every tier, and deoptimization guarantees correctness. Understanding this pipeline is the key to understanding why code may become faster or slower after running a few times.
 :::
 
@@ -171,7 +171,7 @@ flowchart LR
     class D decide;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The core of JIT is "optimistic specialization + type feedback + deoptimization": specialized machine code is generated based on types observed at runtime, and if assumptions are broken, execution falls back. Therefore, keeping types and shapes stable is the key to keeping hot functions on the optimized path — which is exactly the goal served by hidden classes and inline caching in the following sections.
 :::
 
@@ -249,7 +249,7 @@ The following operations break hidden-class sharing or force V8 to degrade:
 - **Inconsistent dynamic addition order**: As shown above, produces different hidden classes.
 - **Heavy mixing of indexed properties (array elements) and named properties**: Affects the fast-elements path.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Hidden classes are the key to giving dynamic languages static-layout performance: objects with the same shape share a hidden class, and property access becomes a fast "hidden class + offset" operation. The core rule for keeping objects on the fast path is to "initialize all properties once, in the same order, inside the constructor."
 :::
 
@@ -317,7 +317,7 @@ const mixed = [{ x: 1 }, { x: 1, y: 2 }, { x: 1, z: 3 }]
 mixed.forEach((p) => p.x) // polymorphic, slow
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Inline caching stores the "hidden class + offset" lookup result at the access point, making repeated accesses close to direct value retrieval. IC has a degradation path from monomorphic → polymorphic → megamorphic. Keeping object shapes consistent and letting hot functions handle only a few shapes is the key to keeping IC on the fast path.
 :::
 
@@ -385,7 +385,7 @@ flowchart TB
 - **Concurrent Sweeping / Concurrent Compacting**: Sweeping and compacting are also performed concurrently when possible.
 - **Incremental Marking**: A single long mark is split into multiple small steps, interleaved with main-thread execution, avoiding one long pause.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 V8 GC is based on the generational hypothesis: the young generation uses semi-space copy (Scavenge), and the old generation uses Mark-Sweep / Mark-Compact. Orinoco pushes pauses down to the millisecond level through concurrent marking, parallel Scavenge, and incremental marking. However, GC pressure still depends on how many short-lived objects you create — creating fewer temporary objects on hot paths directly lowers GC frequency.
 :::
 
@@ -473,7 +473,7 @@ function animate() {
 
 Sparse arrays (many holes) or oversized arrays fall off the fast-elements path and degrade to dictionary elements. Avoid using objects as sparse maps; use `Map` when necessary.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The common essence of performance anti-patterns is destroying hidden-class consistency (`delete`, inconsistent order), type stability (mixed shapes), or amplifying object-lifecycle costs (frequently creating short-lived objects). The optimization direction is "consistent shape, stable types, object reuse."
 :::
 
@@ -509,7 +509,7 @@ node --trace-opt --trace-deopt app.js
 
 The output will mark entries such as `[optimizing: ...]` and `[deoptimizing: ...]`; the "reason" field can pinpoint specific shape / type inconsistencies.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The three-piece toolkit for analyzing V8 behavior: the Performance panel for long tasks and GC pauses, the Memory panel for heap usage and allocation hotspots, and `--trace-opt --trace-deopt` for optimization / deoptimization reasons. Performance optimization should start with observation and measurement before changing code.
 :::
 

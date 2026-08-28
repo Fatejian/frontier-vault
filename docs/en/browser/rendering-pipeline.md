@@ -1,6 +1,6 @@
 ---
 title: "Rendering Pipeline: From HTML to Pixels"
-description: A deep dive into the complete browser pipeline from HTML streaming parsing, CSSOM construction, render-tree synthesis, layout, paint layering, to GPU compositing.
+description: The complete browser pipeline from HTML streaming parsing, CSSOM construction, render-tree synthesis, layout, paint layering, to GPU compositing.
 category: Browser
 tags:
   - Browser Internals
@@ -50,10 +50,10 @@ Many frontend engineers understand browser rendering as "DOM + CSS = page," and 
 - What sits between Paint and Composite? Why doesn't `transform` trigger Layout?
 - How does GPU compositing assemble multiple layers onto the screen?
 
-This article does not turn the rendering pipeline into a list of definitions. It aims to build a **reasoning model**: after you change a piece of DOM or a CSS property, you can predict which pipeline stages the browser will walk through, the cost of each, and how they appear in the Performance panel.
+This article aims to build a **reasoning model**: after you change a piece of DOM or a CSS property, you can predict which pipeline stages the browser will walk through, the cost of each, and how they appear in the Performance panel.
 
-::: tip Key takeaway of this section
-The core of the rendering pipeline is not memorizing the names of five stages, but understanding **trigger conditions** and **data flow**. Every stage has input, output, and trigger conditions; optimization means reducing unnecessary triggers and shrinking the scope of each trigger.
+::: tip Core conclusion of this section
+The core of the rendering pipeline is understanding **trigger conditions** and **data flow**. Every stage has input, output, and trigger conditions; optimization means reducing unnecessary triggers and shrinking the scope of each trigger.
 :::
 
 ---
@@ -213,7 +213,7 @@ flowchart TB
     class MeetCSS,MeetScript,WaitCSS decision;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 HTML parsing is streaming, so earlier bytes are better. Synchronous scripts and CSS are the main blockers. Putting first-screen critical resources in HTML and using `defer` for non-critical JS are the core ways to reduce parsing cost.
 :::
@@ -273,7 +273,7 @@ The cost of Style calculation depends on:
 - Number of CSS rules
 - Selector complexity (descendant selectors and universal selectors are more expensive)
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 CSS blocks first render but not HTML parsing. Critical CSS should load as early as possible; non-critical CSS can be made asynchronous with the media hack. Keep selectors simple and avoid large-scale descendant selectors.
 :::
@@ -316,7 +316,7 @@ Understanding the difference between render tree and DOM explains many phenomena
 - Why a large number of `display: none` nodes slows initial rendering: although they are not painted, the DOM parsing and Style calculation stages still process them.
 - Why virtual lists optimize long lists: they reduce the number of Layout Tree nodes at the source.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Render tree ≠ DOM tree. `display: none` elements are not in the render tree and avoid initial Layout cost, but they are still in the DOM and still participate in parsing and Style calculation. Controlling DOM scale is the root solution.
 :::
@@ -364,7 +364,7 @@ element.getBoundingClientRect()
 window.scrollX / scrollY / innerWidth / innerHeight
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Layout is the most expensive stage of the rendering pipeline and has global impact. Prioritize avoiding it; when unavoidable, shrink its scope. Alternating reads and writes of layout information triggers forced synchronous layout; see the dedicated Layout Thrashing article.
 :::
@@ -417,7 +417,7 @@ Paint cost mainly comes from:
 
 A large-area blurred shadow such as `box-shadow: 0 0 50px rgba(0,0,0,0.5)` is very expensive because the browser either uses CPU software blur or multiple GPU samples.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Paint produces drawing instructions rather than pixels, organized by layers. Controlling repaint area, avoiding large-area blurred shadows, and using layers reasonably are the keys to reducing Paint cost.
 :::
@@ -454,7 +454,7 @@ Not all "GPU acceleration" is good:
 - Too many compositing layers slow down the Composite stage itself.
 - Abusing `will-change` causes memory bloat.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Composite is the only key stage of the rendering pipeline that completes outside the main thread. Making animations "only change transform / opacity" is the fundamental prerequisite for smooth animation, but more compositing layers are not always better.
 :::
@@ -503,9 +503,9 @@ Every call to this function triggers: DOM rebuild → Style recalculation → fo
 2. Read `clientWidth` first, then write in batch.
 3. Make shadows static backgrounds or use `filter` (compositing layer).
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
-The essence of bottleneck localization is answering: "Which pipeline stages does this operation trigger, and how expensive is each?" The color blocks in the Performance panel directly answer this.
+Bottleneck localization is answering one question: "Which pipeline stages does this operation trigger, and how expensive is each?" The color blocks in the Performance panel directly answer this.
 :::
 
 ---
@@ -576,7 +576,7 @@ Properties that do not change geometry but change visual appearance:
 
 These two properties are magical because they act on compositing layers: the browser does not need to recalculate layout or regenerate drawing instructions; it only changes the transform matrix or opacity during Composite.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 For animations, prefer `transform` and `opacity`. Use `transform: translate()` for movement, `transform: rotate()` for rotation, `transform: scale()` for scaling, and `opacity` for fade in/out.
 :::
@@ -624,7 +624,7 @@ DevTools → More tools → Rendering provides:
 - **Layer borders**: shows compositing-layer boundaries.
 - **FPS meter**: real-time frame rate.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The standard workflow for locating rendering bottlenecks: Performance recording → look at color distribution → find the longest block → locate the specific code → optimize specifically. The Rendering tab is used for auxiliary verification.
 :::

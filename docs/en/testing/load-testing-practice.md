@@ -119,13 +119,13 @@ The core value of load testing can be summarized as follows:
 5. **Verify third-party dependencies**: Test the behavior of dependent external services (e.g., external queue services) under high load, and simulate whether the system's degradation or circuit-breaker mechanism works when third parties fail — even if the external queue service fails, the system should withstand 10x or 30x traffic impact, allowing slowdown but not outage.
 6. **Cost optimization**: Determine the minimum-cost resource configuration (server count, database specifications) that meets performance requirements through testing, avoiding over-investment in hardware or cloud resources for unrealistic high loads.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
-Load testing is not only technical verification, but also business assurance. It exposes risks early, optimizes resource investment, and ensures the system still provides reliable service to users under real pressure.
+Load testing is both technical verification and business assurance. It exposes risks early, optimizes resource investment, and ensures the system still provides reliable service to users under real pressure.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Treating load testing as "run a script once before going live." This practice only yields a binary pass/fail conclusion and cannot answer where the inflection point is, how to attribute the bottleneck, or whether scaling is linear — wasting the value of testing at the final step.
 
@@ -218,7 +218,7 @@ flowchart TB
     class E1,E2,E3,E4,E5 exhaust;
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The three groups are progressive: waiting is the precursor of bottlenecks (throughput still rising, response time starting to climb), blocking is the outbreak of bottlenecks (throughput falling, error rate rising), and resource exhaustion is the physical root cause of blocking. The goal of load testing is to push the system to the critical point of these three groups and identify which resource reaches the boundary first.
 
@@ -260,13 +260,13 @@ Inflection point localization: find the concurrency at which TPS stops growing
 Scaling validation: after horizontal scaling to 4 instances, does TPS grow linearly?
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of the test plan is "quantified objectives + realistic load model + consistent environment." Vague objectives only produce vague conclusions, and a load model divorced from real business makes test results lose their guiding significance.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Test environment configuration is lower than production, leading to the conclusion "the system can handle X concurrency." In the actual production environment, hardware is stronger, and the real bottleneck may be completely different; the reverse is also true. Environmental consistency is the prerequisite for credible test conclusions.
 
@@ -308,7 +308,7 @@ Assert the code field of the returned JSON is 0 (checkpoint)
 
 After parameterization, first replay the script with a single user to ensure functional correctness and troubleshoot script logic or data issues. After single-user validation, gradually increase concurrency to verify whether parameterized data is correctly allocated, correlations take effect, and assertions trigger.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Script quality determines the credibility of test conclusions. Scripts without parameterization can only test single-point performance and cannot expose concurrency issues; scripts without assertions will misjudge "returning an error page" as "request successful."
 
@@ -367,7 +367,7 @@ flowchart TB
     class A1,A2,A3,A4 analysis;
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Load patterns should match test objectives: use ramp-up to find inflection points, and constant load to verify stability. Monitoring configuration must be completed before testing, covering infrastructure, application, database, and middleware layers; otherwise, bottleneck attribution after testing becomes "guessing."
 
@@ -407,7 +407,7 @@ Observe key metrics in real time through dashboards (Grafana Dashboard):
 
 The value of real-time monitoring lies in "testing while checking": when response time suddenly degrades, you can immediately check CPU, connection pool, and lock waiting data at the same time point, quickly locking the bottleneck layer. If you wait until the test ends to check monitoring, time points will not align, and attribution becomes much more difficult.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of the execution phase is "real-time observation + time-point alignment." Warm-up excludes cold-start interference, and real-time monitoring transforms bottleneck localization from "post-hoc guessing" to "on-site verification."
 
@@ -471,13 +471,13 @@ Typical bottlenecks at three levels:
 - **Architecture layer**: insufficient database connection pool, cache invalidation, unreasonable load balancing strategy.
 - **Resource layer**: CPU overload, memory leak, disk I/O bottleneck, network bandwidth bottleneck.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Bottleneck diagnosis must be layered: first look at the resource layer (easiest to quantify), then the architecture layer (connection pool / cache / load balancing), and finally the code layer (SQL / algorithm / locks). Leapfrog attribution is a common cause of diagnosis failure — seeing high CPU and going to optimize code, when the real bottleneck is that the connection pool configuration is too small, causing request backlog.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Only looking at average response time. The average can be lowered by a large number of fast requests, masking the existence of a few very slow requests. An interface with an average of 500ms may have 95% of requests completed within 100ms, but 5% of requests take 5 seconds — these 5% of users have a terrible experience, which is hidden by the average. P95 / P99 must be examined.
 
@@ -527,7 +527,7 @@ Error rate rises from 0.1% to 3.5% after 250 concurrency
 Conclusion: system inflection point is at 200 concurrency; bottleneck is database connection pool
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of the indicator system is "look at distribution, look at trends, look at correlations." Averages hide long tails, instantaneous values hide inflection points, and a single indicator hides bottleneck attribution. P95 is the core SLA, TPS trend locates the inflection point, and error type distribution points to the bottleneck layer.
 
@@ -569,7 +569,7 @@ Degradation logic returns local queuing or friendly prompt
 System can still serve core processes when external queue service is down
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Third-party dependency pressure validation must answer two questions: when the third party is normal but slow, will the main system be dragged down? When the third party is completely down, can the main system survive by degrading? Dependency calls without timeout control and circuit-breaker mechanisms are time bombs for system stability.
 
@@ -643,7 +643,7 @@ Blocking in load testing includes: lock contention blocking, connection pool blo
 
 Resource exhaustion is the physical root cause of blocking: CPU saturation, memory leak, disk I/O bottleneck, network bandwidth depletion, and database connection exhaustion. Corresponding strategies are vertical scaling (upgrading hardware), horizontal scaling (adding instances), and resource isolation (preventing a single tenant from collapsing the global system).
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 All load testing phenomena can be classified into the three groups of "waiting, blocking, and resource exhaustion." This unified model is the thinking framework for load testing: first observe which group the phenomenon belongs to, then trace the root cause at the previous layer, and finally choose the corresponding strategy. Waiting corresponds to scaling and asynchronous processing; blocking corresponds to rate limiting and splitting; resource exhaustion corresponds to scaling and isolation.
 

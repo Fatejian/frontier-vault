@@ -25,7 +25,7 @@
 ## 项目特色
 
 - **深度优先**：每篇文章 20+ 分钟长文，覆盖原理、机制、工程实践与可执行清单，而非碎片化技巧罗列
-- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇三件套、章节四件套、Mermaid 五色主题、反例/正例对照、统一模型图、分组实践清单
+- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇结构、章节写法、Mermaid 五色主题、反例/正例对照、统一模型图、分组实践清单
 - **核心论点贯穿**：每篇文章有明确核心论点，在开篇 `::: info`、每章 `::: tip`、结语 `blockquote` 中三次呼应
 - **可执行结论**：以分组实践清单（task list）收尾，检查项具体可验证，避免"看起来优化了"的伪结论
 - **数据驱动 i18n**：所有语言元数据集中管理在单一数据源，通过代码生成 `config.js`，新增语言无需修改任何硬编码
@@ -121,7 +121,7 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 
 所有 AI 技能集中管理在 [`skills/`](skills/) 目录，与 `docs/`（内容）、`scripts/`（工具）平级，作为独立的工程资产层随仓库版本化，克隆即得：
 
-- **项目自研**（`skills/project/`，2 个）：`frontier-vault-article-style`（写作规范，8 子 Skill）、`svg-color-contrast-debug`（SVG 对比度调试方法论）
+- **项目自研**（`skills/project/`，2 个）：`frontier-vault-article-style`（文章写作风格规范）、`svg-color-contrast-debug`（SVG 对比度调试方法论）
 - **第三方技能**（`skills/third-party/`，14 个）：源自 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) 与 [`oil-oil/beautify-github-readme`](https://github.com/oil-oil/beautify-github-readme)，涵盖图像生成、UI 设计、README 美化、工作流四类
 - **运行时副本**：`.agents/skills/` 由 `skills-lock.json` 管理安装/更新，与 `skills/` 权威副本职责分离
 

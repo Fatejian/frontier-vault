@@ -62,7 +62,7 @@ flowchart TB
 
 ## Learning Path
 
-1. Read the included "Context" article to build a holistic understanding of the six-layer context model and AI programming transformation.
+1. Read the included "Context" article to build a complete understanding of the six-layer context model and AI programming transformation.
 2. Map your own workflow and identify the weakest context layer you currently supply (language / task / business / state / organization / constraint).
 3. Design personal task packages and upgrade "writing prompts" into "building information environments."
 4. Accumulate shared context assets at the team level to establish a reusable engineering baseline.

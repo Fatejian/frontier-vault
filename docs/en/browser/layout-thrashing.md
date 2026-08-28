@@ -1,6 +1,6 @@
 ---
 title: "The Truth About Layout Thrashing: How It Wrecks Your Animations"
-description: 'From forced synchronous layout to layout thrashing, a deep dive into the cost of interleaved reads/writes, the correct use of rAF, and Layout-stage optimization strategies.'
+description: 'From forced synchronous layout to layout thrashing, covering the cost of interleaved reads/writes, the correct use of rAF, and Layout-stage optimization strategies.'
 category: Browser
 tags:
   - Browser Internals
@@ -12,7 +12,7 @@ outline: deep
 
 # The Truth About Layout Thrashing: How It Wrecks Your Animations
 
-> Subtitle: From forced synchronous layout to layout thrashing, a deep dive into the cost of interleaved reads/writes, the correct use of rAF, and Layout-stage optimization strategies.
+> Subtitle: From forced synchronous layout to layout thrashing, covering the cost of interleaved reads/writes, the correct use of rAF, and Layout-stage optimization strategies.
 >
 > Target readers: Intermediate to advanced frontend engineers, frontend architects, and animation/interaction performance owners.
 >
@@ -24,7 +24,7 @@ Alternating layout reads and writes inside a loop forces the browser to repeated
 
 ## Table of Contents
 
-- [Preface](#preface)
+- [Introduction](#introduction)
 - [1. What Is Forced Synchronous Layout (FSL)](#what-is-forced-synchronous-layout)
 - [2. How Read-Write Alternation Causes Layout Thrashing](#how-read-write-alternation-causes-layout-thrashing)
 - [3. Bad vs. Good Code Examples](#bad-vs-good-code-examples)
@@ -36,7 +36,7 @@ Alternating layout reads and writes inside a loop forces the browser to repeated
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Preface {#preface}
+## Introduction
 
 If you have ever optimized frontend animations, you have probably heard: "Don't read `offsetWidth` inside a loop." But few people explain why.
 
@@ -46,13 +46,13 @@ But when you **read layout information** (e.g. `offsetWidth`, `getBoundingClient
 
 Put this mechanism inside a loop where each iteration writes then reads, and the browser is forced to perform a full Layout on every iteration. An originally O(n) batched operation degrades to O(n²). This is **Layout Thrashing**.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The root cause of layout thrashing is not "reading layout information," but "reading after writing." Understand this mechanism, and you can avoid it structurally instead of memorizing a list of "properties that trigger Layout."
 :::
 
 ---
 
-## 1. What Is Forced Synchronous Layout (FSL)? {#what-is-forced-synchronous-layout}
+## 1. What Is Forced Synchronous Layout (FSL)?
 
 ### 1. Normal rendering rhythm
 
@@ -128,7 +128,7 @@ flowchart TB
     class T1,T2,T3,T4,T5,T6,T7,T8,T9 thrash;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Forced synchronous layout is a single write-read pair that triggers one early Layout. Layout Thrashing is repeated write-read pairs in a loop that trigger N early Layouts — the real culprit behind performance collapse.
 :::
 
@@ -138,7 +138,7 @@ Treating "reading `offsetWidth` is always slow" as an iron rule. In reality, a *
 
 ---
 
-## 2. How Read-Write Alternation Causes Layout Thrashing {#how-read-write-alternation-causes-layout-thrashing}
+## 2. How Read-Write Alternation Causes Layout Thrashing
 
 ### 1. Why write-then-read triggers early Layout
 
@@ -170,13 +170,13 @@ A total of N Layouts. Each Layout cost is not necessarily "processing one elemen
 
 Chromium has a minor optimization: in some cases, consecutive forced synchronous layouts are merged. But this only works in very simple scenarios and cannot be relied upon. In loops, or with multiple interdependent elements, the optimization fails.
 
-::: tip Key takeaway of this section
-The essence of layout thrashing: N Layouts that should have been batched are forced to complete one by one during JS execution. The fundamental fix is "read in batch first, then write in batch," so the browser performs only one Layout at the end of the frame.
+::: tip Core conclusion of this section
+The core of layout thrashing: N Layouts that should have been batched are forced to complete one by one during JS execution. The fundamental fix is "read in batch first, then write in batch," so the browser performs only one Layout at the end of the frame.
 :::
 
 ---
 
-## 3. Bad vs. Good Code Examples {#bad-vs-good-code-examples}
+## 3. Bad vs. Good Code Examples
 
 ### 1. Bad example: read-write alternation in a loop
 
@@ -282,13 +282,13 @@ cards.forEach((card, i) => {
 })
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The fixed pattern for fixing layout thrashing: **read in batch first, then write in batch**. No matter how complex the loop, as long as reads and writes are separated in time, N Layouts collapse into 1.
 :::
 
 ---
 
-## 4. The Correct Way to Use requestAnimationFrame {#the-correct-way-to-use-requestanimationframe}
+## 4. The Correct Way to Use requestAnimationFrame
 
 ### 1. What rAF does
 
@@ -375,7 +375,7 @@ requestAnimationFrame(() => {
 })
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 rAF is not a cure for layout thrashing; **read/write separation is**. rAF solves "animation alignment with rendering" and "merging multiple writes into one frame." Remember: read first, then write; inside rAF, only write, don't read.
 :::
 
@@ -385,7 +385,7 @@ Wrapping all DOM operations in rAF to "improve performance." This won't fix layo
 
 ---
 
-## 5. Layout-Stage Optimization Strategies {#layout-stage-optimization-strategies}
+## 5. Layout-Stage Optimization Strategies
 
 ### 1. Prefer transform / opacity for animations
 
@@ -454,13 +454,13 @@ React, Vue, Solid, and others all have batching mechanisms:
 - **Vue 3**: based on reactive-system dependency tracking, multiple modifications in the same tick are merged into one update.
 - But framework batching solves "multiple state changes merged into one render"; it **cannot** solve layout thrashing caused by actively reading/writing the DOM inside effects.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Layout optimization toolkit: ① replace geometric properties with `transform`/`opacity`; ② isolate with `contain`; ③ control DOM size with virtual lists; ④ batch insertions with `DocumentFragment`. Framework batching cannot replace manual read/write separation.
 :::
 
 ---
 
-## 6. How to Identify and Diagnose Layout Thrashing {#how-to-identify-and-diagnose-layout-thrashing}
+## 6. How to Identify and Diagnose Layout Thrashing
 
 ### 1. Performance panel
 
@@ -488,13 +488,13 @@ The Lighthouse report has a "Minimize layout thrashing" item that points out spe
 - **INP**: slow interaction response but JS execution time is not high — Layout may be occupying the main thread.
 - **CLS**: cumulative layout shift, reflecting visual stability.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The fastest path to diagnose layout thrashing: Performance panel recording → look for consecutive purple Layout blocks → click to see the triggering function → check for write-read alternation. Forced synchronous layout warnings are the most direct signal.
 :::
 
 ---
 
-## 7. Common Trigger Scenarios and Pitfalls {#common-trigger-scenarios-and-pitfalls}
+## 7. Common Trigger Scenarios and Pitfalls
 
 ### 1. Frequent `getBoundingClientRect` in responsive components
 
@@ -559,13 +559,13 @@ Some animations need per-frame element-position measurements (e.g. drag snapping
 - Cache measurement results in a ref to avoid repeated reads.
 - Displacement expressible with `transform` should never use `top`/`left`.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The most common layout thrashing traps: reading `getBoundingClientRect` in scroll events, internal read/write alternation in third-party libraries, and ref measurements inside framework effects. Use `IntersectionObserver` instead of manual measurement, and `transform` instead of geometric properties.
 :::
 
 ---
 
-## Conclusion: Make Read-Write Separation a Muscle Memory {#conclusion-make-read-write-separation-a-muscle-memory}
+## Conclusion: Make Read-Write Separation a Muscle Memory
 
 Layout thrashing is a "low-cost, high-return" optimization point in frontend performance: the fix is simple (read/write separation), but the effect is immediate (several-fold FPS improvement). It is also a key interview topic that distinguishes "can write code" from "understands the browser."
 
@@ -585,7 +585,7 @@ Apply this mental model to daily code, and you can eliminate most layout thrashi
 
 ---
 
-## FAQ {#faq}
+## FAQ
 
 ### 1. Why does "read first, then write" solve layout thrashing?
 
@@ -609,7 +609,7 @@ Not necessarily. If there are no unprocessed style changes, `getBoundingClientRe
 
 ---
 
-## Sources {#sources}
+## Sources
 
 This article is based on the Chromium rendering pipeline documentation, the web.dev performance series, the Chrome DevTools documentation, and the author's engineering practice. Key technical details can be found in:
 

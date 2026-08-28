@@ -21,9 +21,9 @@ outline: deep
 >
 > 阅读时间：约 25 分钟
 
-::: info 一句话
-Agent 工程化的本质，是从单次对话的 Prompt 技巧，走向可调度、可隔离、可观测的工具运行时系统。
-:::
+:::: info 一句话
+Agent 工程化的终点，是一套可调度、可隔离、可观测的工具运行时系统。单次对话的 Prompt 技巧只是起点。
+::::
 
 ## 目录
 
@@ -108,7 +108,7 @@ flowchart TB
 
 ### 1. Context：什么进上下文、什么不进
 
-AI Coding 不是"模型变强就能自动写好代码"，而是"在每一步给模型最相关、最准确、最有结构的信息"。Claude Code 通过 `.claude/`、Cursor 通过 `.cursor/rules`、Copilot 通过 `custom_instructions` 把团队规范、技术栈、命名约定固化为长期上下文。**真正决定 AI Coding 质量的是上下文工程，而不是单条 Prompt 的措辞。**
+AI Coding 靠的不是模型变强就能自动写好代码，靠的是在每一步给模型最相关、最准确、最有结构的信息。Claude Code 通过 `.claude/`、Cursor 通过 `.cursor/rules`、Copilot 通过 `custom_instructions` 把团队规范、技术栈、命名约定固化为长期上下文。**真正决定 AI Coding 质量的是上下文工程，单条 Prompt 的措辞反而在其次。**
 
 ### 2. Tool Use：理解工具的语义与副作用
 
@@ -144,23 +144,23 @@ System Prompt 描述角色、规范、工具与权限边界；User Prompt 描述
 验收：P95 < 300ms、单测全绿、安全扫描通过、产出变更摘要
 ```
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
-AI Coding 的本质不是"会用工具写代码"，而是把自然语言指令转化为"可消费的上下文 + 可调用的工具 + 可验证的反馈闭环"。理解三大工具在 Context / Tool Use / Workflow 上的共性，才能从用户升级为工程师。
+AI Coding 的核心是把自然语言指令转化为"可消费的上下文 + 可调用的工具 + 可验证的反馈闭环"。理解三大工具在 Context / Tool Use / Workflow 上的共性，才能从用户升级为工程师。
 
-:::
+::::
 
-::: warning 常见误区
+:::: warning 常见误区
 
 把 AI Coding 等同于"打开 Cursor 按 Tab"。这只用到上下文的最浅层。真正的工程化要建立任务包模板、长期上下文资产和验证闭环，否则永远停在"看起来很快、实际不可控"的阶段。
 
-:::
+::::
 
 ---
 
 ## 二、Agent Framework — 理解 Runtime 的工作机制
 
-进入第二阶段，最大的认知陷阱是"学框架 API"。LangChain、OpenAI Agents SDK、AutoGen、CrewAI 各自有 API、有自己的概念体系，但如果只学 API，等于在背语法；**真正要学的是 Agent Runtime 的工作机制**——它如何循环、如何维护状态、如何调度工具、如何在什么条件下终止。
+进入第二阶段，最大的认知陷阱是"学框架 API"。LangChain、OpenAI Agents SDK、AutoGen、CrewAI 各自有 API、有自己的概念体系，但只学 API 等于在背语法。**要学的是 Agent Runtime 的工作机制**——它如何循环、如何维护状态、如何调度工具、在什么条件下终止。
 
 四个框架各有侧重，理解它们的设计取向比记忆 API 更重要：
 
@@ -169,7 +169,7 @@ AI Coding 的本质不是"会用工具写代码"，而是把自然语言指令�
 - **AutoGen**：以多 Agent 对话为核心，强调角色分工与消息传递，适合探索性任务和辩论式协作；
 - **CrewAI**：以角色和流程为核心，把 Agent / Task / Crew 拆成显式结构，适合业务流程化的协作。
 
-但四个框架的底层都收敛到同一个模型：**Agent Runtime = 循环 + 状态 + 工具注册表 + 终止条件**。下图把这一通用 Runtime 结构显式化：
+四个框架的底层都收敛到同一个模型：**Agent Runtime = 循环 + 状态 + 工具注册表 + 终止条件**。下图把这一通用 Runtime 结构显式化：
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
@@ -227,13 +227,13 @@ Agent Runtime 至少包含"感知 → 推理 → 决策 → 观察 → 终止判
 
 ### 3. 工具注册表：调度的入口
 
-工具注册表是 Runtime 与外部世界之间的契约层。它负责：声明可用工具、校验参数 Schema、检查调用权限、记录调用历史。一个没有工具注册表的"Agent"，本质上只是个会聊天的模型。
+工具注册表是 Runtime 与外部世界之间的契约层。它负责：声明可用工具、校验参数 Schema、检查调用权限、记录调用历史。一个没有工具注册表的"Agent"，说白了只是个会聊天的模型。
 
 ### 4. 多 Agent 协作：Handoff 与消息传递
 
-OpenAI Agents SDK 的 Handoff、AutoGen 的消息传递、CrewAI 的 Crew 都在解决同一个问题：**单个 Agent 的上下文窗口与能力边界不够用**。多 Agent 协作的本质是"把上下文分区、把职责分层"，每个 Agent 只看自己负责的子上下文。
+OpenAI Agents SDK 的 Handoff、AutoGen 的消息传递、CrewAI 的 Crew 都在解决同一个问题：**单个 Agent 的上下文窗口与能力边界不够用**。多 Agent 协作要做的事是把上下文分区、把职责分层，每个 Agent 只看自己负责的子上下文。
 
-下面这组反例与正例对照，展示了"无终止条件的循环"与"带终止条件的 Runtime"在生产环境下的本质差别：
+下面这组反例与正例对照，展示了"无终止条件的循环"与"带终止条件的 Runtime"在生产环境下的差别：
 
 ```python
 # 反例：无终止条件的 Agent 循环可能死循环
@@ -259,23 +259,23 @@ for step in range(MAX_STEPS):
 return Result(status="step_limit_exceeded")
 ```
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
-学 Agent Framework 不是学 API，而是学 Runtime。Runtime 的核心是"循环 + 状态 + 工具注册表 + 终止条件"。生产级 Runtime 必须有显式终止条件和资源预算，否则一定会在某个边界场景失控。
+学 Agent Framework 学的是 Runtime，不是 API。Runtime 的核心是"循环 + 状态 + 工具注册表 + 终止条件"。生产级 Runtime 必须有显式终止条件和资源预算，否则一定会在某个边界场景失控。
 
-:::
+::::
 
-::: warning 常见误区
+:::: warning 常见误区
 
-把 LangChain 调用链跑通就当作"会用 Agent 了"。框架封装的循环、记忆和工具调用都是默认行为，默认行为很少能在生产环境直接落地。不理解 Runtime 机制，就没办法在出问题时定位是循环、状态还是工具注册表的问题。
+把 LangChain 调用链跑通就当作"会用 Agent 了"。框架封装的循环、记忆和工具调用都是默认行为，默认行为很少能在生产环境直接落地。不理解 Runtime 机制，出问题时就没法定位是循环、状态还是工具注册表的问题。
 
-:::
+::::
 
 ---
 
 ## 三、MCP 与 Function Calling — Agent 的核心是 Tool 调度
 
-第三阶段是整个学习路线的分水岭。源文章的一句话点破了 Agent 工程的核心：**Agent 的核心就是 Tool 调度**。这句话不是修辞，而是工程事实——LLM 的推理能力只有在被 Tool 落地为真实副作用时，才从"会聊天"升级为"会做事"。MCP（Model Context Protocol）和 Function Calling 是当前 Tool 调度的两套主流方案，理解它们的协议、Schema、风险与 Runtime，才能把 Tool 治理做扎实。
+第三阶段是整个学习路线的分水岭。源文章一句话点破了 Agent 工程的核心：**Agent 的核心就是 Tool 调度**。这是工程事实——LLM 的推理能力只有在被 Tool 落地为真实副作用时，才从"会聊天"升级为"会做事"。MCP（Model Context Protocol）和 Function Calling 是当前 Tool 调度的两套主流方案，理解它们的协议、Schema、风险与 Runtime，才能把 Tool 治理做扎实。
 
 ### 1. Function Calling：协议层面的事实标准
 
@@ -315,7 +315,7 @@ const tool = {
 };
 ```
 
-正例与反例的差异不是"写得更详细"，而是把 Tool 变成了机器可消费的契约：参数约束、返回上限、失败语义都被显式声明，模型不再需要"猜"。
+正例与反例的差异不是"写得更详细"——它把 Tool 变成了机器可消费的契约：参数约束、返回上限、失败语义都被显式声明，模型不用再"猜"。
 
 ### 3. MCP：标准化的 Tool / Resource / Prompt 三类原语
 
@@ -325,7 +325,7 @@ MCP（Model Context Protocol）由 Anthropic 在 2024 年提出，目标是把 T
 - **Resource**：可读、无副作用、按 URI 寻址，例如配置文件、文档、数据库 schema；
 - **Prompt**：可复用的提示模板，例如代码审查模板、缺陷分析模板。
 
-MCP 的价值不在某个具体 Server，而在"协议层统一"——一份 Tool 定义可以被 Claude Code、Cursor、Cline 等任意支持 MCP 的客户端复用，跨 Agent 的 Tool 治理成为可能。
+MCP 的价值不在某个具体 Server，在"协议层统一"——一份 Tool 定义可以被 Claude Code、Cursor、Cline 等任意支持 MCP 的客户端复用，跨 Agent 的 Tool 治理才成为可能。
 
 ### 4. Prompt Injection：Tool 调度最大的安全风险
 
@@ -392,23 +392,23 @@ flowchart TB
 
 Tool Runtime 不是"调用一下就完事"。生产级 Tool Runtime 必须包含：超时控制、重试策略、幂等性保证、权限校验、参数白名单、返回值脱敏、调用审计。把这些做好，Tool 才能从"Demo 能跑"升级为"生产可用"。
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
 Agent 的核心是 Tool 调度。Function Calling 是协议、MCP 是标准化原语、JSON Schema 是契约、Tool Runtime 是执行环境。任何一环薄弱，Agent 都会从"会做事"退化为"会出错"。
 
-:::
+::::
 
-::: warning 常见误区
+:::: warning 常见误区
 
-认为"模型会自动选对工具、自动生成正确参数"。模型选错工具和参数错位是 Agent 失败的最高频原因，必须靠精确的 Schema、参数校验和权限隔离兜底，而不是寄希望于模型每次都猜对。
+认为"模型会自动选对工具、自动生成正确参数"。模型选错工具和参数错位是 Agent 失败的最高频原因，必须靠精确的 Schema、参数校验和权限隔离兜底，别寄希望于模型每次都猜对。
 
-:::
+::::
 
 ---
 
 ## 四、Docker 与 Kubernetes — Agent 走向 Infra 化
 
-源文章的判断非常前瞻：**未来的 Agent 一定会越来越 Infra 化**。这句话的工程含义是：当 Agent 从"个人开发者的 Cursor 插件"演进到"企业级生产系统"，它必然要面对资源隔离、权限边界、弹性扩缩、日志归集、版本发布这些传统基础设施问题。Docker 和 Kubernetes 不是 Agent 工程师的"可选技能"，而是把 Agent 从 Demo 推向生产的必经一环。
+源文章的判断很直接：**未来的 Agent 一定会越来越 Infra 化**。工程含义也清楚——当 Agent 从"个人开发者的 Cursor 插件"演进到"企业级生产系统"，它必然要面对资源隔离、权限边界、弹性扩缩、日志归集、版本发布这些传统基础设施问题。Docker 和 Kubernetes 不是 Agent 工程师的"可选技能"，是把 Agent 从 Demo 推向生产的必经一环。
 
 ### 1. Dockerfile：把 Agent 打包成可移植工件
 
@@ -437,7 +437,7 @@ ENTRYPOINT ["python", "-m", "src.agent"]
 
 ### 3. 容器隔离：文件系统、网络、用户
 
-容器化的真正价值不只是"打包"，而是"隔离"。对 Agent 来说，隔离有三层：
+容器化的真正价值不只是"打包"，是"隔离"。对 Agent 来说，隔离有三层：
 
 - **文件系统隔离**：Agent 只能看到挂载进来的目录，不会污染宿主；
 - **网络隔离**：通过 NetworkPolicy 限制 Agent 可访问的下游服务，防止越权调用；
@@ -510,23 +510,23 @@ flowchart TB
 
 Agent 的日志与传统服务不同——它包含大量"模型推理轨迹、工具调用参数、Token 消耗"等半结构化信息。直接 `print` 到 stdout 会让排障变成大海捞针。工程化做法是：结构化日志（JSON）、统一字段（trace_id / agent_id / step / tool / token_usage）、集中收集（Fluent Bit / Loki / ELK）、与 Trace 系统关联。
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
-Agent 走向 Infra 化是必然趋势。Docker 提供工件可移植与隔离边界，K8s 提供声明式编排与弹性调度。当 Agent 进入生产，"会不会写 Prompt"已经不再是主要矛盾，"能不能稳定跑在集群里"才是。
+Agent 走向 Infra 化是必然趋势。Docker 提供工件可移植与隔离边界，K8s 提供声明式编排与弹性调度。当 Agent 进入生产，"会不会写 Prompt"已经退居其次，"能不能稳定跑在集群里"才是主要矛盾。
 
-:::
+::::
 
-::: info 工程启示
+:::: info 工程启示
 
-很多团队把 Agent 部署在单台 VM 上"跑起来就完事"。这种部署方式在内部 Demo 阶段可以，但一旦走向生产，就必然遇到版本回滚、故障隔离、弹性扩缩、日志归集这些基础设施问题。提前用 Docker / K8s 把这套体系搭好，是 Agent 工程化的隐形门槛。
+很多团队把 Agent 部署在单台 VM 上"跑起来就完事"。这种部署方式在内部 Demo 阶段还行，一旦走向生产，就必然遇到版本回滚、故障隔离、弹性扩缩、日志归集这些基础设施问题。提前用 Docker / K8s 把这套体系搭好，是 Agent 工程化的隐形门槛。
 
-:::
+::::
 
 ---
 
 ## 五、Agent 可观测性 — 最易忽略却最关键
 
-源文章的判断一针见血：**这是很多人最容易忽略的，但其实是最关键的部分**。Agent 是概率系统 + 多步执行 + 工具副作用，传统 APM（应用性能监控）只能看到"接口延迟、错误率"，完全看不到"模型为什么这么决策、Tool 为什么这么调用、Token 烧在哪里"。没有可观测性，Agent 出了问题就只能"凭感觉调 Prompt"，永远无法定位根因。
+源文章的判断很直白：**这是很多人最容易忽略的，但其实是最关键的部分**。Agent 是概率系统 + 多步执行 + 工具副作用，传统 APM（应用性能监控）只能看到"接口延迟、错误率"，完全看不到"模型为什么这么决策、Tool 为什么这么调用、Token 烧在哪里"。没有可观测性，Agent 出了问题就只能"凭感觉调 Prompt"，永远到不了根因。
 
 ### 1. Trace 与 Span：把 Agent 执行轨迹结构化
 
@@ -605,23 +605,23 @@ flowchart TB
     class P1,P2,P3 block;
 ```
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
 Agent 可观测性是最易忽略却最关键的环节。Trace 还原执行轨迹、Timeline 定位尾部延迟、Token Usage 归因成本、Replay 让问题可复现。没有可观测性的 Agent 是黑箱，出问题就只能凭感觉调 Prompt，永远到不了根因。
 
-:::
+::::
 
-::: warning 常见误区
+:::: warning 常见误区
 
-认为"Agent 接了日志就够了"。传统日志只能记录"做了什么"，无法回答"为什么这么做、Token 烧在哪里、哪一步卡住"。Agent 可观测性必须用 Trace + Span + Token 归因 + Replay 这套体系，而不是把传统 APM 直接套用过来。
+认为"Agent 接了日志就够了"。传统日志只能记录"做了什么"，回答不了"为什么这么做、Token 烧在哪里、哪一步卡住"。Agent 可观测性必须用 Trace + Span + Token 归因 + Replay 这套体系，把传统 APM 直接套过来不够用。
 
-:::
+::::
 
 ---
 
 ## 六、统一模型：五阶段 Agent 工程能力地图
 
-下图把前面五个阶段汇总为统一模型。核心节点是 Agent 工程化的三大属性——可调度、可隔离、可观测——五个阶段逐层递进，最终通过可观测性反馈到第一阶段的上下文工程，形成闭环。
+下图把前面五个阶段汇总为统一模型。核心节点是 Agent 工程化的三大属性（可调度、可隔离、可观测），五个阶段逐层递进，最终通过可观测性反馈到第一阶段的上下文工程，形成闭环。
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
@@ -699,11 +699,11 @@ Docker 与 K8s 阶段建立的是"可隔离运行时"的能力。容器提供工
 
 可观测性阶段建立的是"可观测系统"的能力。Trace、Timeline、Token Usage、Replay 把 Agent 从黑箱变成白箱，让问题可定位、成本可归因、回归可对比。
 
-::: tip 本节核心结论
+:::: tip 本节核心结论
 
-五阶段不是平行清单，而是递进路径：可消费上下文 → 可调度循环 → 可治理 Tool → 可隔离运行时 → 可观测系统。可观测性的产出反馈到第一阶段的上下文工程，形成完整的工程闭环。这正是核心论点的落地——从 Prompt 技巧走向可调度、可隔离、可观测的工具运行时系统。
+五阶段是递进路径，不是平行清单：可消费上下文 → 可调度循环 → 可治理 Tool → 可隔离运行时 → 可观测系统。可观测性的产出反馈到第一阶段的上下文工程，形成完整的工程闭环。这条路径的终点，就是核心论点说的那套可调度、可隔离、可观测的工具运行时系统。
 
-:::
+::::
 
 ---
 
@@ -763,13 +763,13 @@ Docker 与 K8s 阶段建立的是"可隔离运行时"的能力。容器提供工
 
 ## 结语：从 Prompt 到运行时系统
 
-回看这条学习路线，五阶段并不是平行的技能清单，而是一次认知跃迁。第一阶段的 AI Coding 让人理解"上下文决定输出"；第二阶段的 Agent Framework 让人理解"循环与状态决定能不能跑长任务"；第三阶段的 MCP 与 Function Calling 让人理解"Tool 调度才是 Agent 的核心"；第四阶段的 Docker 与 K8s 让人理解"生产化必然走向 Infra"；第五阶段的可观测性让人理解"看不见就调不好"。
+回看这条学习路线，五阶段是递进路径，不是平行清单，每一步都是一次认知跃迁。第一阶段让人理解"上下文决定输出"；第二阶段让人理解"循环与状态决定能不能跑长任务"；第三阶段让人理解"Tool 调度才是 Agent 的核心"；第四阶段让人理解"生产化必然走向 Infra"；第五阶段让人理解"看不见就调不好"。
 
 每一阶段都在打破前一阶段的认知舒适区。从"会写 Prompt"到"会调 Tool"，从"会调 Tool"到"会跑 Runtime"，从"会跑 Runtime"到"会部署容器"，从"会部署容器"到"会观测系统"。每一步都在把 Agent 从"个人玩具"推向"工程系统"。
 
-而贯穿这五阶段的，是同一条工程主线：**可调度、可隔离、可观测**。可调度让 Agent 能稳定跑长任务；可隔离让 Agent 能安全执行副作用；可观测让 Agent 能被定位根因。这三者缺一不可——少了任何一项，Agent 都只能停留在 Demo 阶段。
+贯穿五阶段的，是同一条工程主线：**可调度、可隔离、可观测**。可调度让 Agent 能稳定跑长任务；可隔离让 Agent 能安全执行副作用；可观测让 Agent 能被定位根因。这三者缺一不可——少了任何一项，Agent 都只能停在 Demo 阶段。
 
-> **Agent 工程化的本质，是从单次对话的 Prompt 技巧，走向可调度、可隔离、可观测的工具运行时系统。**
+> **Agent 工程化的终点，是一套可调度、可隔离、可观测的工具运行时系统。单次对话的 Prompt 技巧只是起点。**
 
 ---
 
@@ -777,11 +777,11 @@ Docker 与 K8s 阶段建立的是"可隔离运行时"的能力。容器提供工
 
 ### 1. 先学 Agent 框架，还是先学 MCP？
 
-建议先学 Agent 框架，再学 MCP。原因是 Agent 框架（如 OpenAI Agents SDK、LangChain）让人先理解 Runtime 的循环、状态与终止条件，建立"Agent 是运行时系统"的认知。MCP 是 Tool 调度的标准化协议，它的价值在于把 Tool 治理统一化——但只有先理解 Runtime 怎么调度 Tool，才能体会 MCP 解决了什么问题。直接学 MCP 容易陷入"协议细节"，而看不到它在 Runtime 中的位置。
+建议先学 Agent 框架，再学 MCP。原因是 Agent 框架（如 OpenAI Agents SDK、LangChain）让人先理解 Runtime 的循环、状态与终止条件，建立"Agent 是运行时系统"的认知。MCP 是 Tool 调度的标准化协议，它的价值在于把 Tool 治理统一化——但只有先理解 Runtime 怎么调度 Tool，才能体会 MCP 解决了什么问题。直接学 MCP 容易陷在"协议细节"里，看不到它在 Runtime 中的位置。
 
 ### 2. Agent 一定要上 K8s 吗？
 
-不一定，但生产化几乎一定要。K8s 解决的是"声明式编排、弹性扩缩、故障自愈、版本回滚"这些生产级问题。如果 Agent 只在内部 Demo 或单机环境跑，Docker Compose 就够了。但一旦走向多副本、多租户、需要按流量扩缩容、需要灰度发布，K8s 几乎是事实标准。判断标准是：你的 Agent 是否需要 7x24 稳定运行、是否需要应对流量峰值、是否需要快速回滚。
+不一定，但生产化几乎一定要。K8s 解决的是"声明式编排、弹性扩缩、故障自愈、版本回滚"这些生产级问题。如果 Agent 只在内部 Demo 或单机环境跑，Docker Compose 就够了。一旦走向多副本、多租户、需要按流量扩缩容、需要灰度发布，K8s 几乎是事实标准。判断标准是：你的 Agent 是否需要 7x24 稳定运行、是否需要应对流量峰值、是否需要快速回滚。
 
 ### 3. 可观测性为什么是最关键的环节？
 
@@ -789,11 +789,11 @@ Docker 与 K8s 阶段建立的是"可隔离运行时"的能力。容器提供工
 
 ### 4. MCP 和 Function Calling 是替代关系吗？
 
-不是替代，是分层关系。Function Calling 是模型层的协议，定义了"模型如何生成工具调用意图"；MCP 是应用层的协议，定义了"工具如何被标准化声明、发现与执行"。一个 Agent 可以同时用 Function Calling 作为模型接口、用 MCP 作为工具治理层。MCP 的价值不在于替代 Function Calling，而在于把 Tool、Resource、Prompt 抽象为跨框架复用的标准原语。
+不是替代，是分层关系。Function Calling 是模型层的协议，定义了"模型如何生成工具调用意图"；MCP 是应用层的协议，定义了"工具如何被标准化声明、发现与执行"。一个 Agent 可以同时用 Function Calling 作为模型接口、用 MCP 作为工具治理层。MCP 的价值在于把 Tool、Resource、Prompt 抽象为跨框架复用的标准原语，而不是去替代 Function Calling。
 
 ### 5. 学完五阶段后，下一步应该深入哪个方向？
 
-取决于角色定位。如果偏架构，建议深入 Tool Runtime 与 MCP 协议演进，把 Tool 治理做扎实；如果偏平台，建议深入可观测性与 Agent 调度平台，把 Trace / Replay / Token 归因体系建起来；如果偏基础设施，建议深入 K8s Operator、Serverless Agent、弹性调度这些方向；如果偏应用，建议深入多 Agent 协作、长任务调度、记忆系统。五阶段是地基，地基之上选哪个方向深耕，取决于业务需求与个人兴趣。
+取决于角色定位。偏架构就深入 Tool Runtime 与 MCP 协议演进，把 Tool 治理做扎实；偏平台就深入可观测性与 Agent 调度平台，把 Trace / Replay / Token 归因体系建起来；偏基础设施就深入 K8s Operator、Serverless Agent、弹性调度这些方向；偏应用就深入多 Agent 协作、长任务调度、记忆系统。五阶段是地基，地基之上选哪个方向深耕，看业务需求与个人兴趣。
 
 ---
 

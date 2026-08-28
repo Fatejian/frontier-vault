@@ -23,4 +23,5 @@ yarn-error.log*
 .idea/
 /.trae
 /.agents
+/.codebuddy
 /skills-lock.json

@@ -106,15 +106,15 @@ The engineering value of Python test automation can be summarized as follows:
 3. **Controllable resource lifecycle**: Browser process creation, reuse, and teardown are managed centrally by fixtures, avoiding CI memory leaks and cross-test pollution in parallel runs.
 4. **Reuse and composition**: Common headers, footers, and modals can be extracted into `Component` classes and composed into page objects, following Python's "composition over inheritance" philosophy.
 5. **Readability approaching natural language**: Test cases interact only with page objects, so the code reads like `LoginPage(driver).enter_username("admin").click_login()` — product managers and manual testers can understand it.
-6. **Seamless integration with the pytest ecosystem**: The driver is injected via fixtures, page objects pass each other through return values, and type hints let the IDE auto-complete chained calls.
+6. **Clean integration with the pytest ecosystem**: The driver is injected via fixtures, page objects pass each other through return values, and type hints let the IDE auto-complete chained calls.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Python test automation engineering is not just "writing scripts" — it engineers three things: architecture, locators, and resources. It turns one-off scripts into maintainable test assets, reducing the maintenance cost of UI-heavy test cases from linear growth to nearly constant under frequent UI iteration.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Equating test automation with "record-replay + a pile of find_element scripts." This approach is barely maintainable when there are fewer than 20 cases. Once the page is refactored or the suite scales up, the maintenance cost grows far faster than linear, eventually causing the entire automation system to be abandoned.
 
@@ -265,13 +265,13 @@ flowchart TB
     class Change block
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 POM encapsulates page elements into Python classes and establishes the three mappings of "element → attribute, operation → method, navigation → return value," confining the impact of UI changes within a single class. This is the architectural foundation for moving Python UI automation from "one-off scripts" to "sustainably maintained engineering."
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Treating page objects as "locator container utility classes" and stuffing them with `assert` statements. The correct approach is for page objects to provide only services (operations + state queries), with assertions staying in the test case layer. Once a page object contains assertions, it simultaneously bears two responsibilities — "page modeling" and "test verification" — and its reusability drops sharply.
 
@@ -398,7 +398,7 @@ def test_login_success(login_page):
     assert home_page.get_welcome_message() == "Welcome back"
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The engineering essentials of POM are "chained calls + componentization + fixture decoupling": action methods return self to support chaining, reusable regions are extracted into Components and composed in, and the driver is injected by a pytest fixture to decouple lifecycle from cases. Page objects only provide services and contain no assertions — this is the boundary that guarantees reusability.
 
@@ -489,13 +489,13 @@ flowchart TB
     class R4 block
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 XPath and CSS Selector are not an "either-or" opposition but a complementary division of labor: CSS Selector is faster and shares a consensus with frontend, so it is the default; XPath is enabled when text matching or parent-sibling traversal is needed. The true starting point of a locator strategy is having a stable id/name; without one, the priority is to push the frontend to add `data-testid` rather than playing locator tricks on fragile structures.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Blindly pursuing "writing complex XPath paths" as a sign of technical ability. Complex XPath (such as `//div[3]/ul/li[2]/a`) relies on absolute positions and breaks on any DOM change — it is the biggest source of fragility in test automation. If a problem can be solved with id/name, do not use complex XPath paths.
 
@@ -578,13 +578,13 @@ _submit = (By.XPATH, "/html/body/div[2]/form/div[3]/button[1]")
 _submit = (By.XPATH, "//button[text()='Submit']")
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of locator design is "stability over cleverness": priority follows the decreasing principle of id > name > data-testid > semantic class > complex structure; locators are centralized as class attributes; when there is no stable anchor, push the frontend to add data-testid rather than playing locator tricks on fragile structures; absolute XPath is an anti-pattern and must be replaced by relative XPath combined with stable anchors.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Equating "can write complex XPath" with "strong locator ability." Complex XPath usually means fragility. Truly strong locator ability is reflected in: using the simplest id/name when possible instead of complex structures; pushing the frontend to add data-testid rather than wrestling with styling classes; centralizing locators so the impact of frontend changes is minimized.
 
@@ -783,13 +783,13 @@ flowchart TB
     class Leak block
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of Driver engineering is "lifecycle centralized by fixture, explicit waits over implicit waits, quit instead of close for cleanup." The fixture's yield mechanism guarantees quit runs even if a case raises; explicit waits encapsulated inside page objects make cases unaware; quit closes the entire browser and driver service, and is the bottom line for CI resources not to leak.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Using `driver.close()` instead of `driver.quit()` on CI to save a few seconds. close only closes the current window; the browser process and chromedriver service keep running in the background. After a CI job runs hundreds of cases, the machine accumulates dozens of zombie browser processes, memory keeps growing, and eventually the CI node becomes unavailable. quit must be used for thorough cleanup.
 
@@ -876,7 +876,7 @@ def driver():
 
 In this mode, the driver is still managed by a fixture, and the case and page object code remain completely unchanged. This is the scalability of the POM + fixture architecture.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The Driver-POM collaboration follows the "injection + navigation chain + parallel isolation" pattern: the driver is injected into page objects via the constructor, navigation methods pass the same driver to the next page object to form a chain, and parallel tests give each process an independent driver for data isolation. This collaboration lets the driver lifecycle be fully managed by the fixture, page objects only use it, and the case layer is completely unaware of the driver's existence.
 
@@ -953,7 +953,7 @@ The locator dimension follows the "decreasing priority" principle: id > name > d
 
 The Driver dimension centralizes the lifecycle through a pytest fixture: created before yield, quit after yield; explicit waits are preferred over implicit ones and encapsulated inside page objects; function scope isolates each case to avoid state pollution; quit instead of close for thorough cleanup to avoid CI resource leaks.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 All engineering essentials of Python test automation can be placed into the three dimensions of "POM · Locator · Driver." This unified model is the thinking framework of engineering: POM solves "how UI changes are isolated," locators solve "how elements are stably locked," and Driver solves "how resources are managed by lifecycle." The three collaborate through "driver injected into page objects, locators as class attributes, fixture controlling lifecycle," together turning one-off scripts into sustainably maintainable test assets.
 

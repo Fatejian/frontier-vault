@@ -14,7 +14,7 @@ hero:
 features:
   - icon: '🌐'
     title: Browser Internals
-    details: Deep dive into Chromium's multi-process architecture, the rendering pipeline (Style / Layout / Paint / Raster / Composite), GPU compositing, and V8 engine mechanics. Build a complete mental model from request to pixel.
+    details: How Chromium's multi-process architecture, the rendering pipeline (Style / Layout / Paint / Raster / Composite), GPU compositing, and V8 engine mechanics work. Build a complete mental model from request to pixel.
     link: /en/browser/
   - icon: '💻'
     title: JavaScript Deep Dive

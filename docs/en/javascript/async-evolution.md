@@ -1,6 +1,6 @@
 ---
 title: "Async Programming Evolution: From Callback Hell to async/await"
-description: A deep dive from single-threaded event loops, macro/micro task scheduling, callback trust issues, Promise state machines, to the async/await execution model.
+description: From single-threaded event loops, macro/micro task scheduling, callback trust issues, Promise state machines, to the async/await execution model.
 category: JavaScript
 tags:
   - JavaScript
@@ -51,7 +51,7 @@ Many problems appear to be "unfamiliar syntax" but are actually "unclear mental 
 
 To answer these questions, we must first understand JavaScript's single-threaded model and the event loop, then understand why callbacks have trust issues, how Promise solves them with a state machine, and finally what async/await adds on top of Promise. This article follows this evolutionary thread.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The evolution of async programming is not simply "syntax becoming cleaner." It is a shift from "callbacks hand over control" to "Promise regains control with an irreversible state," and then to "async/await gives async code synchronous readability." Each evolution redistributes who holds the initiative of scheduling.
 :::
 
@@ -136,7 +136,7 @@ console.log('2. Sync end')
 
 `setTimeout`'s callback enters the macro task queue, `Promise.then`'s callback enters the microtask queue. Synchronous code (1, 2) runs first, then microtasks are drained (3), and finally the next macro task runs (4).
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Single-threaded JS + the event loop is the physical foundation of asynchrony. Synchronous code runs on the call stack; asynchronous callbacks are hosted by the environment and, once ready, enter task queues to wait for the main thread to become idle. Understanding "queues" and "polling" is the prerequisite for understanding all asynchronous behavior.
 :::
 
@@ -193,11 +193,11 @@ function batchUpdate() {
 }
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The core difference between macro tasks and microtasks is "scheduling timing": one macro task executes per tick, while all microtasks in a tick are drained. Microtasks always run before the next macro task and before rendering. Mastering this rule lets you predict the output order of the vast majority of asynchronous code.
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 Use `queueMicrotask` for logic that needs to run "as soon as possible but asynchronously"; use `setTimeout(fn, 0)` or `requestAnimationFrame` for logic that needs to "yield the main thread to rendering." Do not mix them up.
 :::
 
@@ -249,7 +249,7 @@ getUser(userId, function (err, user) {
 
 This "pyramid of doom" is not just ugly; more fatally, **control flow is shattered**. Error handling has to be repeated on every level and cannot be unified; adding or reordering a step in the middle requires reshuffling the entire nested structure; sharing variables across steps can only be done through closures passed layer by layer.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 The problem with callbacks is not "nesting is ugly"; it is "control leaks out + trust is uncontrollable + control flow is shattered." Promise was created precisely to regain control and solve the trust problem with a unified model.
 :::
 
@@ -332,7 +332,7 @@ Promise.resolve(1)
   .catch((err) => console.log(err.message)) // 'boom'
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Promise is a finite state machine of "irreversible + one-time settlement + asynchronous triggering." It regains the control lost by callbacks through state rules, and achieves flat chaining by having `then` return a new Promise. Understanding the state machine is the key to understanding Promise error propagation and combination APIs.
 :::
 
@@ -405,7 +405,7 @@ async function loadAll() {
 
 This logic would be very awkward to write with pure Promise — you would need manual recursion or `reduce` to chain the steps. `async/await` restores "asynchronous flow control" to the most familiar synchronous control-flow syntax.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 `async/await` is syntactic sugar on top of Promise, but it gives asynchronous code synchronous readability: coherent variable scope, natural control flow (conditions / loops), and unified error handling. Its essence is simulating synchronous semantics with "function pause + microtask resume," but the underlying mechanism is still Promise and the event loop.
 :::
 
@@ -477,11 +477,11 @@ const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value)
 const failed = results.filter((r) => r.status === 'rejected')
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Three principles of asynchronous error handling: wrap `await` in try/catch; never swallow errors silently (at least log them); choose `all` / `allSettled` / `any` / `race` as needed. `allSettled` is best for "continue even if some fail."
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 Register a global `unhandledrejection` listener at the application entry point to report all uncaught Promise errors to the monitoring platform. This is the last line of defense for discovering "forgotten catch."
 :::
 
@@ -592,7 +592,7 @@ The Promise returned by `syncToRemote` is not `await`ed, so its rejection will n
 syncToRemote().catch((err) => tracker.report(err))
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 Concurrency control points: `forEach` does not wait for `await`; use `for...of` or `Promise.all`; use `Promise.all` for independent tasks and serial only for dependent tasks; use a concurrency limiter for large batches; any fire-and-forget Promise must `.catch` to avoid silent rejection.
 :::
 

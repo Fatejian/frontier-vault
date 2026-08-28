@@ -106,7 +106,7 @@ This leads to a counterintuitive phenomenon: **click response is slow because a 
 
 ### 3. Call Stack Depth Equals Component Tree Depth
 
-Because recursion is used, the deeper the component tree, the deeper the call stack. This not only limits architectural evolution but also makes error stacks hard to read.
+Because recursion is used, the deeper the component tree, the deeper the call stack. This limits architectural evolution and makes error stacks hard to read.
 
 ::: tip Core conclusion of this section
 The fundamental problem of Stack Reconciler is not "insufficient performance," but "insufficient model" — it does not treat "interruptibility" and "priority scheduling" as first-class citizens. Fiber's design motivation is precisely to add these two capabilities.
@@ -290,7 +290,7 @@ Note that the return value of `performUnitOfWork` is "the next unit of work to b
 
 ### 2. Scheduling Unit = Rendering Unit
 
-A Fiber node is not only a data carrier, but also a scheduling unit. The scheduler can decide:
+A Fiber node is both a data carrier and a scheduling unit. The scheduler can decide:
 
 - How many Fiber nodes to process now
 - At which node to yield the main thread
@@ -558,7 +558,7 @@ const nonTransitionLanes = lanes & ~TransitionLanes
 
 ### 2. Lane and batchedUpdates Relationship
 
-React 18's Automatic Batching is tightly coupled with the Lane model. Multiple `setState`s being merged into the same update essentially means their lanes are merged with `|`:
+React 18's Automatic Batching is tightly coupled with the Lane model. Multiple `setState`s being merged into the same update means their lanes are merged with `|`:
 
 ```javascript
 function markRootUpdated(root, updateLane) {
@@ -845,7 +845,7 @@ It is not "cheaper," it is "controllable." The recursive call stack is managed b
 
 ### 3. What is the difference between `useTransition` and `setTimeout(fn, 0)`?
 
-`setTimeout` defers the callback to the next macro task; it is still essentially executing all `setState`s inside that callback synchronously. `useTransition` marks the `setState` as low priority, letting React "defer processing" at the scheduling level, and it can be interrupted and cut in line. The former is "delayed invocation," the latter is "priority declaration" — completely different models.
+`setTimeout` defers the callback to the next macro task, but the `setState`s inside that callback still execute synchronously. `useTransition` marks the `setState` as low priority, letting React "defer processing" at the scheduling level, and it can be interrupted and cut in line. The former is "delayed invocation," the latter is "priority declaration" — completely different models.
 
 ### 4. Why can't the commit phase be interrupted?
 

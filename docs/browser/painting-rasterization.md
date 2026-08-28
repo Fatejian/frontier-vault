@@ -1,6 +1,7 @@
 ---
-title: "绘制与光栅化：从图层合成到屏幕显示"
-description: 从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，深入解析 transform/opacity 为何不触发 Layout
+title: "绘制与光栅化：从图层合成到屏幕显示
+"
+description: 从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，拆解 transform/opacity 为何不触发 Layout
 category: Browser
 tags:
   - Browser Internals
@@ -14,7 +15,7 @@ outline: deep
 
 # 绘制与光栅化：从图层合成到屏幕显示
 
-> 副标题：从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，深入解析 transform/opacity 为何不触发 Layout
+> 副标题：从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，拆解 transform/opacity 为何不触发 Layout
 >
 > 目标读者：中高级前端工程师、前端架构师、动画与渲染性能优化负责人
 >
@@ -52,7 +53,7 @@ outline: deep
 - 为什么 GPU 加速不是免费的？
 - 为什么 LCP 图片下载完了还要等几百毫秒才能显示？
 
-理解这条链路，本质上是理解"浏览器如何把抽象的图层模型变成具体的像素"。本文会带你走完从 Paint 到屏幕的每一步，最终建立一个能解释上述所有现象的模型。
+理解这条链路，就是理解"浏览器如何把抽象的图层模型变成具体的像素"。本文会带你走完从 Paint 到屏幕的每一步，最终建立一个能解释上述所有现象的模型。
 
 ::: tip 本节核心结论
 
@@ -272,7 +273,7 @@ LCP（Largest Contentful Paint）的完成时间，本质上取决于"**LCP 元�
 
 合成是渲染流水线的最后一步：把多个已经光栅化的图层（GPU 纹理），按正确的顺序、正确的变换，拼成最终的一帧画面，输出到屏幕。
 
-合成的本质是一系列**纹理 + 变换矩阵**的组合：
+合成就是一系列**纹理 + 变换矩阵**的组合：
 
 ```
 合成帧 = [

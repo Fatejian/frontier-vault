@@ -21,12 +21,12 @@ outline: deep
 > Reading time: ~27 minutes.
 
 ::: info In one sentence
-Every step in frontend state-management evolution resolves the tension between "traceability of state changes" and "developer experience" — from Flux's strongly constrained unidirectional flow to Zustand's minimal API, each is essentially a rebalancing of these two dimensions.
+Every step in frontend state-management evolution resolves the tension between "traceability of state changes" and "developer experience" — from Flux's strongly constrained unidirectional flow to Zustand's minimal API, each is a rebalancing of these two dimensions.
 :::
 
 ## Table of Contents
 
-- [Preface](#preface)
+- [Introduction](#introduction)
 - [1. State Management Problems in the MVC Era](#1-state-management-problems-in-the-mvc-era)
 - [2. Flux: The Unidirectional Data Flow Revolution](#2-flux-the-unidirectional-data-flow-revolution)
 - [3. Redux: The Extreme of Functional and Immutable Style](#3-redux-the-extreme-of-functional-and-immutable-style)
@@ -37,7 +37,7 @@ Every step in frontend state-management evolution resolves the tension between "
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Preface
+## Introduction
 
 Many frontend engineers understand state management like this:
 
@@ -47,7 +47,7 @@ Many frontend engineers understand state management like this:
 - Annoyed by Redux: switch to MobX / Zustand / Jotai.
 - After a while: each solution feels slightly off.
 
-This process of "switching tools" essentially reflects a failure to understand the problems different solutions are trying to solve. This article tries to build a complete "state-management evolution map" to answer these questions:
+This process of "switching tools" reflects a failure to understand the problems different solutions are trying to solve. This article tries to build a complete "state-management evolution map" to answer these questions:
 
 - Why did Flux appear? What problem of MVC did it solve?
 - Why are Redux's "three principles" these three? What is forced immutability for?
@@ -138,7 +138,7 @@ Many people misinterpret this as "the MVC pattern itself is flawed." In fact, MV
 
 :::
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The core problem of state management in the MVC era was: two-way binding + Models listening to each other caused data flow to become a mesh that could not be traced. Flux appeared precisely to break this mesh dependency with unidirectional data flow.
 
@@ -255,7 +255,7 @@ addButton.onclick = () => {
 
 These limitations directly gave birth to Redux — a "standardized, single-Store, functional" variant of Flux.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Flux broke MVC's mesh dependency with unidirectional data flow (Action → Dispatcher → Store → View). Its core contribution is "constraint": all state changes must be explicit Actions. The cost is verbose boilerplate and complex multi-Store coordination — precisely the problems Redux set out to solve.
 
@@ -446,7 +446,7 @@ const reducer = produce((draft, action) => {
 })
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Redux pushes Flux to the extreme: single Store, pure-function reducers, and enforced immutability. In exchange, it gains traceability, time travel, and pure-function testability, at the cost of a lot of boilerplate and tedious immutable updates. Redux suits "large applications + teams that need strong constraints."
 
@@ -577,7 +577,7 @@ Redux and MobX are not a "good vs bad" relationship, but a trade-off between "co
 
 :::
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 MobX uses a reactive system to automatically bind "state changes" and "UI updates," letting developers directly mutate state without Actions/Reducers. The cost is the loss of "explicitly traceable" auditability. It is the representative of the "freedom camp," standing in contrast to Redux's "constraint camp."
 
@@ -754,7 +754,7 @@ flowchart TB
 
 But they also "lack" some things Redux provides: no enforced Action types, no time travel (although Zustand can implement it via middleware), and no standardized side-effect solution (you need to use saga/observable/async yourself).
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Zustand and Jotai represent the "return to simplicity" trend. Zustand is a "tiny Redux" — keeping the centralized store while removing boilerplate. Jotai is "atomic state" — scattering state into minimal units and letting the dependency graph manage itself. Both improve developer experience by "reducing constraints."
 
@@ -866,7 +866,7 @@ Server state has dedicated libraries: React Query, SWR, RTK Query. They solve ca
 
 Choosing Redux for a team with many newcomers is "paying for constraints," but the learning cost is high. Choosing MobX for a strongly collaborative scenario is "paying for freedom," but it is hard to trace state changes. **Technology choices must consider team structure, not just technical metrics.**
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 There is no "best" state-management choice, only a "suitable" one. The core dimensions are state scale, state shape, team size, and performance requirements. At the same time, avoid the two anti-patterns of "putting all state in the global store" and "using a state-management library to manage server state."
 
@@ -903,7 +903,7 @@ In the next 3–5 years, "state management" as an independent technical topic wi
 
 :::
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Understanding the evolution of state management is not just about "choosing the right library," but about understanding the data flow of frontend applications. After server state, URL state, and client state are managed separately, the domain of traditional "global state management" is narrowing. This is the fundamental reason why lightweight solutions such as Zustand/Jotai have risen.
 

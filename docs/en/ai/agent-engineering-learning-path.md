@@ -22,25 +22,25 @@ outline: deep
 > Reading time: ~25 minutes
 
 ::: info In one sentence
-The essence of Agent engineering is moving from single-turn prompt tricks to a schedulable, isolated, and observable tool runtime system.
+The end goal of Agent engineering is a schedulable, isolated, and observable tool runtime system. Single-turn prompt tricks are only the starting point.
 :::
 
 ## Table of Contents
 
-- [One. AI Coding — From Tool Use to Workflow Thinking](#one-ai-coding-—-from-tool-use-to-workflow-thinking)
-- [Two. Agent Framework — Understanding How the Runtime Works](#two-agent-framework-—-understanding-how-the-runtime-works)
-- [Three. MCP and Function Calling — The Core of an Agent Is Tool Scheduling](#three-mcp-and-function-calling-—-the-core-of-an-agent-is-tool-scheduling)
-- [Four. Docker and Kubernetes — Agents Move Toward Infra](#four-docker-and-kubernetes-—-agents-move-toward-infra)
-- [Five. Agent Observability — The Most Overlooked yet Most Critical Part](#five-agent-observability-—-the-most-overlooked-yet-most-critical-part)
-- [Six. Unified Model: A Five-Stage Agent Engineering Capability Map](#six-unified-model-a-five-stage-agent-engineering-capability-map)
-- [Seven. Agent Engineering Practice Checklist](#seven-agent-engineering-practice-checklist)
+- [1. AI Coding — From Tool Use to Workflow Thinking](#1-ai-coding-from-tool-use-to-workflow-thinking)
+- [2. Agent Framework — Understanding How the Runtime Works](#2-agent-framework-understanding-how-the-runtime-works)
+- [3. MCP and Function Calling — The Core of an Agent Is Tool Scheduling](#3-mcp-and-function-calling-the-core-of-an-agent-is-tool-scheduling)
+- [4. Docker and Kubernetes — Agents Move Toward Infra](#4-docker-and-kubernetes-agents-move-toward-infra)
+- [5. Agent Observability — The Most Overlooked yet Most Critical Part](#5-agent-observability-the-most-overlooked-yet-most-critical-part)
+- [6. Unified Model: A Five-Stage Agent Engineering Capability Map](#6-unified-model-a-five-stage-agent-engineering-capability-map)
+- [7. Agent Engineering Practice Checklist](#7-agent-engineering-practice-checklist)
 - [Conclusion: From Prompt to Runtime System](#conclusion-from-prompt-to-runtime-system)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ---
 
-## One. AI Coding — From Tool Use to Workflow Thinking
+## 1. AI Coding — From Tool Use to Workflow Thinking
 
 Many people equate AI Coding with "knowing how to write code with Claude Code, Cursor, or Copilot." That is only the entry-level understanding. The real dividing line is whether you can convert "natural language instructions" into "model-consumable workflows" and understand how each category of tool differs across three dimensions: Context, Tool Use, and Workflow.
 
@@ -108,7 +108,7 @@ flowchart TB
 
 ### 1. Context: What Enters the Context and What Does Not
 
-AI Coding is not "the model gets stronger and writes better code automatically"; it is "feeding the model the most relevant, accurate, and well-structured information at every step." Claude Code via `.claude/`, Cursor via `.cursor/rules`, and Copilot via `custom_instructions` all crystallize team conventions, tech stacks, and naming conventions into long-term context. **What truly determines AI Coding quality is context engineering, not the wording of any single prompt.**
+AI Coding does not get better just because the model gets stronger. It gets better by feeding the model the most relevant, accurate, and well-structured information at every step. Claude Code via `.claude/`, Cursor via `.cursor/rules`, and Copilot via `custom_instructions` all crystallize team conventions, tech stacks, and naming conventions into long-term context. **What truly determines AI Coding quality is context engineering, not the wording of any single prompt.**
 
 ### 2. Tool Use: Understand the Semantics and Side Effects of Each Tool
 
@@ -144,13 +144,13 @@ Constraints: no new dependencies, keep password hash strength unchanged
 Acceptance: P95 < 300ms, all unit tests green, security scan passed, change summary produced
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
-The essence of AI Coding is not "knowing how to write code with tools" but converting natural language instructions into "consumable context + callable tools + verifiable feedback loops." Only by understanding the commonalities of the three tools across Context / Tool Use / Workflow can you upgrade from a user to an engineer.
+AI Coding is about converting natural language instructions into "consumable context + callable tools + verifiable feedback loops." Only by understanding the commonalities of the three tools across Context / Tool Use / Workflow can you upgrade from a user to an engineer.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Equating AI Coding with "open Cursor and press Tab." That uses only the shallowest layer of context. Real engineering means building task package templates, long-term context assets, and verification loops; otherwise you stay stuck in the "looks fast, actually uncontrollable" stage forever.
 
@@ -158,9 +158,9 @@ Equating AI Coding with "open Cursor and press Tab." That uses only the shallowe
 
 ---
 
-## Two. Agent Framework — Understanding How the Runtime Works
+## 2. Agent Framework — Understanding How the Runtime Works
 
-Entering stage two, the biggest cognitive trap is "learning framework APIs." LangChain, OpenAI Agents SDK, AutoGen, and CrewAI each have their own APIs and conceptual systems, but learning only APIs is just memorizing syntax; **what you really need to learn is how the Agent Runtime works** — how it loops, how it maintains state, how it schedules tools, and under what conditions it terminates.
+Entering stage two, the biggest cognitive trap is "learning framework APIs." LangChain, OpenAI Agents SDK, AutoGen, and CrewAI each have their own APIs and conceptual systems, but learning only APIs is just memorizing syntax. **What you really need to learn is how the Agent Runtime works** — how it loops, how it maintains state, how it schedules tools, and under what conditions it terminates.
 
 The four frameworks each have different emphases; understanding their design intent matters more than memorizing APIs:
 
@@ -169,7 +169,7 @@ The four frameworks each have different emphases; understanding their design int
 - **AutoGen**: Centers on multi-Agent conversation, emphasizes role division and message passing, suitable for exploratory tasks and debate-style collaboration.
 - **CrewAI**: Centers on roles and processes; splits Agent / Task / Crew into explicit structures, suitable for business-process-oriented collaboration.
 
-But all four frameworks converge on the same model at the bottom: **Agent Runtime = loop + state + tool registry + termination condition**. The diagram below makes this universal Runtime structure explicit:
+All four frameworks converge on the same model at the bottom: **Agent Runtime = loop + state + tool registry + termination condition**. The diagram below makes this universal Runtime structure explicit:
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
@@ -227,11 +227,11 @@ Short-term context maintains the execution trace of the current task; constraine
 
 ### 3. Tool Registry: The Entry Point for Scheduling
 
-The tool registry is the contract layer between the Runtime and the outside world. It is responsible for: declaring available tools, validating parameter schemas, checking call permissions, and recording call history. An "Agent" without a tool registry is, in essence, just a chatty model.
+The tool registry is the contract layer between the Runtime and the outside world. It is responsible for: declaring available tools, validating parameter schemas, checking call permissions, and recording call history. An "Agent" without a tool registry is just a chatty model.
 
 ### 4. Multi-Agent Collaboration: Handoff and Message Passing
 
-OpenAI Agents SDK's Handoff, AutoGen's message passing, and CrewAI's Crew all solve the same problem: **a single Agent's context window and capability boundary are not enough.** The essence of multi-Agent collaboration is "partition the context and layer the responsibilities," so each Agent only sees the sub-context it is responsible for.
+OpenAI Agents SDK's Handoff, AutoGen's message passing, and CrewAI's Crew all solve the same problem: **a single Agent's context window and capability boundary are insufficient.** Multi-Agent collaboration means partitioning the context and layering the responsibilities, so each Agent only sees the sub-context it is responsible for.
 
 The anti-pattern / correct-pattern pair below shows the fundamental difference in production between "a loop without a termination condition" and "a Runtime with a termination condition":
 
@@ -259,13 +259,13 @@ for step in range(MAX_STEPS):
 return Result(status="step_limit_exceeded")
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
-Learning Agent Framework is not learning APIs; it is learning the Runtime. The core of the Runtime is "loop + state + tool registry + termination condition." A production-grade Runtime must have explicit termination conditions and resource budgets; otherwise it will inevitably lose control in some edge case.
+Learning Agent Framework is about learning the Runtime, not the APIs. The core of the Runtime is "loop + state + tool registry + termination condition." A production-grade Runtime must have explicit termination conditions and resource budgets; otherwise it will inevitably lose control in some edge case.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Treating "running a LangChain call chain end-to-end" as "knowing how to use Agents." The loop, memory, and tool invocation that the framework wraps are all default behaviors, and default behaviors rarely land directly in production. Without understanding the Runtime mechanism, you cannot locate whether a problem is in the loop, the state, or the tool registry when things go wrong.
 
@@ -273,9 +273,9 @@ Treating "running a LangChain call chain end-to-end" as "knowing how to use Agen
 
 ---
 
-## Three. MCP and Function Calling — The Core of an Agent Is Tool Scheduling
+## 3. MCP and Function Calling — The Core of an Agent Is Tool Scheduling
 
-Stage three is the watershed of the entire learning path. One sentence from the source article nails the core of Agent engineering: **the core of an Agent is Tool scheduling.** This is not rhetoric but an engineering fact — LLM reasoning only upgrades from "can chat" to "can do things" when it is materialized into real side effects through Tools. MCP (Model Context Protocol) and Function Calling are the two mainstream Tool scheduling solutions today; only by understanding their protocols, schemas, risks, and Runtime can you make Tool governance solid.
+Stage three is the watershed of the entire learning path. One sentence from the source article nails the core of Agent engineering: **the core of an Agent is Tool scheduling.** This is an engineering fact — LLM reasoning only upgrades from "can chat" to "can do things" when it is materialized into real side effects through Tools. MCP (Model Context Protocol) and Function Calling are the two mainstream Tool scheduling solutions today; only by understanding their protocols, schemas, risks, and Runtime can you make Tool governance solid.
 
 ### 1. Function Calling: The De facto Standard at the Protocol Layer
 
@@ -315,7 +315,7 @@ const tool = {
 };
 ```
 
-The difference between the correct pattern and the anti-pattern is not "more detailed writing" but turning the Tool into a machine-consumable contract: parameter constraints, return caps, and failure semantics are all declared explicitly, so the model no longer needs to "guess."
+The difference between the correct pattern and the anti-pattern is that the correct one turns the Tool into a machine-consumable contract: parameter constraints, return caps, and failure semantics are all declared explicitly, so the model no longer needs to "guess."
 
 ### 3. MCP: Standardized Tool / Resource / Prompt Primitives
 
@@ -325,7 +325,7 @@ MCP (Model Context Protocol) was introduced by Anthropic in 2024 with the goal o
 - **Resource**: Readable, no side effects, addressed by URI — e.g. config files, documents, database schemas.
 - **Prompt**: Reusable prompt templates — e.g. code review templates, defect analysis templates.
 
-The value of MCP is not in any specific Server but in "unifying the protocol layer" — a single Tool definition can be reused by any MCP-supporting client such as Claude Code, Cursor, or Cline, making cross-Agent Tool governance possible.
+The value of MCP lies in "unifying the protocol layer" — a single Tool definition can be reused by any MCP-supporting client such as Claude Code, Cursor, or Cline, making cross-Agent Tool governance possible.
 
 ### 4. Prompt Injection: The Biggest Security Risk in Tool Scheduling
 
@@ -390,15 +390,15 @@ flowchart TB
 
 ### 5. Tool Runtime: Execution Environment, Timeout, Retry, Permissions
 
-A Tool Runtime is not "call it once and you're done." A production-grade Tool Runtime must include: timeout control, retry strategy, idempotency guarantees, permission checks, parameter whitelisting, return value desensitization, and call auditing. Only when these are in place can a Tool upgrade from "the demo runs" to "production-ready."
+A Tool Runtime is more than "call it once and you're done." A production-grade Tool Runtime must include: timeout control, retry strategy, idempotency guarantees, permission checks, parameter whitelisting, return value desensitization, and call auditing. Only when these are in place can a Tool upgrade from "the demo runs" to "production-ready."
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 The core of an Agent is Tool scheduling. Function Calling is the protocol, MCP is the standardized primitive, JSON Schema is the contract, and Tool Runtime is the execution environment. If any layer is weak, the Agent degrades from "can do things" to "can produce errors."
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Assuming "the model will automatically pick the right tool and generate the correct parameters." Wrong tool selection and misaligned parameters are the most frequent causes of Agent failure; they must be backed by precise Schemas, parameter validation, and permission isolation, not by hoping the model guesses right every time.
 
@@ -406,9 +406,9 @@ Assuming "the model will automatically pick the right tool and generate the corr
 
 ---
 
-## Four. Docker and Kubernetes — Agents Move Toward Infra
+## 4. Docker and Kubernetes — Agents Move Toward Infra
 
-The source article's judgment is highly forward-looking: **the Agent of the future will inevitably become more and more Infra-like.** The engineering implication of this sentence is: as the Agent evolves from "an individual developer's Cursor plugin" to "an enterprise-grade production system," it must face traditional infrastructure problems such as resource isolation, permission boundaries, elastic scaling, log aggregation, and version release. Docker and Kubernetes are not "optional skills" for Agent engineers; they are the mandatory step that takes an Agent from demo to production.
+The source article's judgment is direct: **the Agent of the future will inevitably become more and more Infra-like.** The engineering implication is clear — as the Agent evolves from "an individual developer's Cursor plugin" to "an enterprise-grade production system," it must face traditional infrastructure problems such as resource isolation, permission boundaries, elastic scaling, log aggregation, and version release. Docker and Kubernetes are not "optional skills" for Agent engineers; they are the mandatory step that takes an Agent from demo to production.
 
 ### 1. Dockerfile: Packaging an Agent as a Portable Artifact
 
@@ -437,7 +437,7 @@ ENTRYPOINT ["python", "-m", "src.agent"]
 
 ### 3. Container Isolation: Filesystem, Network, User
 
-The real value of containerization is not "packaging" but "isolation." For an Agent, isolation has three layers:
+The real value of containerization is "isolation." For an Agent, isolation has three layers:
 
 - **Filesystem isolation**: The Agent only sees mounted directories and will not pollute the host.
 - **Network isolation**: Use NetworkPolicy to restrict the downstream services an Agent can reach, preventing unauthorized calls.
@@ -510,9 +510,9 @@ flowchart TB
 
 Agent logs differ from traditional service logs — they contain a large amount of semi-structured information such as "model reasoning traces, tool call parameters, Token consumption." Directly `print`ing to stdout turns troubleshooting into looking for a needle in a haystack. The engineering approach is: structured logs (JSON), unified fields (trace_id / agent_id / step / tool / token_usage), centralized collection (Fluent Bit / Loki / ELK), and correlation with the tracing system.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
-Agents moving toward Infra is an inevitable trend. Docker provides artifact portability and isolation boundaries; K8s provides declarative orchestration and elastic scheduling. When an Agent enters production, "can you write a good prompt" is no longer the main contradiction — "can it run stably in a cluster" is.
+Agents moving toward Infra is an inevitable trend. Docker provides artifact portability and isolation boundaries; K8s provides declarative orchestration and elastic scheduling. When an Agent enters production, "can you write a good prompt" is no longer the main concern — "can it run stably in a cluster" is.
 
 :::
 
@@ -524,9 +524,9 @@ Many teams deploy Agents on a single VM and call it done once "it runs." This de
 
 ---
 
-## Five. Agent Observability — The Most Overlooked yet Most Critical Part
+## 5. Agent Observability — The Most Overlooked yet Most Critical Part
 
-The source article's judgment hits the nail on the head: **this is the part most people overlook, but it is actually the most critical.** An Agent is a probabilistic system + multi-step execution + tool side effects. Traditional APM (application performance monitoring) only sees "API latency and error rate" and completely misses "why the model made that decision, why the Tool was called that way, and where the Tokens were burned." Without observability, when an Agent goes wrong you can only "tune the prompt by feel" and will never locate the root cause.
+The source article's judgment is direct: **this is the part most people overlook, but it is actually the most critical.** An Agent is a probabilistic system + multi-step execution + tool side effects. Traditional APM (application performance monitoring) only sees "API latency and error rate" and completely misses "why the model made that decision, why the Tool was called that way, and where the Tokens were burned." Without observability, when an Agent goes wrong you can only "tune the prompt by feel" and will never locate the root cause.
 
 ### 1. Trace and Span: Structuring the Agent Execution Trace
 
@@ -605,13 +605,13 @@ flowchart TB
     class P1,P2,P3 block;
 ```
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
 Agent observability is the most overlooked yet most critical part. Trace reconstructs the execution trace, Timeline locates tail latency, Token Usage attributes cost, and Replay makes problems reproducible. An Agent without observability is a black box; when something goes wrong you can only tune the prompt by feel and will never reach the root cause.
 
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Assuming "the Agent has logs and that's enough." Traditional logs can only record "what was done" and cannot answer "why it was done this way, where the Tokens were burned, and which step got stuck." Agent observability must use the Trace + Span + Token attribution + Replay system; it is not something you get by directly applying traditional APM.
 
@@ -619,14 +619,14 @@ Assuming "the Agent has logs and that's enough." Traditional logs can only recor
 
 ---
 
-## Six. Unified Model: A Five-Stage Agent Engineering Capability Map
+## 6. Unified Model: A Five-Stage Agent Engineering Capability Map
 
 The diagram below summarizes the previous five stages into a unified model. The core node is the three attributes of Agent engineering — schedulable, isolated, observable. The five stages progress layer by layer, ultimately feeding back through observability into the context engineering of stage one, forming a closed loop.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
 flowchart TB
-    Core["Agent Engineering<br/>Schedulable & Isolated & Observable"]
+    Core["Agent Engineering<br/>Schedulable · Isolated · Observable"]
 
     subgraph S1["Stage One: AI Coding"]
         direction TB
@@ -699,15 +699,15 @@ The Docker and K8s stage builds the capability of an "isolated runtime." Contain
 
 The observability stage builds the capability of an "observable system." Trace, Timeline, Token Usage, and Replay turn the Agent from a black box into a white box, making problems locatable, costs attributable, and regressions comparable.
 
-::: tip Core takeaway of this section
+::: tip Core conclusion of this section
 
-The five stages are not a parallel checklist but a progressive path: consumable context → schedulable loop → governable Tools → isolated runtime → observable system. The output of observability feeds back into the context engineering of stage one, forming a complete engineering loop. This is exactly the concrete realization of the core thesis — moving from prompt tricks toward a schedulable, isolated, and observable tool runtime system.
+The five stages are a progressive path, not a parallel checklist: consumable context → schedulable loop → governable Tools → isolated runtime → observable system. The output of observability feeds back into the context engineering of stage one, forming a complete engineering loop. This path ends at the schedulable, isolated, and observable tool runtime system described in the core thesis.
 
 :::
 
 ---
 
-## Seven. Agent Engineering Practice Checklist
+## 7. Agent Engineering Practice Checklist
 
 ### 1. AI Coding Workflow
 
@@ -763,13 +763,13 @@ The five stages are not a parallel checklist but a progressive path: consumable 
 
 ## Conclusion: From Prompt to Runtime System
 
-Looking back at this learning path, the five stages are not a parallel skill list but a cognitive leap. Stage one's AI Coding makes people understand that "context determines output"; stage two's Agent Framework makes people understand that "loop and state determine whether long tasks can run"; stage three's MCP and Function Calling makes people understand that "Tool scheduling is the core of an Agent"; stage four's Docker and K8s makes people understand that "productionization inevitably moves toward Infra"; stage five's observability makes people understand that "what you cannot see, you cannot tune."
+Looking back at this learning path, the five stages are a progressive path, not a parallel checklist. Each step is a cognitive leap. Stage one's AI Coding makes people understand that "context determines output"; stage two's Agent Framework makes people understand that "loop and state determine whether long tasks can run"; stage three's MCP and Function Calling makes people understand that "Tool scheduling is the core of an Agent"; stage four's Docker and K8s makes people understand that "productionization inevitably moves toward Infra"; stage five's observability makes people understand that "what you cannot see, you cannot tune."
 
 Each stage breaks the cognitive comfort zone of the previous one. From "can write prompts" to "can call Tools," from "can call Tools" to "can run a Runtime," from "can run a Runtime" to "can deploy containers," from "can deploy containers" to "can observe a system." Each step pushes the Agent from "personal toy" toward "engineering system."
 
-And what runs through these five stages is the same engineering throughline: **schedulable, isolated, observable.** Schedulability lets an Agent run long tasks stably; isolation lets an Agent execute side effects safely; observability lets an Agent be root-caused. All three are indispensable — without any one of them, the Agent can only stay at the demo stage.
+Running through all five stages is the same engineering throughline: **schedulable, isolated, observable.** Schedulability lets an Agent run long tasks stably; isolation lets an Agent execute side effects safely; observability lets an Agent be root-caused. All three are indispensable — without any one of them, the Agent can only stay at the demo stage.
 
-> **The essence of Agent engineering is moving from single-turn prompt tricks to a schedulable, isolated, and observable tool runtime system.**
+> **The end goal of Agent engineering is a schedulable, isolated, and observable tool runtime system. Single-turn prompt tricks are only the starting point.**
 
 ---
 
@@ -777,11 +777,11 @@ And what runs through these five stages is the same engineering throughline: **s
 
 ### 1. Should I learn an Agent framework first, or MCP first?
 
-It is recommended to learn an Agent framework first, then MCP. The reason is that Agent frameworks (such as OpenAI Agents SDK and LangChain) let you first understand the Runtime's loop, state, and termination conditions, building the mental model of "an Agent is a runtime system." MCP is the standardized protocol for Tool scheduling; its value lies in unifying Tool governance — but only by first understanding how the Runtime schedules Tools can you appreciate what problem MCP solves. Learning MCP directly makes it easy to get lost in "protocol details" without seeing where it sits inside the Runtime.
+It is recommended to learn an Agent framework first, then MCP. The reason is that Agent frameworks (such as OpenAI Agents SDK and LangChain) let you first understand the Runtime's loop, state, and termination conditions, building the mental model of "an Agent is a runtime system." MCP is the standardized protocol for Tool scheduling; its value lies in unifying Tool governance — only by first understanding how the Runtime schedules Tools can you appreciate what problem MCP solves. Learning MCP directly makes it easy to get lost in "protocol details" without seeing where it sits inside the Runtime.
 
 ### 2. Does an Agent have to run on K8s?
 
-Not necessarily, but productionization almost certainly does. K8s solves production-grade problems like "declarative orchestration, elastic scaling, fault self-healing, and version rollback." If the Agent only runs in an internal demo or single-machine environment, Docker Compose is enough. But the moment it moves toward multiple replicas, multi-tenancy, traffic-driven scaling, and canary releases, K8s is practically the de facto standard. The judgment criteria are: does your Agent need to run 24/7 stably, does it need to handle traffic spikes, and does it need fast rollbacks.
+Not necessarily, but productionization almost certainly does. K8s solves production-grade problems like "declarative orchestration, elastic scaling, fault self-healing, and version rollback." If the Agent only runs in an internal demo or single-machine environment, Docker Compose is enough. Once it moves toward multiple replicas, multi-tenancy, traffic-driven scaling, and canary releases, K8s is practically the de facto standard. The judgment criteria are: does your Agent need to run 24/7 stably, does it need to handle traffic spikes, and does it need fast rollbacks.
 
 ### 3. Why is observability the most critical part?
 
@@ -789,7 +789,7 @@ Because an Agent is a probabilistic system + multi-step execution + tool side ef
 
 ### 4. Are MCP and Function Calling a replacement relationship?
 
-Not a replacement; it is a layered relationship. Function Calling is a model-layer protocol that defines "how the model generates a tool call intent"; MCP is an application-layer protocol that defines "how tools are standardized, discovered, and executed." An Agent can simultaneously use Function Calling as the model interface and MCP as the tool governance layer. The value of MCP is not in replacing Function Calling but in abstracting Tool, Resource, and Prompt into standard primitives that can be reused across frameworks.
+No, it is a layered relationship. Function Calling is a model-layer protocol that defines "how the model generates a tool call intent"; MCP is an application-layer protocol that defines "how tools are standardized, discovered, and executed." An Agent can simultaneously use Function Calling as the model interface and MCP as the tool governance layer. The value of MCP is in abstracting Tool, Resource, and Prompt into standard primitives that can be reused across frameworks, rather than replacing Function Calling.
 
 ### 5. After finishing the five stages, which direction should I go deeper into next?
 

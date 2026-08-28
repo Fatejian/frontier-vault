@@ -73,18 +73,18 @@ skills/
 
 #### 1. frontier-vault-article-style
 
-从《现代前端性能的底层链路》一文提炼的可复用写作规范，覆盖完整长文结构。内含 **8 个子 Skill**，按 workflow 顺序执行：
+从《现代前端性能的底层链路》一文提炼的可复用写作规范，覆盖完整长文结构。核心约定：
 
-1. `FrontmatterSpecSkill`（P0）— 规范 frontmatter 字段
-2. `OpeningStructureSkill`（P0）— 构建开篇三件套（H1 + blockquote 副标题 + `::: info` 核心论点 + TOC）
-3. `ChapterPatternSkill`（P0）— 套用章节四件套（问题框架 → 解释+示例 → `::: tip` 结论 → 可选 warning/info）
-4. `MermaidThemeSkill`（P1）— 应用五色主题（wait 蓝 / block 橙 / work 绿 / metric 紫 / core 深色）
-5. `CodeExamplePairSkill`（P1）— 反例/正例成对展示
-6. `UnifiedModelDiagramSkill`（P1）— 生成统一模型汇总图
-7. `PracticeChecklistSkill`（P1）— 输出分组实践清单（task list）
-8. `ClosingStructureSkill`（P0）— 收尾五件套（统一模型 + 实践清单 + 结语 + FAQ + 来源）
+- **整体形状**：frontmatter → 开篇 → 正文章节 → 统一模型 → 实践清单 → 结语 + FAQ + 来源
+- **开篇**：H1 + 引用块（副标题 / 目标读者 / 阅读时间）+ `::: info 一句话` 核心论点 + 目录
+- **章节**：问题引入 → 机制讲解（配代码/图）→ `::: tip 本节核心结论`，`::: warning 常见误区` / `::: info 工程启示` 按需
+- **图表**：Mermaid 五色主题（wait 蓝 / block 橙 / work 绿 / metric 紫 / core 深色），固定 `%%{init}%%` 写法
+- **代码**：反例/正例成对展示，首行注释标注
+- **收尾**：按文章类型走——实践型（性能/测试/工程流程/学习路径）为 统一模型汇总图 → 分组实践清单（task list）→ 结语 → FAQ → 来源；原理型（浏览器机制/框架源码/运行时原理）为 结语 → FAQ → 来源，统一模型与实践清单不强求
 
 **核心论点三次呼应**：开篇 `::: info` → 每章 `::: tip` → 结语 `blockquote`。
+
+正文内置一份可直接使用的「生成 prompt」和一份「校验清单」。
 
 #### 2. svg-color-contrast-debug
 
@@ -156,8 +156,8 @@ skills/
 
 | 项目场景 | 推荐技能 | 说明 |
 | --- | --- | --- |
-| 撰写知识库新文章 | `frontier-vault-article-style` | 按 8 步 workflow 生成同结构同质感长文 |
-| 校验现有文章风格 | `frontier-vault-article-style` | 逐子 Skill 的 `quality_checks` 输出问题清单 |
+| 撰写知识库新文章 | `frontier-vault-article-style` | 用正文「生成 prompt」产出同结构同质感长文 |
+| 校验现有文章风格 | `frontier-vault-article-style` | 用正文「校验清单」逐项检查并输出问题清单 |
 | Mermaid 图表文字不可见 | `svg-color-contrast-debug` | 套用科学调试工作流定位根因 |
 | 重设计首页 `HomePage.vue` | `design-taste-frontend` + `redesign-existing-projects` | 先审计再升级，遵守项目「禁用 SaaS 蓝紫渐变」约束 |
 | 为新页面生成设计参考图 | `imagegen-frontend-web` | 每个 section 一张图，再据此实现 |

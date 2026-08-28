@@ -1,6 +1,6 @@
 ---
 title: "Vue 3 Reactivity System: The Complete Implementation of Proxy and Dependency Collection"
-description: From Object.defineProperty to Proxy — a deep dive into the dependency collection mechanisms of reactive, ref, computed, and effect.
+description: From Object.defineProperty to Proxy, covering the dependency collection mechanisms of reactive, ref, computed, and effect.
 category: Frameworks
 tags:
   - Vue
@@ -661,7 +661,7 @@ Vue's batched updates are not based on the "event loop" but on the "microtask qu
 
 ### 4. The Relationship Among effect, computed, and watch
 
-All three are essentially effects:
+All three are variants of effect:
 
 | API | Internal implementation | Scheduler behavior |
 |-----|------------------------|--------------------|
@@ -864,7 +864,7 @@ const double = computed(() => {
 
 ::: tip Core conclusion of this section
 
-Common pitfalls in Vue reactivity all come from the "boundaries of Proxy interception": destructuring loses reactivity, differential ref unwrapping behavior, object replacement, asynchronous code, and computed side effects. Understanding the essence of these pitfalls is the watershed between "knowing how to use Vue" and "mastering Vue."
+Common pitfalls in Vue reactivity all come from the "boundaries of Proxy interception": destructuring loses reactivity, differential ref unwrapping behavior, object replacement, asynchronous code, and computed side effects. Understanding why these pitfalls happen is the watershed between "knowing how to use Vue" and "mastering Vue."
 
 :::
 

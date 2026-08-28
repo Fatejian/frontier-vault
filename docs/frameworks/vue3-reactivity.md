@@ -1,6 +1,7 @@
 ---
-title: "Vue 3 响应式系统：Proxy 与依赖收集的完整实现"
-description: 从 Object.defineProperty 到 Proxy，深入剖析 reactive / ref / computed 与 effect 的依赖收集机制
+title: "Vue 3 响应式系统：Proxy 与依赖收集的完整实现
+"
+description: 从 Object.defineProperty 到 Proxy，拆解 reactive / ref / computed 与 effect 的依赖收集机制
 category: Frameworks
 tags:
   - Vue
@@ -661,7 +662,7 @@ Vue 的批量更新不是基于"事件循环"，而是基于"微任务队列"。
 
 ### 4. effect、computed、watch 的关系
 
-三者本质上都是 effect：
+三者都是 effect 的不同变体：
 
 | API | 内部实现 | scheduler 行为 |
 |-----|---------|---------------|
@@ -864,7 +865,7 @@ computed 应该是纯函数。`scheduler` 机制下，computed 可能在不可�
 
 ::: tip 本节核心结论
 
-Vue 响应式的常见坑都来自"Proxy 拦截的边界"：解构失去响应性、ref 解包的差异化行为、对象替换、异步代码、computed 副作用。理解这些坑的本质，是"会用 Vue"和"精通 Vue"的分水岭。
+Vue 响应式的常见坑都来自"Proxy 拦截的边界"：解构失去响应性、ref 解包的差异化行为、对象替换、异步代码、computed 副作用。理解这些坑为什么发生，是"会用 Vue"和"精通 Vue"的分水岭。
 
 :::
 

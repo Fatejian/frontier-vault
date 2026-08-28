@@ -1,6 +1,6 @@
 ---
 title: "Painting and Rasterization: From Layer Composition to Screen Display"
-description: "The complete pipeline from Paint Record generation, layer splitting, tile rasterization to GPU compositing, with a deep dive into why transform/opacity don't trigger Layout"
+description: "The complete pipeline from Paint Record generation, layer splitting, tile rasterization to GPU compositing, explaining why transform/opacity don't trigger Layout"
 category: Browser
 tags:
   - Browser Internals
@@ -14,7 +14,7 @@ outline: deep
 
 # Painting and Rasterization: From Layer Composition to Screen Display
 
-> Subtitle: The complete pipeline from Paint Record generation, layer splitting, tile rasterization to GPU compositing, with a deep dive into why transform/opacity don't trigger Layout
+> Subtitle: The complete pipeline from Paint Record generation, layer splitting, tile rasterization to GPU compositing, explaining why transform/opacity don't trigger Layout
 >
 > Target readers: intermediate to advanced frontend engineers, frontend architects, animation and rendering performance optimization leads
 >
@@ -52,9 +52,9 @@ This path is often overlooked by frontend engineers because it "seems far from b
 - Why isn't GPU acceleration free?
 - Why does an LCP image still need a few hundred milliseconds to display after it has downloaded?
 
-Understanding this path is essentially understanding "how the browser turns an abstract layer model into concrete pixels." This article will walk you through every step from Paint to screen, and finally build a model that can explain all the phenomena above.
+Understanding this path is understanding "how the browser turns an abstract layer model into concrete pixels." This article will walk you through every step from Paint to screen, and finally build a model that can explain all the phenomena above.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Paint and Raster are two different things: Paint generates drawing commands (on the main thread), while Raster turns commands into pixels (on worker threads + GPU). Compositing assembles multiple layers (in the GPU process). The reason `transform/opacity` don't trigger Layout is that they act in the compositing stage, not the Paint stage.
 :::
@@ -110,7 +110,7 @@ In addition to producing the Paint Record, the Paint stage also **splits the pag
 
 Not every Paint Layer is promoted to a Graphics Layer. Only layers that meet specific conditions (such as 3D transforms, `will-change`, animated transform/opacity) are promoted to compositing layers.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Paint produces drawing commands rather than pixels, organized by layer. The most expensive Paint operations are large-area blurred shadows and complex filters. The output of Paint is the Paint Record plus a layer list, which is then handed over to rasterization and compositing.
 :::
@@ -196,12 +196,12 @@ flowchart TB
     class Software,Shared software;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Layers come from stacking contexts; compositing layers are the VIPs among layers. Compositing layers can be composited directly by the GPU, skipping the main thread, but each one consumes GPU memory. Abusing `will-change` can cause a "compositing-layer explosion" that actually slows performance.
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Adding `transform: translateZ(0)` to every element to "enable GPU acceleration." This makes the browser create compositing layers for elements that don't really need them, causing memory usage to surge and the compositing stage to slow down. The correct approach is to use it temporarily only for elements that truly need animation.
 :::
@@ -259,7 +259,7 @@ The completion time of LCP (Largest Contentful Paint) essentially depends on **w
 
 This is why long main-thread tasks delay LCP — when the main thread is occupied, the Paint stage cannot start, and rasterization cannot begin either.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Rasterization turns drawing commands into pixel bitmaps, split into tiles and executed concurrently. GPU rasterization is the mainstream, but some complex filters fall back to software. The final LCP time depends on rasterization completion; main-thread stalling slows the whole pipeline.
 :::
@@ -361,7 +361,7 @@ flowchart LR
     class G1,G2 gpu;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Compositing is the last step of the rendering pipeline, completed in the compositor thread and GPU process without main-thread involvement. This is the fundamental reason why transform/opacity animations can stay smooth when the main thread is stalled. Scrolling can be "non-main-thread scrolling" provided passive listeners are used reasonably.
 :::
@@ -443,7 +443,7 @@ If an element is not on a compositing layer, every frame of a transform animatio
 
 This is much more expensive than "only compositing." So the browser **automatically promotes elements with animated transform/opacity to compositing layers**, ensuring the animation takes only the compositing path.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The root reason transform/opacity don't trigger Layout: they change the transform matrix and opacity in the compositing stage, without changing layout information or draw content. The browser automatically promotes elements animated with these properties to compositing layers, so the animation runs entirely through the compositing path.
 :::
@@ -544,12 +544,12 @@ The GPU texture size of each compositing layer is roughly: `width × height × 4
 - A page with 20 such layers uses 160MB of GPU memory
 - When video memory is insufficient, the browser falls back to software compositing and performance drops sharply
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The accurate term for "GPU acceleration" is "promoting a layer to a compositing layer." `will-change` should be event-driven and removed immediately after use; it must not be left on permanently. Each compositing layer consumes GPU memory; too many will degrade performance.
 :::
 
-::: warning Common pitfall
+::: warning Common misconception
 
 Treating `will-change` as a performance optimization "patch" and adding it to every element that might animate. This causes compositing-layer explosion, GPU memory usage to surge, and the page to slow down.
 :::
@@ -610,7 +610,7 @@ element.addEventListener('scroll', handleScroll, { passive: true })
 
 The compositor thread is also responsible for handling some input events (such as touch, wheel). The compositor thread can forward events to the main thread (e.g. `click`) or consume them directly (e.g. non-passive scrolling). If the main thread is occupied by a long task, events queue up and INP worsens.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The compositor thread and worker threads are independent of the main thread, which is the foundation of "transform animations don't block the main thread" and "non-main-thread scrolling." But starting new animations and Style/Layout updates still require the main thread. Mobile scroll listeners must use `passive: true`.
 :::
@@ -659,7 +659,7 @@ DevTools → More tools → Layers:
 | Layer too large | Split large layers, or use `contain` to isolate |
 | Slow rasterization | Control layer count and size; avoid rasterizing entire large lists as one layer |
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 To locate Paint and Raster bottlenecks: use the Performance panel to inspect the distribution and duration of green blocks, the Layers panel to inspect layer count and memory, and Paint flashing to inspect repainted areas. The optimization directions are to reduce repaint area, control compositing-layer count, and avoid large-area blur effects.
 :::

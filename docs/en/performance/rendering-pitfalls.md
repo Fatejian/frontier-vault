@@ -148,7 +148,7 @@ flowchart LR
     class Composite,Composite2,Composite3 composite;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The cost of the rendering pipeline depends on which stage a change triggers. Layout is the most expensive (triggering all subsequent stages), Paint is second, and Composite is the cheapest. The first principle of rendering performance optimization is: **make changes trigger only Composite as much as possible**.
 
@@ -164,7 +164,7 @@ Thinking "CSS animations are always faster than JS animations". If an animated p
 
 ## II. Layout Pitfalls: Layout Thrashing and Forced Synchronous Layout
 
-**Layout Thrashing** is one of the most classic traps in rendering performance. Its essence is repeatedly triggering a "write → read → write → read" loop within the same frame, forcing the browser to execute synchronous layout calculations multiple times.
+**Layout Thrashing** is one of the most classic traps in rendering performance. Its root cause is repeatedly triggering a "write → read → write → read" loop within the same frame, forcing the browser to execute synchronous layout calculations multiple times.
 
 ### 1. Causes of Forced Synchronous Layout
 
@@ -222,7 +222,7 @@ function measureAndMutate() {
 }
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The root cause of Layout Thrashing is "interleaved reads and writes". The solution is to batch layout reads and layout writes separately, avoiding repeated forced synchronous layouts within the same frame.
 
@@ -294,7 +294,7 @@ Fixed-position elements (`position: fixed` / `position: sticky`) can cause the e
 
 After promoting to a composite layer, the element's repaint does not propagate to other layers, and the main thread is also less burdened during scrolling.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Paint cost is determined by "paint region × paint complexity". `box-shadow`, `border-radius`, filters, and gradients are the main sources of Paint cost. Promoting frequently changing elements to independent composite layers can limit the repaint region.
 
@@ -372,7 +372,7 @@ Some elements get promoted to composite layers even without `will-change`, for e
 
 These implicit composite layers are not a problem by themselves, but if there are too many, they can also drag down the Composite stage.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 `will-change` is a way to "borrow GPU resources", not free. Only enable it when animation actually needs a boost, and remove it immediately after the animation ends. Indiscriminate `will-change` causes layer explosion.
 
@@ -440,7 +440,7 @@ element.scrollIntoView({ behavior: 'smooth' })
 }
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 For `transform` / `opacity` animations to stay smooth, three conditions must be met simultaneously: the animated element is on an independent composite layer, the parent does not trigger Layout during animation, and the animated element itself is not so large that rasterization is overloaded.
 
@@ -494,7 +494,7 @@ function renderVisibleItems(container, items, scrollTop, viewportHeight) {
 }
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 DOM scale is a multiplier for rendering performance. The more nodes there are, the slower every pipeline stage becomes. Long lists, tree structures, and tables should be virtualized or paginated first.
 
@@ -553,7 +553,7 @@ When matching selectors, the browser starts from the rightmost key selector and 
 
 The advantage of BEM is not "nice naming", but that selector complexity is constant O(1) and does not depend on DOM depth.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 CSS selector complexity directly affects Style stage time. Prefer class selectors, avoid universal selectors, attribute selectors, and overly deep descendant selectors. Flat naming conventions like BEM are better for performance.
 
@@ -608,7 +608,7 @@ If the metrics of the fallback font and the custom font differ, replacement will
 />
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Font loading affects LCP and CLS. Use `font-display: swap` to avoid FOIT, use `preload` to accelerate critical fonts, and use `size-adjust` to reduce layout shift during font replacement.
 
@@ -659,7 +659,7 @@ Rasterization needs to upload the decoded bitmap as a texture to the GPU. The te
 
 The `poster` image is displayed before the video first frame renders, avoiding a long black screen when the LCP element is a video.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The rendering cost of images and media includes "decoding + rasterization + texture upload". Use `decoding="async"` for asynchronous decoding, use `srcset` to control size, and use `poster` to placeholder the video first frame.
 
@@ -730,7 +730,7 @@ document.addEventListener(
 )
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The core of scroll performance optimization is: declare `passive: true` so listeners do not block scrolling, throttle callbacks with `requestAnimationFrame`, and keep visual changes during scrolling within composite layers (only change `transform`).
 
@@ -810,7 +810,7 @@ Blocking in the rendering pipeline includes: forced synchronous layout blocking 
 
 Repeated work in the rendering pipeline includes: repeated layout (Layout Thrashing), repeated paint (large-area repaints), repeated rasterization (composite layers being repeatedly rebuilt), repeated compositing (layer sorting repeatedly), and repeated decoding (the same image decoded multiple times).
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 All rendering performance issues can be grouped into "waiting, blocking, repeated work". This unified model is the mental framework for rendering performance optimization: first locate which stage the problem is in, then determine which group it belongs to, and finally choose the corresponding strategy.
 

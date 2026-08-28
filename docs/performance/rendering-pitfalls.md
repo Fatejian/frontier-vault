@@ -1,5 +1,6 @@
 ---
-title: "渲染性能避坑指南：从 Layout、Paint 到 Composite 的常见陷阱与解法"
+title: "渲染性能避坑指南：从 Layout、Paint 到 Composite 的常见陷阱与解法
+"
 description: 从布局抖动、强制同步布局、大面积重绘、合成层爆炸到 will-change 滥用
 category: Performance
 tags:
@@ -164,7 +165,7 @@ flowchart LR
 
 ## 二、Layout 陷阱：布局抖动与强制同步布局
 
-**Layout Thrashing（布局抖动）** 是渲染性能里最经典的陷阱之一。它的本质是：在同一个帧里，反复触发"写 → 读 → 写 → 读"的循环，迫使浏览器多次执行同步布局计算。
+**Layout Thrashing（布局抖动）** 是渲染性能里最经典的陷阱之一。它的成因是：在同一个帧里，反复触发"写 → 读 → 写 → 读"的循环，迫使浏览器多次执行同步布局计算。
 
 ### 1. 强制同步布局的成因
 

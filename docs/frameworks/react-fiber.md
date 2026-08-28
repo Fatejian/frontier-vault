@@ -1,6 +1,6 @@
 ---
 title: "React Fiber 架构：从栈调度到链式可中断渲染"
-description: 深入剖析 React Fiber 的数据结构、双缓冲、时间切片、Lane 模型与并发模式
+description: 拆解 React Fiber 的数据结构、双缓冲、时间切片、Lane 模型与并发模式
 category: Frameworks
 tags:
   - React
@@ -186,7 +186,7 @@ flowchart LR
 
 ::: tip 本节核心结论
 
-Fiber 的三个目标——可中断、可恢复、可优先级调度——共同决定了它的实现方式：用链表替代树、用对象保存上下文、用调度器决定何时让出主线程。这是一套协同式调度系统，而不是简单的"性能优化"。
+Fiber 的三个目标（可中断、可恢复、可优先级调度）共同决定了它的实现方式：用链表替代树、用对象保存上下文、用调度器决定何时让出主线程。这是一套协同式调度系统，而不是简单的"性能优化"。
 
 :::
 
@@ -578,7 +578,7 @@ const nonTransitionLanes = lanes & ~TransitionLanes
 
 ### 2. Lane 与 batchedUpdates 的关系
 
-React 18 的 Automatic Batching 跟 Lane 模型紧密相关。多个 setState 被合并到同一次更新，本质上是把它们的 lanes 用 `|` 合并：
+React 18 的 Automatic Batching 跟 Lane 模型紧密相关。多个 setState 被合并到同一次更新，就是把它们的 lanes 用 `|` 合并：
 
 ```javascript
 function markRootUpdated(root, updateLane) {
@@ -879,7 +879,7 @@ Fiber 是 React 走向"调度系统"的关键一步。它带来了优先级、�
 
 ### 3. `useTransition` 和 `setTimeout(fn, 0)` 有什么区别？
 
-`setTimeout` 把回调推迟到下一个宏任务，本质上还是同步执行该回调里的所有 setState。`useTransition` 是把 setState 标记为低优先级，让 React 在调度层面"延后处理"，并且可以被打断、被插队。前者是"延迟调用"，后者是"优先级声明"，模型完全不同。
+`setTimeout` 把回调推迟到下一个宏任务，但回调里的 setState 仍然是同步执行。`useTransition` 是把 setState 标记为低优先级，让 React 在调度层面"延后处理"，并且可以被打断、被插队。前者是"延迟调用"，后者是"优先级声明"，模型完全不同。
 
 ### 4. 为什么 commit 阶段不能中断？
 

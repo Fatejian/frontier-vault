@@ -1,6 +1,6 @@
 ---
 title: "Execution Context & Scope Chain: Understanding Closures from the V8 Perspective"
-description: A deep dive from execution context lifecycle, variable and lexical environments, scope-chain construction to the closure memory model and memory leaks.
+description: From execution context lifecycle, variable and lexical environments, scope-chain construction to the closure memory model and memory leaks.
 category: JavaScript
 tags:
   - JavaScript
@@ -47,7 +47,7 @@ Many frontend engineers understand closures at the interview-question level: "A 
 
 To answer these questions, we must go from JavaScript execution context, environment record, and scope chain all the way to V8's heap memory model. This article follows that path.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The essence of a closure is: when a function is created, it captures the lexical environment in which it was defined; when that function is executed elsewhere, it still looks up variables along this captured environment chain. V8 stores this environment chain as a `Context` object on the heap — this is the underlying reason a closure can "remember" outer variables.
 
@@ -124,7 +124,7 @@ var a = 1
 let b = 2
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The execution context is the "scene" where code runs, managed by a stack. The creation phase registers variable bindings, determines `this`, and builds the scope chain. The essence of hoisting is "registered during creation, but not yet initialized".
 
@@ -189,13 +189,13 @@ function demo() {
 demo()
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 ES6 split out the lexical environment to support block scoping and the TDZ. `var` goes through the variable environment (function-scoped, initialized to undefined), while `let` / `const` go through the lexical environment (block-scoped, TDZ before declaration). Identifier lookup always starts from the current lexical environment.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
 The TDZ is not "syntactic sugar"; it is a real runtime constraint. When using `let` to declare order-sensitive variables inside loops or conditional blocks, the TDZ helps expose "use before declare" bugs early, whereas `var` would silently yield `undefined`.
 
@@ -260,7 +260,7 @@ flowchart LR
     class Null ending;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 The scope chain is not dynamically stitched together at runtime; it is fixed at function creation time by each environment's `outer` pointer. Lexical scope means "which variables a function can access" is determined at definition time, independent of the call site.
 
@@ -340,13 +340,13 @@ flowchart TB
     class FR stack;
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 V8 uses escape analysis to decide where variables live: variables referenced by closures go into heap `Context` objects; unreferenced variables stay on the stack and are reclaimed with the stack frame. Therefore "a closure captures the entire outer scope" is inaccurate — it only captures the variables that are actually used.
 
 :::
 
-::: info Engineering implication
+::: info Engineering insight
 
 This gives a practical troubleshooting approach: if a piece of closure code consumes unexpected memory, first look at which "large variables" it references. Even if you do not explicitly use a variable, as long as some function on the closure chain references it, it will stay on the heap.
 
@@ -415,7 +415,7 @@ Use the **Memory panel** in Chrome DevTools:
 3. Take another heap snapshot and choose "Comparison" mode.
 4. Sort by **Retained Size** and look for continuously growing objects, paying special attention to `(closure)` and `(array)` types.
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 A closure is not a leak; "a long-lived reference chain + objects that should be reclaimed but aren't" is the leak. When investigating, focus on closure objects whose Retained Size keeps growing; often they point to uncleaned listeners or timers.
 
@@ -544,7 +544,7 @@ console.log(account.getBalance()) // 150
 // account.balance // undefined — state is protected by the closure
 ```
 
-::: tip Key takeaway of this section
+::: tip Core conclusion of this section
 
 Best practices for closures: use `let` instead of IIFE in loops; explicitly dereference large objects after use; keep stable references to event callbacks for easy unbinding; use closures to encapsulate private state. The core idea is to "manage the lifecycle and reference scope of closures".
 

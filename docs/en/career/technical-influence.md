@@ -19,7 +19,7 @@ outline: deep
 > Reading time: ~26 minutes
 
 ::: info In one sentence
-The essence of technical influence is making the value produced by your capabilities exceed the code you personally write — from "doing well yourself" to "making the system better" to "making the organization better."
+Technical influence means making the value produced by your capabilities exceed the code you personally write — from "doing well yourself" to "making the system better" to "making the organization better."
 :::
 
 ## Table of Contents
@@ -38,16 +38,16 @@ The essence of technical influence is making the value produced by your capabili
 
 ## Introduction
 
-Many senior frontend engineers feel confused at a certain stage of career development:
+Many senior frontend engineers run into a confusion at some point in their career:
 
 > My technical skills are already strong, but why is my influence in the team still limited? Why can't I push cross-team projects forward? Why are my technical proposals always rejected?
 
-The essence of this confusion is: **equating "technical capability" with "technical influence."**
+The root of this confusion is: **equating "technical capability" with "technical influence."**
 
-Technical capability is "what you can do yourself"; technical influence is "what you can make others do." The two are related but not equal. A person can have strong technical skills but weak influence (the typical "lone wolf" engineer), or moderate technical skills but strong influence (the typical "amplifier" engineer).
+Technical capability is "what you can do yourself"; technical influence is "what you can make others do." The two are related, but they're not the same thing. A person can have strong technical skills but weak influence (the typical "lone wolf" engineer), or moderate technical skills but strong influence (the typical "amplifier" engineer).
 
 ::: info In one sentence
-The essence of technical influence is making the value produced by your capabilities exceed the code you personally write. From "doing well yourself" to "making the system better" to "making the organization better."
+Technical influence means making the value produced by your capabilities exceed the code you personally write. From "doing well yourself" to "making the system better" to "making the organization better."
 :::
 
 The diagram below shows the four-layer model of technical influence and the core capabilities corresponding to each layer:
@@ -106,13 +106,13 @@ flowchart TB
     class L4,L4A,L4B,L4C,L4D l4;
 ```
 
-This article will expand layer by layer and conclude with a discussion of the nature of technical leadership and the transition traps from technical expert to technical manager.
+This article expands layer by layer and closes with a section on the nature of technical leadership, plus the transition traps from technical expert to technical manager.
 
 ---
 
 ## 1. The Four-Layer Model of Technical Influence
 
-Technical influence can be divided into four layers, each with different scope, core capabilities, and metrics:
+Technical influence splits into four layers, each with a different scope, core capability, and metric:
 
 | Layer | Scope of Influence | Core Capability | Metric |
 | --- | --- | --- | --- |
@@ -121,26 +121,27 @@ Technical influence can be divided into four layers, each with different scope, 
 | L3 Organization Level | Multiple Teams | Architecture decisions, cross-team driving | Cross-team project outcomes, organization-level metrics |
 | L4 Industry Level | Entire Industry | Thought leadership, ecosystem building | Industry recognition, open source project impact |
 
-The four layers are progressive, but that doesn't mean "you must finish L1 before doing L2." In reality, most senior engineers switch between L1 and L2, experts between L2 and L3, and architects between L3 and L4.
+The four layers are progressive, but that doesn't mean "you must finish L1 before doing L2." In practice, most senior engineers switch between L1 and L2, experts between L2 and L3, and architects between L3 and L4.
 
-The core value of the four-layer model is: **it lets you identify which layer your current influence mainly sits on, and what you need to supplement to break through to the next layer.**
+The real value of the four-layer model is: **it lets you identify which layer your current influence mainly sits on, and what you need to add to break through to the next layer.**
 
-::: tip Key takeaway from this section
-Technical influence is layered. Identifying your current layer and what capabilities the next layer requires is the prerequisite for planning influence building.
+::: tip Core conclusion of this section
+
+Technical influence is layered. Identifying which layer you're on now and what capabilities the next layer requires is the prerequisite for planning influence building.
 :::
 
 ---
 
 ## 2. Code Level: High-Quality Output and Open Source Contribution
 
-L1 is the foundation of influence. If your code quality is poor, no matter how well you communicate or evangelize, it will be hard to gain technical trust.
+L1 is the foundation of influence. If your code quality is poor, no matter how well you communicate or evangelize, it's hard to earn technical trust.
 
 ### 1. High-Quality Code Output
 
-The core characteristics of high-quality code:
+Core characteristics of high-quality code:
 
 - **Readability**: Others can understand the main logic within an hour of taking over your code
-- **Maintainability**: When requirements change, changes are localized and don't trigger cascading effects
+- **Maintainability**: When requirements change, changes stay localized and don't trigger cascading effects
 - **Testability**: Core logic has test coverage, so refactoring won't break functionality
 - **Robustness**: Edge cases and exceptional situations are handled
 
@@ -225,13 +226,13 @@ function UserList({ onError }: UserListProps) {
 
 The difference is not "using more APIs," but improvements on three levels:
 
-- **State machine thinking**: Explicitly model states to avoid the "loading + error" combined state
+- **State machine thinking**: Explicitly model states to avoid the combined "loading + error" state
 - **Resource management**: Use AbortController to handle race conditions and cleanup
 - **Separation of concerns**: Data fetching, UI rendering, and error handling are independent
 
 ### 2. Open Source Contribution
 
-Open source contribution is an amplifier of L1 influence. Its value lies not just in "code being merged," but in:
+Open source contribution is an amplifier of L1 influence. Its value is not just "code being merged," but:
 
 - **Credibility building**: Publicly verifiable technical capability
 - **Collaboration proof**: The ability to drive things forward in an unfamiliar team
@@ -245,13 +246,15 @@ Open source contribution doesn't have to mean "maintaining a project with tens o
 4. **Maintain a submodule**: Be responsible for reviewing and evolving a module
 5. **Maintain your own project**: From utility libraries to frameworks
 
-Many engineers have "barrier anxiety" about open source contribution, feeling "I'm not good enough to contribute." But in reality, what open source projects need most is not "people who can write big features," but "people willing to do the dirty work" — fixing docs, adding tests, reproducing issues, participating in discussions. These contributions may seem small, but they are the foundation for building trust.
+Many engineers have "barrier anxiety" about open source contribution, feeling "I'm not good enough to contribute." But what open source projects need most is never "people who can write big features" — it's "people willing to do the dirty work" — fixing docs, adding tests, reproducing issues, participating in discussions. People who can write big features are not scarce; what's scarce is people willing to do these small things. These contributions may seem small, but they're the foundation for building trust.
 
-::: tip Key takeaway from this section
+::: tip Core conclusion of this section
+
 The foundation of L1 influence is high-quality code output. Open source contribution is an amplifier; start with low-barrier tasks to build trust and gradually take on greater responsibility.
 :::
 
 ::: warning Common misconception
+
 Equating "ability to write complex code" with "high-quality code." Complex code often means unclear design; high-quality code is usually simple — because the abstraction is right.
 :::
 
@@ -263,7 +266,7 @@ The core of L2 influence is **making your capabilities replicate across the enti
 
 ### 1. Technical Standards Setting
 
-The essence of technical standards is turning "personal best practices" into "team standards." A good standard should be:
+What technical standards do is turn "personal best practices" into "team standards." A good standard should be:
 
 - **Executable**: Can be automatically checked by tools (ESLint, TypeScript, CommitLint)
 - **Justified**: Every rule has a "why," not just "I think so"
@@ -277,7 +280,7 @@ Here's a concrete example. A frontend code standard that merely says "we use ESL
 - **Testing standards**: Which code must have tests, test coverage thresholds, E2E test scope
 - **Commit standards**: Commit message format, PR size limits, review process
 
-The key to setting standards is not "listing rules," but "explaining why + providing tool support." A rule without tool support will eventually be forgotten.
+The key to setting standards is not "how many rules you list," but "explaining why + providing tool support." A rule without tool support will basically be forgotten.
 
 ### 2. Code Review Culture Building
 
@@ -304,7 +307,7 @@ High-quality review looks at design:
 
 #### Review Attitude
 
-Code Review is not "finding fault," but "collaborative improvement." Three principles:
+Code Review is "collaborative improvement," not "finding fault." Three principles:
 
 - **Target the code, not the person**: Comments address the code, not the author
 - **Explain why**: Don't just say "this is bad"; say "this will cause problem Y in scenario X"
@@ -312,7 +315,7 @@ Code Review is not "finding fault," but "collaborative improvement." Three princ
 
 #### Review Scope
 
-Review doesn't mean "micromanage everything." Key questions:
+Review doesn't mean "micromanage everything." Key distinctions:
 
 - Affects online stability: must be strict
 - Affects maintainability: recommend improvement
@@ -320,7 +323,7 @@ Review doesn't mean "micromanage everything." Key questions:
 
 ### 3. Knowledge Retention
 
-Knowledge retention is the process of turning "tacit team knowledge" into "explicit, reusable assets."
+Knowledge retention is turning "tacit team knowledge" into "explicit, reusable assets."
 
 Typical examples of tacit knowledge:
 
@@ -339,14 +342,15 @@ Ways to make it explicit:
 
 Mentorship is the highest form of L2 influence — **amplifying your impact by developing others**.
 
-The key to mentorship is not "teaching technology," but "helping the mentee grow." Specific practices:
+The key to mentorship is "helping the mentee grow," not just "teaching technology." Specific practices:
 
 - **Regular 1:1s**: Weekly or biweekly, discussing growth rather than progress
 - **Challenging task assignment**: Give mentees tasks slightly harder than their current ability, with a safety net
 - **Reflective feedback**: Give specific feedback after key events, not just "good job" or "bad job"
 - **Career planning**: Help mentees see the next step in their growth direction
 
-::: tip Key takeaway from this section
+::: tip Core conclusion of this section
+
 The core of L2 influence is "making your capabilities replicate across the entire team." Technical standards, Code Review, knowledge retention, and mentorship are the four key means. Upgrade from "doing well yourself" to "making the team better."
 :::
 
@@ -358,7 +362,7 @@ The core of L3 influence is **getting multiple teams to move in the same directi
 
 ### 1. Architecture Decisions
 
-The essence of architecture decisions is "making trade-offs across multiple uncertain dimensions and convincing others to follow."
+What architecture decisions do is "make trade-offs across multiple uncertain dimensions and convince others to follow."
 
 An effective architecture decision process:
 
@@ -393,7 +397,7 @@ Examples: whether to introduce micro-frontends, whether to unify the state manag
 
 #### Gather Options
 
-At least 2-3 viable options should be listed, including the "do nothing" option. A "decision" that lists only 1 option is actually "persuasion."
+At least 2-3 viable options should be listed, including the "do nothing" option. A "decision" that lists only 1 option is actually just "persuasion."
 
 #### Analyze Trade-offs
 
@@ -433,11 +437,11 @@ New projects default to Vite; legacy projects stay on Webpack and are not active
 - Risks: Vite's stability on large projects needs ongoing observation
 ```
 
-The value of ADR is not in "recording the decision," but in "letting future engineers understand the context at the time the decision was made."
+The value of an ADR is not in "recording the decision," but in "letting future engineers understand the context at the time the decision was made."
 
 ### 2. Cross-Team Collaboration
 
-Cross-team collaboration is the most direct test of L3 influence. Whether a cross-team project can be driven forward is often not a technical problem, but an interest problem.
+Cross-team collaboration is the most direct test of L3 influence. Whether a cross-team project can be driven forward is often a matter of interests, not a technical problem.
 
 Key principles of cross-team collaboration:
 
@@ -452,7 +456,7 @@ Before project launch, list all stakeholders:
 
 #### Design Win-Win Outcomes
 
-A good cross-team project is one where "all participants benefit." If only one party benefits, it will be very hard to push forward.
+A good cross-team project is one where "all participants benefit." If only one party benefits, pushing it forward will be very hard.
 
 Example. You want to promote a "unified front-end monitoring platform" across the company.
 
@@ -461,7 +465,7 @@ Example. You want to promote a "unified front-end monitoring platform" across th
 - Operations team: benefits (unified observability)
 - Testing team: benefits (online issues traceable)
 
-Business teams are potential resistance. Solutions:
+Business teams are the potential resistance. Solutions:
 
 - Minimize integration cost (one-line SDK introduction)
 - Bring immediate value to business teams (e.g., free performance reports)
@@ -477,7 +481,7 @@ Cross-team communication can't use "technical talk." Use different languages for
 
 ### 3. Technical Evangelism
 
-Technical evangelism is an amplifier of L3 influence. Its essence is "making good technical practices adopted by more people."
+Technical evangelism is an amplifier of L3 influence. What it does is "make good technical practices adopted by more people."
 
 Forms of technical evangelism:
 
@@ -486,9 +490,10 @@ Forms of technical evangelism:
 - **Tech newsletter**: Regularly push valuable technical content
 - **Training courses**: Systematically train teams on new technologies
 
-The key to technical evangelism is not "talking about new technology," but "clearly explaining which scenarios it fits and which it doesn't." An evangelist who only says "this technology is great" will eventually lead the team into "blind following."
+The key to technical evangelism is "clearly explaining which scenarios it fits and which it doesn't," not "talking about new technology." An evangelist who only says "this technology is great" will eventually lead the team into "blind following."
 
-::: tip Key takeaway from this section
+::: tip Core conclusion of this section
+
 The core of L3 influence is "getting multiple teams to move in the same direction." Architecture decisions, cross-team collaboration, and technical evangelism are the key means. Upgrade from "making the team better" to "making the organization better."
 :::
 
@@ -542,7 +547,7 @@ Key capabilities for maintaining an open source project:
 - **Community building**: Attracting contributors, handling issues, responding to PRs
 - **Sustainability**: Avoiding burnout, building a maintainer team
 
-Many excellent open source projects eventually die not because of poor technology, but because of maintainer burnout. So "sustainability" is the most underrated capability for L4 open source projects.
+Many excellent open source projects eventually die not because of poor technology, but because of maintainer burnout — which has no direct relation to whether the technology is good. So "sustainability" is the most underrated capability for L4 open source projects.
 
 ### 4. Standard Setting
 
@@ -554,8 +559,9 @@ The highest level of L4 influence is participating in industry standard setting:
 
 This is a level few can reach, but it's worth knowing as a direction.
 
-::: tip Key takeaway from this section
-L4 influence is optional, not required. If you want to build it, technical talks, in-depth articles, and open source projects are the main paths. The core is "outputting insightful thinking," not "marketing yourself."
+::: tip Core conclusion of this section
+
+L4 influence is optional, not required. If you have the willingness to build it, technical talks, in-depth articles, and open source projects are the main paths. The core is "outputting insightful thinking," not "marketing yourself."
 :::
 
 ---
@@ -565,7 +571,7 @@ L4 influence is optional, not required. If you want to build it, technical talks
 Technical leadership is often misunderstood as "the strongest technical person becomes the leader." This is wrong.
 
 ::: info In one sentence
-The essence of technical leadership is not "doing best yourself," but "making the team do best."
+Technical leadership is "making the team do its best," not "doing your own best."
 :::
 
 ### 1. Technical Leadership vs. Technical Capability
@@ -587,8 +593,8 @@ Differences between the two:
 
 Define the team's technical direction:
 
-- What technology stack should the team use
-- How should the system evolve
+- What technology stack the team should use
+- How the system should evolve
 - Which technical debts should be prioritized
 
 #### Level 2: Technical Decision Leadership
@@ -608,7 +614,7 @@ Develop the team's technical capabilities:
 - Provide mentorship and feedback
 - Help team members grow
 
-Many technical experts, after becoming technical leaders, only do Level 1 and Level 2 and ignore Level 3. As a result, the team's dependence on them grows stronger, the busier they are, the weaker the team becomes — this is the typical "technical leadership trap."
+Many technical experts, after becoming technical leaders, only do Level 1 and Level 2 and ignore Level 3. As a result, the team's dependence on them grows stronger, they get busier, and the team gets weaker — this is the typical "technical leadership trap."
 
 ### 3. Core Principles of Technical Leadership
 
@@ -630,8 +636,9 @@ Delegation doesn't mean no judgment. On key issues (such as architecture directi
 
 When the team makes mistakes, technical leaders should take responsibility, not pass the buck to executors. This is the foundation of building trust.
 
-::: tip Key takeaway from this section
-The essence of technical leadership is "making the team do best," not "doing best yourself." Three levels: direction leadership, decision leadership, talent leadership. The core principle is "make the team not need you."
+::: tip Core conclusion of this section
+
+Technical leadership is "making the team do its best," not "doing your own best." Three levels: direction leadership, decision leadership, talent leadership. The core principle is "make the team not need you."
 :::
 
 ---
@@ -673,7 +680,7 @@ New managers easily fall into the obsession of "building processes": weekly repo
 
 **Problem**: Too many processes make the team lose initiative; everyone is "completing processes" rather than "delivering results."
 
-**Breakthrough**: Process is a tool, not a goal. Before establishing a process, ask "what problem does this process solve"; if you can't explain it, don't establish it.
+**Breakthrough**: Process is a tool, not a goal. Before establishing a process, ask "what problem does this process solve"; if you can't explain it clearly, don't build it.
 
 ### Trap 4: Avoiding Conflict
 
@@ -703,11 +710,13 @@ Some technical managers, after transitioning, start looking at problems from a "
 
 **Breakthrough**: Remember how you felt as an engineer — the pain of being pressured by unreasonable requirements, the pain of being tortured by vague PRDs, the pain of being woken up by online incidents. This empathy is the foundation of good technical management.
 
-::: tip Key takeaway from this section
+::: tip Core conclusion of this section
+
 The transition from technical expert to technical manager has six major traps. The core principle is: technical managers are still technical people; only their work object has expanded from "code" to "team + system."
 :::
 
 ::: warning Common misconception
+
 Thinking "management means giving up technology." Excellent technical managers maintain technical sensitivity; they just no longer write all the code themselves. "Management" completely detached from technology will eventually lose the trust of the technical team.
 :::
 
@@ -719,10 +728,10 @@ Back to the beginning: what is the relationship between technical capability and
 
 **Technical capability is the foundation; technical influence is the amplifier.**
 
-Influence without technical capability is a castle in the air — you can talk eloquently, but you can't land.
+Influence without technical capability is a castle in the air — you can talk eloquently, but you can't land anything.
 Technical capability without influence is the lone wolf — you can solve problems, but you can't solve systemic problems.
 
-The four-layer influence model (code / team / organization / industry) is not "you must climb to the top," but a map:
+The four-layer influence model (code / team / organization / industry) gives you a map, not "you must climb to the top":
 
 - L1 is the foundation; in any case, it must be solid
 - L2 is the goal of most senior engineers
@@ -731,10 +740,10 @@ The four-layer influence model (code / team / organization / industry) is not "y
 
 Technical leadership is not a synonym for "promotion." An L2 engineer can fully demonstrate technical leadership — through Code Review helping colleagues grow, through technical standards improving team efficiency, through mentorship cultivating new people. These are all manifestations of technical leadership.
 
-Ultimately, the measure of technical influence is not "what is your title," but "what would the team become without you."
+Ultimately, the measure of technical influence comes down to one question: what would the team become without you.
 
 ::: info In one sentence
-Technical influence is an amplifier — it makes the value produced by your capabilities exceed the code you personally write. From "doing well yourself" to "making the system better" to "making the organization better," this is the essential path of technical people growth.
+Technical influence is an amplifier — it makes the value produced by your capabilities exceed the code you personally write. From "doing well yourself" to "making the system better" to "making the organization better," this is the main thread of a technical person's growth.
 :::
 
 ---
@@ -743,7 +752,7 @@ Technical influence is an amplifier — it makes the value produced by your capa
 
 ### 1. I'm an L2 engineer and want to start building L2 influence. Where do I start?
 
-Starting with Code Review is easiest. Take the initiative to do Code Review, upgrading from "finding syntax errors" to "looking at design problems." At the same time, you can choose a small area (such as the team's internal utility function library) to standardize and document. Mentorship can start with "onboarding new people"; you don't need a formal mentor relationship — usually helping new people solve problems is the prototype of mentorship.
+Starting with Code Review is easiest. Take the initiative to do Code Review, upgrading from "finding syntax errors" to "looking at design problems." At the same time, you can pick a small area (such as the team's internal utility function library) to standardize and document. Mentorship can start with "onboarding new people"; you don't need a formal mentor relationship — usually helping new people solve problems is the prototype of mentorship.
 
 ### 2. Cross-team projects can't move forward. Is it a technical problem or a communication problem?
 
@@ -751,11 +760,11 @@ Starting with Code Review is easiest. Take the initiative to do Code Review, upg
 
 ### 3. Does open source contribution really help career development?
 
-It helps, but with prerequisites. The prerequisites are: (1) the contribution is real, not padding PR numbers; (2) the contribution is related to your growth direction, not blind participation; (3) you can extract insights from the contribution, not just "I contributed N PRs." The biggest value of open source contribution is not "resume points," but "proof of collaboration ability + expansion of technical horizons." If you can clearly explain in an interview "what I learned while contributing to a project," the value far exceeds "I contributed to N projects."
+It helps, but with prerequisites. The prerequisites are: (1) the contribution is real, not padding PR numbers; (2) the contribution is related to your growth direction, not blind participation; (3) you can extract insights from the contribution, not just "I contributed N PRs." The biggest value of open source contribution is "proof of collaboration ability + expansion of technical horizons"; the resume boost is incidental. If you can clearly explain in an interview "what I learned while contributing to a project," the value far exceeds "I contributed to N projects."
 
 ### 4. Does technical leadership have to be demonstrated through management?
 
-No. Technical leadership can be fully demonstrated on the IC (Individual Contributor) path. A senior IC can: (1) influence team decisions through technical direction suggestions; (2) help the team grow through Code Review and mentorship; (3) drive organizational improvement through cross-team technical projects. These are all manifestations of technical leadership. Whether to do management depends on whether you prefer "influencing through yourself" or "influencing through the team" — both can achieve high influence.
+No. Technical leadership can be fully demonstrated on the IC (Individual Contributor) path. A senior IC can: (1) influence team decisions through technical direction suggestions; (2) help the team grow through Code Review and mentorship; (3) drive organizational improvement through cross-team technical projects. These are all manifestations of technical leadership. Whether to do management depends on whether you prefer "influencing through yourself" or "influencing through the team" — both can reach high influence.
 
 ### 5. After moving from technical expert to manager, I feel increasingly "empty." What should I do?
 

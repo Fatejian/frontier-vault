@@ -1,0 +1,14 @@
+# Keep shell scripts checked out as LF.
+#
+# Blobs in this repository are already stored as LF; core.autocrlf converts
+# them to CRLF in the working copy on Windows. A script executed directly
+# from a WSL working copy then fails with:
+#   /bin/bash^M: bad interpreter: No such file or directory
+#
+# Pinning eol=lf makes the checkout deterministic regardless of each
+# machine's autocrlf setting, which is what the deploy flow relies on when
+# these scripts are run on the origin server.
+#
+# Scoped to *.sh: line endings in documentation do not affect execution, and
+# renormalizing them would produce a large diff for no functional gain.
+*.sh text eol=lf

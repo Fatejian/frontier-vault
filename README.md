@@ -69,7 +69,7 @@ npm run i18n:home      # 校验各语言 index.md 首页 frontmatter 与 home.js
 
 > 开发模式下无需手动执行：`npm run docs:dev` 启动后，`vite.config.js` 中的 `vite-plugin-auto-sidebar.js` 插件会监听 `docs/**/*.md` 的增删改，自动重跑 `sidebar:gen` 重新生成 `config.js`。
 
-> 译者协作规范（翻译规则、Mermaid 标签转义、`:::` 指令、内链/外链更新、缺翻译策略、新增语言完整步骤等）详见 [`CONTRIBUTING-i18n.md`](CONTRIBUTING-i18n.md)。
+> 译者协作规范（翻译规则、Mermaid 标签转义、`:::` 指令、内链/外链更新、缺翻译策略、新增语言完整步骤等）详见 [`project-docs/CONTRIBUTING-i18n.md`](project-docs/CONTRIBUTING-i18n.md)。
 
 ## 技术栈
 
@@ -100,9 +100,11 @@ frontier-vault/
 ├── assets/readme/             # README 视觉资产（hero.svg）
 ├── scripts/                   # 工具脚本（generate-sidebar / vite-plugin-auto-sidebar / audit-articles / extract-headings）
 ├── skills/                    # AI 技能资产（自包含、Git 跟踪，克隆即得）
+├── project-docs/              # 项目层面文档（不进 VitePress 构建）
+│   ├── CONTRIBUTING-i18n.md       # 译者协作规范
+│   └── PERFORMANCE-OPTIMIZATION.md# 加载性能优化执行文档（CDN 接入）
 ├── .github/workflows/deploy.yml
 ├── vite.config.js             # Vite 配置（dev 时 auto-sidebar 插件入口）
-├── CONTRIBUTING-i18n.md       # 译者协作规范
 ├── LICENSE-CODE / LICENSE-CONTENT
 └── package.json
 ```

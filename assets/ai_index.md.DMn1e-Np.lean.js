@@ -1,1 +1,0 @@
-import{_ as a,o as n,c as i,a1 as e}from"./chunks/framework.Bd3Jtoau.js";const u=JSON.parse('{"title":"AI 工程","description":"","frontmatter":{},"headers":[],"relativePath":"ai/index.md","filePath":"ai/index.md"}'),l={name:"ai/index.md"};function r(t,s,p,o,h,c){return n(),i("div",null,[...s[0]||(s[0]=[e("",24)])])}const d=a(l,[["render",r]]);export{u as __pageData,d as default};

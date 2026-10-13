@@ -1,49 +1,58 @@
 # frontier-vault 加载性能优化执行文档
 
-> **主站**：`www.fatejian.icu`（VitePress 1.6.4，Cloudflare CDN）
-> **子应用**：`kb` / `plan` / `pmp`.fatejian.icu（源站直连，Nginx 按 Host 分流）
+> **主站**：`www.fatejian.icu`（VitePress 1.6.4，Cloudflare CDN + Cache Rule）
+> **子应用**：`kb.fatejian.icu`（已纳入 CDN）/ `plan`、`pmp.fatejian.icu`（源站直连）
 > 源站：`<ORIGIN_IP>`（阿里云杭州，nginx 1.24.0）
-> 诊断完成：2026-10-12 ｜ 架构重构：2026-10-12
+> 诊断完成：2026-10-12 ｜ 架构重构：2026-10-12 ｜ CDN 扩面：2026-10-13
 > 关联文档：[`SUBDOMAIN-PROXY.md`](./SUBDOMAIN-PROXY.md)（子应用分流完整手册）
 
 ---
 
 ## 一、当前架构现状
 
-> 本节为 2026-10-12 重构新增。**理解后续所有结论的前提**：主站与子应用走的是两条完全不同的流量路径，性能特征不可混为一谈。
+> 本节为 2026-10-12 重构新增，2026-10-13 更新。**理解后续所有结论的前提**：五个入口走三种不同的流量路径，性能特征不可混为一谈。
 
-### 四个站点，两条路径
+### 五个入口，三种路径
 
-| 站点 | 用途 | 源站端口 | DNS 代理 | 流量路径 | TLS 证书 |
+| 站点 | 用途 | 源站端口 | DNS 代理 | HTML 缓存 | 流量路径 |
 |---|---|---|---|---|---|
-| `www.fatejian.icu` | 主站文档 | 80/443 | 🟠 橙云 | 用户 → Cloudflare 边缘 → 源站 | 泛域名 `*.fatejian.icu` |
-| `fatejian.icu` | 主站 apex | 80/443 | 🟠 橙云 | 同上 | 同上 |
-| `kb.fatejian.icu` | 知识库 | 8082 | ⚪ 灰云 | 用户 → 源站（跨境） | SAN 证书 |
-| `plan.fatejian.icu` | 计划工具 | 8081 | ⚪ 灰云 | 同上 | 泛域名证书 |
-| `pmp.fatejian.icu` | 管理后台 | 8080 | ⚪ 灰云 | 同上 | 泛域名证书 |
+| `www.fatejian.icu` | 主站文档 | 80/443 | 🟠 橙云 | ✅ 已配（600s） | Cloudflare 边缘（**命中不回源**） |
+| `fatejian.icu` | 主站 apex | 80/443 | 🟠 橙云 | ✅ 已配（600s） | 同上 |
+| `kb.fatejian.icu` | 知识库 | 8082 | 🟠 橙云 | ✅ 已配（600s） | 同上 |
+| `plan.fatejian.icu` | 计划工具 | 8081 | ⚪ 灰云 | — | 用户 → 源站（**跨境**） |
+| `pmp.fatejian.icu` | 管理后台 | 8080 | ⚪ 灰云 | — | 同上 |
 
 分流由 `scripts/setup-subdomain-proxies.sh` 生成配置（`/etc/nginx/conf.d/subdomain-proxies.conf`）：
 用户始终访问 443，Nginx 按 `Host` 匹配 `server_name` 后 `proxy_pass` 到对应本地端口。
 **DNS 无法指定端口**，端口映射只能由源站 Nginx 完成——详见 `SUBDOMAIN-PROXY.md`。
 
-### 关键差异：子应用没有 CDN 保护
+### 决定性变量是 HTML 有没有被 CDN 缓存
 
-2026-10-12 客户端实测（同一网络环境）：
+2026-10-13 最终实测（同一网络环境，TTFB 连测 3 次取平均）：
 
-| 目标 | DNS | TLS | TTFB | 总耗时 | 页面大小 |
-|---|---|---|---|---|---|
-| `www.fatejian.icu` | 116ms | 237ms | **311ms** | 315ms | 24 KB |
-| `kb.fatejian.icu` | 476ms | 583ms | **621ms** | 688ms | 47 KB |
-| `plan.fatejian.icu` | 511ms | 611ms | **653ms** | 653ms | 0.6 KB |
-| `pmp.fatejian.icu` | 261ms | 367ms | **412ms** | 412ms | 0.6 KB |
+| 入口 | 路径 | TTFB 平均 | 最低 | `cf-cache-status` |
+|---|---|---|---|---|
+| `www.fatejian.icu` | 橙云 + Cache Rule | **191ms** | 188ms | HIT |
+| `fatejian.icu` | 橙云 + Cache Rule | **200ms** | 192ms | HIT |
+| `kb.fatejian.icu` | 橙云 + Cache Rule | **226ms** | 196ms | HIT |
+| `plan.fatejian.icu` | 灰云直连 | 653ms | — | — |
+| `pmp.fatejian.icu` | 灰云直连 | 412ms | — | — |
 
-**子应用的 DNS 耗时（476~511ms）与第二节记录的跨境基线（507ms）几乎一致**，说明它们仍在走跨境链路，CDN 对其零收益。
+**同样的橙云配置，HTML 缓存命中与未命中的 TTFB 相差 7 倍**：
 
-- 主站 TTFB 311ms：相对基线 1192ms 改善 **3.8 倍**，CDN 已生效
-- 子应用 TTFB 412~653ms：TTFB 中**建连开销占主导**，服务器实际处理不足 100ms
-- `plan` / `pmp` 首屏只有 0.6KB（SPA 骨架），但 JS/CSS 仍需跨境拉取，未命中缓存时耗时会显著放大
+| 阶段 | www TTFB | 说明 |
+|---|---|---|
+| CDN 前基线 | 1192 ms | 跨境直连 |
+| 纳入 CDN，未配 Cache Rule | **1411 ms** | Cloudflare 对 HTML 返回 `DYNAMIC`，每次回源，等于白折腾 |
+| 纳入 CDN + 配 Cache Rule | **191 ms** | 命中即不回源 |
 
-> ⚠️ **这不是缺陷，是当时的取舍**：子应用灰云直连意味着源站真实 IP 对外可见，且子应用多为一对一的内部工具，初期不急于接入 CDN。是否纳入 CDN 见第五节。
+结论：
+
+1. **纳入 CDN 只是入场券，Cache Rule 才是决定性因素。** 没有它，Cloudflare 按扩展名决定缓存，HTML 一律 `DYNAMIC`。
+2. 主站 TTFB 从 1411ms 降至 191ms，**改善 7.4倍**；相对 CDN 前基线（1192ms）改善 **6.2 倍**。
+3. `plan` / `pmp` 的 DNS 耗时（261~511ms）与跨境基线（507ms）同量级，CDN 对其零收益，是否纳入见第五节。
+
+> 📌 **Anycast 节点会变**：`kb` 切换代理后首次测得 `CF-RAY: …-LHR`（伦敦），复测为 `…-HKG`（香港）。判断是否走 CDN 应以 `Server: cloudflare` 或 `cf-ray` 响应头为准，不要以固定 colo 假设为准。
 
 ---
 
@@ -133,25 +142,51 @@ curl -s https://www.fatejian.icu/cdn-cgi/trace | grep colo
 
 ### 缓存策略
 
-| 路径 | 源站响应头 | 效果 |
+| 路径 | 源站响应头 | Cloudflare 是否缓存 |
 |---|---|---|
-| `/assets/*` | `max-age=2592000, immutable` | 30 天零回源（文件名带内容 hash） |
-| HTML | `max-age=600, stale-while-revalidate=86400` | 10 分钟零回源，之后先返回旧内容后台静默更新 |
+| `/assets/*` | `max-age=2592000, immutable`（kb 为 `max-age=31536000`） | ✅ 按扩展名默认缓存，无需规则 |
+| HTML（`www` / apex / `kb`） | `max-age=600` | ✅ 均已配Cache Rule |
 
-> **更正版**（2026-10-12）：旧版本文档称"脚本默认写入 `max-age=0, stale-while-revalidate=600`，需手动改为 600/86400"，**该描述与实现不符**。
-> `scripts/setup-nginx-perf.sh` 的实际默认值即 `HTML_MAXAGE=600`、`REVALIDATE=86400`，执行后无需手动修改。
-> 如需确认源站实际返回值：
-> ```bash
-> curl -sI https://www.fatejian.icu/ | grep -i cache-control
-> ```
+> ⚠️ **重要更正（2026-10-13）**：`Cache-Control: max-age=600` **只对浏览器缓存生效，不会让 Cloudflare 缓存 HTML**。
+> Cloudflare 默认按**文件扩展名**决定缓存，HTML 一律视为动态内容返回 `cf-cache-status: DYNAMIC`。
+> 本项目此前一直误以为"源站已设 600 秒 → 10 分钟零回源"，2026-10-13 实测主站 HTML 连续两次均为 `DYNAMIC`，该结论不成立。
+>
+> 源站头本身没问题：`scripts/setup-nginx-perf.sh` 的默认值即 `HTML_MAXAGE=600`、`REVALIDATE=86400`
+> （旧版本文档称脚本默认写 `max-age=0` 需手动改，与实现不符，已于 2026-10-12 更正）。
+> 真正缺失的是 Cloudflare 侧的 Cache Rule。
+
+### 配置 Cache Rule（HTML 缓存）
+
+路径：`Rules → Cache Rules → Create rule`
+
+| 字段 | 值 |
+|---|---|
+| `Rule name` | `Cache HTML - <hostname>` |
+| `Hostname` | `equals` → `<hostname>` |
+| `URI Path` | `does not contain` → `/assets/` |
+| `Cache eligibility` | `Eligible for cache` |
+| `Edge TTL` | `Ignore cache-control header and use this TTL` → `600` seconds |
+| `Browser TTL` | `Override origin` → `600` seconds |
+
+> `URI Path` 排除 `/assets/` 是必需的：那些文件靠 hash 文件名做长期缓存（30 天~ 1 年），
+> 被这条规则纳入会缩短其 Edge TTL。同时确认 `Cache Deception Armor` 处于关闭状态。
+
+验证：
+
+```bash
+curl -sI https://<hostname>/ | grep -i cf-cache-status   # 第一次 MISS
+curl -sI https://<hostname>/ | grep -i cf-cache-status   # 第二次 HIT
+```
+
+**当前状态**：`www`、`fatejian.icu`、`kb` 三条规则均已配置并验证通过（`cf-cache-status` 均为 `HIT`）。
 
 ### 上线效果实测
 
-| 指标 | CDN 前基线 | 当前实测 | 改善 |
+| 指标 | CDN 前基线 | 当前实测（`www`） | 改善 |
 |---|---|---|---|
-| DNS | 507 ms | **116 ms** | 4.4× |
-| TLS 握手 | 798 ms | **237 ms** | 3.4× |
-| TTFB | 1192 ms（中位） | **311 ms** | 3.8× |
+| DNS | 507 ms | 202 ms | 2.5× |
+| TLS 握手 | 798 ms | 263 ms | 3.0× |
+| TTFB | 1192 ms（中位） | **191 ms** | **6.2×** |
 | 偶发长尾 | 数十秒 | 基本消失 | — |
 
 ---
@@ -204,21 +239,23 @@ buffer_size 16k;          # 必须加，否则进程间不刷盘
 
 ---
 
-## 五、子应用是否纳入 CDN（待决策）
+## 五、子应用 CDN 状态
 
-主站已验证 CDN 收益（TTFB 改善 3.8×）。子应用目前未享受该收益，**是否纳入需要按用途区分，不能一刀切**：
+`kb` 已于 2026-10-13 纳入 CDN 并验证通过；`plan` / `pmp` 仍为灰云直连。
+**是否纳入需按用途区分，不能一刀切**：
 
-| 子应用 | 性质 | 建议 | 理由 |
-|---|---|---|---|
-| `kb` | 内容型知识库（含服务端搜索） | **建议纳入** | 内容公开、流量型，CDN 收益最大；搜索接口已独立反代到 `127.0.0.1:8083`，不受影响 |
-| `plan` | 计划/规划工具 | 待确认 | 取决于是否面向公开用户 |
-| `pmp` | 管理后台 | **建议不纳入** | `admin` 性质，纳入 CDN 会把后台暴露到 Cloudflare 边缘，徒增攻击面 |
+| 子应用 | 状态 | 性质 | 结论 | 理由 |
+|---|---|---|---|---|
+| `kb` | ✅ 橙云 + Cache Rule | 内容型知识库 | 已完成 | TTFB 621ms → 约 210ms；搜索接口独立反代到 `127.0.0.1:8083`，不受影响 |
+| `plan` | ⚪ 灰云直连 | 计划/规划工具 | 待确认 | 取决于是否面向公开用户 |
+| `pmp` | ⚪ 灰云直连 | 管理后台 | **建议不纳入** | `admin` 性质，纳入 CDN 会把后台暴露到 Cloudflare 边缘，徒增攻击面 |
 
-**纳入 CDN 的技术前提已满足**（2026-10-12 核验）：
+**纳入 CDN 的技术前提已满足**（2026-10-13 由 `kb` 实证）：
 
 - 443 已监听，Cloudflare 免费版只回源 80/443，不存在端口限制问题
-- 源站证书有效，Full (strict) 模式下可直接通过校验（SAN 证书覆盖三个子域名）
-- 只需在 Cloudflare 把三条记录从「仅 DNS」改为「已代理」
+- 源站证书有效，Full (strict) 模式下直接通过校验（`kb` 实测 200，无 525）
+- Cloudflare 面板将记录从「仅 DNS」切到「已代理」即可，生效约 1 分钟
+- **但必须同时配 Cache Rule**，否则 HTML 仍每次回源（见第三节）
 
 **纳入前需评估的副作用**：
 
@@ -446,9 +483,12 @@ open() "/var/www/pmp-admin/dist/vp-icons.css" failed (2: No such file or directo
 curl -sI https://pmp.fatejian.icu/vp-icons.css
 ```
 
-**3. 子应用未纳入 CDN** —— 见第五节，待决策。
+**3. `plan` / `pmp` 未纳入 CDN** —— 见第五节，待决策。
 
 **4. 源站 IP 无法隐藏** —— 见第七节，待决策。
+
+> 已于 2026-10-13 关闭的待办：`www` / apex / `kb` 的 HTML Cache Rule 已配置完毕，
+> 三者 `cf-cache-status` 均为 `HIT`，主站 TTFB 由 1411ms 降至 191ms。
 
 ---
 
@@ -462,3 +502,7 @@ curl -sI https://pmp.fatejian.icu/vp-icons.css
 | 2026-10-12 | 更正三处事实错误：HTML `max-age` 默认值、mermaid 图表数（54→79）、验收清单中的硬编码 hash 文件名 |
 | 2026-10-12 | 更正 pmp-admin「站点已下线」的错误结论，实测资源已恢复 |
 | 2026-10-12 | 标注关键冲突：源站 IP 加固与子应用灰云直连互斥，未决策前不可执行 |
+| 2026-10-13 | `kb` 纳入 CDN 并配 Cache Rule，TTFB 621ms → 约 210ms（改善 2.7 倍）；第一节重构为「五个入口、三种路径」 |
+| 2026-10-13 | **更正关键错误结论**：源站 `max-age=600` 并不会让 Cloudflare 缓存 HTML，实测主站连续两次均 `DYNAMIC`。缓存收益必须靠 Cache Rule，已补入配置步骤 |
+| 2026-10-13 | 标注主站 `www` / apex 未配 Cache Rule 为**最高优先级待优化项**（TTFB 仍 1411ms） |
+| 2026-10-13 | **该待办已完成**：`www` / apex / `kb` 三条 Cache Rule 全部配置并验证（`cf-cache-status: HIT`），主站 TTFB 1411ms → **191ms**，静态资源 TTL 未受影响 |

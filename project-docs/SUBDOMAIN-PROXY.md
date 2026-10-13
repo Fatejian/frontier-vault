@@ -1,11 +1,12 @@
 # 子域名端口分流执行文档
 
 > 站点：`kb.fatejian.icu` / `plan.fatejian.icu` / `pmp.fatejian.icu`（源站 `<ORIGIN_IP>`，百度智能云 BCC 华东-北京）
-> 编制：2026-10-12
+> 编制：2026-10-12（2026-10-13 补充 API 缓存双保险）
 > 执行脚本：`scripts/setup-subdomain-proxies.sh`
 > 关联文档：`PERFORMANCE-OPTIMIZATION.md`（同一台服务器）、`CONTRIBUTING-i18n.md`
 > 状态：**已于 2026-10-12 完成上线**，80 跳转 443，三个子域名均返回 200；
-> 8080/8081/8082 已从 `0.0.0.0` 收紧至 `127.0.0.1`，公网直连验证不可达
+> 8080/8081/8082 已从 `0.0.0.0` 收紧至 `127.0.0.1`，公网直连验证不可达；
+> 2026-10-13 追加 `/api/` 的源站侧 `no-store` 兜底，与 Cloudflare Cache Rules 构成双保险
 > 说明：文中 `<ORIGIN_IP>` 需替换为源站公网 IP
 
 ---
@@ -282,6 +283,46 @@ ss -tlnp | grep -E ':(8080|8081|8082)\b'    # 看是绑 0.0.0.0 还是 127.0.0.1
 
 **3. 可选**：确认无误后删掉三处诊断头（每块一行，搜 `X-Upstream-Port`）。
 
+### 阶段 6 · API 缓存兜底（源站侧 `no-store`）
+
+> 已于 2026-10-13 执行。CDN 侧配了 Bypass cache 规则，本阶段是**第二层保险**。
+> 幂等，直接重跑脚本即可，无需手工编辑：
+>
+> ```bash
+> SITE_MODE=https CERT_DIR=/etc/letsencrypt/live/kb.fatejian.icu ./setup-subdomain-proxies.sh
+> ```
+
+**为什么需要两层**
+
+| 层 | 位置 | 典型失效场景 |
+|---|---|---|
+| CDN Cache Rules | Cloudflare 控制台 | 条件写宽或被误改，API 响应被 CDN 缓存 |
+| 源站 `no-store` | 本脚本生成的 `location /api/` | 随配置走，几乎不会单独失效 |
+
+真实踩过的坑：最初只配了 CDN 规则，但 Cache HTML 规则的条件是 `URI Path does not contain /assets/`——**`/api/` 不含 `/assets/`，因此同样被匹配**。于是同一请求既命中 Bypass 又命中 Eligible，后者胜出，**API 响应被 CDN 缓存了 10 分钟**（`cf-cache-status: HIT` + `Age` 递增）。修法是给 Cache HTML 的条件补上 `does not start with /api/`，让两类请求互斥；而源站这层即使 CDN 规则再出类似问题也能挡住。
+
+**为什么必须 `proxy_hide_header`**
+
+nginx 的 `add_header` 是**追加**而不是覆盖。上游应用自己会返回 `Cache-Control: max-age=600`，不先剥离，响应里会同时存在两个 `Cache-Control` 头，CDN 很可能取到上游那份并照常缓存——双保险形同虚设。
+
+**验证**
+
+```bash
+# 源站侧：应只出现一个 Cache-Control，值为 no-store
+curl -sI -H "Host: kb.fatejian.icu"   https://127.0.0.1/api/health | grep -i cache-control
+curl -sI -H "Host: plan.fatejian.icu" https://127.0.0.1/api/health | grep -i cache-control
+curl -sI -H "Host: pmp.fatejian.icu"  https://127.0.0.1/api/health | grep -i cache-control
+
+# 回归：HTML 的缓存头必须原样保留（否则首页缓存被打回）
+curl -sI -H "Host: kb.fatejian.icu" https://127.0.0.1/ | grep -i cache-control
+```
+
+脚本内置了这两项检查。HTML 那条若报 `err`，说明 `location /api/` 被误写成了 `location /`，首页缓存会失效且**不会有任何报错提示**——这正是把它做成自动检查的原因。
+
+> ⚠️ **dry-run 必须与实际执行同参数**：预览的是 `SITE_MODE` 当前模式下的配置，**`http` 模式下片段里完全没有 443 server 块**，照着它执行 HTTPS 入口会整体消失。核对块数：https 应为 **6 个**（3 域名 × 80/443），http 只有 3 个。
+>
+> 脚本已内置防呆：检测到「目标文件已有 `listen 443` 而本次是 http 模式」会**直接拒绝执行**并打印正确命令；确需主动退回 HTTP 模式时，显式加 `ALLOW_REMOVE_HTTPS=1` 放行。dry-run 标题也会标明当前片段是否含 443。
+
 ---
 
 ## 五、回滚
@@ -310,6 +351,8 @@ nginx -t && nginx -s reload
 | 证书签发失败 | `/.well-known/acme-challenge/` 未放行 | 脚本已内置该 location；确认 `SITE_MODE=http` 已先生效 |
 | `nginx -t` 报 duplicate | 手工配置与脚本标记块冲突 | 删除重复的 server 块，或全部删掉后只跑脚本 |
 | 改了 `listen` 地址后 reload 无效，`ss` 仍显示旧地址 | **nginx 平滑重载时旧 worker 仍持有 listening socket**，新 bind 同端口报 `Address already in use`，nginx 会自动回退旧配置继续运行（服务不中断，但改动没生效） | 查 `error.log` 是否有 `[emerg] still could not bind()`；确认后 `systemctl restart nginx` 完全重启释放 socket |
+| API 响应被 CDN 缓存（`cf-cache-status: HIT` 且 `Age` 递增） | Cache Rules 里 Cache HTML 的条件把 `/api/` 也匹配了（`does not contain /assets/` 对 `/api/` 成立），与 Bypass 冲突后 Eligible 胜出 | 给 Cache HTML 的条件补`URI Path does not start with /api/`；同时确认源站 `location /api/` 的 `no-store` 是否生效（两层任留其一即可，但排查时两条都要看） |
+| 首页 HTML 不再被缓存（`cf-cache-status`恒为 DYNAMIC） | `location /api/` 被误写成 `location /`，`no-store` 波及全站 | `grep -n -A3 'add_header Cache-Control' /etc/nginx/conf.d/subdomain-proxies.conf` 确认缩进层级；重跑脚本可幂等修复 |
 
 ---
 
@@ -345,6 +388,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # 缓存兜底，详见阶段 6。proxy_hide_header 不能省：add_header 是追加
+        # 而非覆盖，不剥离上游的 Cache-Control 就会与它并存。
+        proxy_hide_header Cache-Control;
+        proxy_hide_header Expires;
+        proxy_hide_header Pragma;
+        add_header Cache-Control "private, no-store, no-cache, must-revalidate" always;
     }
 
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
@@ -377,20 +426,26 @@ server {
 | `BACKUP_KEEP` | `3` | 保留备份份数 |
 | `ENABLE_IPV6` | `0` | 置 1 才额外 `listen [::]` |
 | `DIAG_HEADER` | `0` | 置 1 才输出 `X-Upstream-Port` 诊断响应头（排查时用） |
+| `API_PATH` | `/api/` | 需强制 `no-store` 的路径前缀（阶段 6） |
+| `API_NO_STORE` | `1` | 置 0 则不生成 `location /api/`，回退到仅靠 CDN 规则 |
+| `ALLOW_REMOVE_HTTPS` | `0` | 置 1 才允许 http 模式覆盖掉已有的 443 配置（默认阻断，见阶段 6 末） |
 
 调用示例：
 
 ```bash
-./setup-subdomain-proxies.sh --dry-run     # 预览
+./setup-subdomain-proxies.sh --dry-run     # 预览（预览哪种模式取决于 SITE_MODE，务必核对块数）
 ./setup-subdomain-proxies.sh               # 仅配80
 SITE_MODE=https CERT_DIR=/etc/letsencrypt/live/kb.fatejian.icu ./setup-subdomain-proxies.sh
 
 DIAG_HEADER=1 ./setup-subdomain-proxies.sh # 临时开启 X-Upstream-Port 诊断头
+API_NO_STORE=0 ./setup-subdomain-proxies.sh # 暂不生成 location /api/
+API_PATH=/graphql ./setup-subdomain-proxies.sh # API 前缀不是 /api/ 时
+ALLOW_REMOVE_HTTPS=1 ./setup-subdomain-proxies.sh # 主动退回 HTTP 模式（会移除 443，危险）
 ```
 
 > `X-Upstream-Port` 诊断头**默认不输出**（`DIAG_HEADER=0`）。它能一眼确认请求命中了哪个上游端口，但属于对外暴露内部结构。https 模式下只有 443 块会输出（80 块是 301 跳转，不反代），因此最多 3 行。
 
-脚本特性：幂等（标记块整体替换，可反复执行）、自动备份、`nginx -t` 失败自动回滚、优先写 conf.d 独立文件。
+脚本特性：幂等（标记块整体替换，可反复执行）、自动备份、`nginx -t` 失败自动回滚、优先写 conf.d 独立文件、`/api/` 自动附加 `no-store` 兜底（阶段 6）、验证含 HTML 缓存回归检查。
 
 ---
 
@@ -411,6 +466,12 @@ DIAG_HEADER=1 ./setup-subdomain-proxies.sh # 临时开启 X-Upstream-Port 诊断
 | 保留 `X-Upstream-Port` 诊断头 | `curl -I` 一次就能确认请求命中了哪个后端端口，排查反代错配很省事。确认无误后可删 |
 | HTTPS 模式把 80 跳转与 443 分成两个 server 块 | 单块混写 `listen 80` + `listen 443 ssl` 会让 80 也要求握手证书 |
 | `set -e` 下不能用 `[[ cond ]] && cmd` 做可选逻辑 | 条件为假时整条命令返回非 0，`set -e` 会直接终止脚本。脚本中该类写法一律改为 `if` |
+| **`/api/` 用独立 location，绝不改 `location /`** | 在 `location /` 里加 `proxy_hide_header Cache-Control` 会连带剥掉 HTML 的 `max-age=600`，首页缓存被打回原形。nginx 按「前缀最长」匹配，`/api/` 自动优先，顺序无关 |
+| **`location /api/` 复用 `gen_proxy_body()` 生成参数** | 那 15 行（SNI、三项超时、缓冲、WebSocket 头）逐字复制必然漏项。漏掉 `proxy_ssl_name` 这类就会退化成 502，且报错指向"上游"而非"配置写漏"，极难定位 |
+| **必须 `proxy_hide_header` 在前、`add_header` 在后** | `add_header` 是**追加**不是覆盖。上游应用自带 `Cache-Control: max-age=600`，不剥离就会与 no-store 并存，CDN 取到上游那份照常缓存——**兜底等于没做**，且现象（仍是 HIT）与未配置时完全一样，看不出原因 |
+| **验证只看响应头，不看业务状态码** | `/api/` 本身常返回 404/500（只是没这条路由），但 `add_header ... always` 照样生效。按状态码判定会稳定误报成失败，久而久之就被当成"脚本坏了"忽略掉 |
+| **验证含 HTML 回归检查** | 防止手滑把 `location /` 也写成 no-store。那种情况下 API 侧三项全绿、站点看似正常，首页缓存却已静默失效，等用户反馈"页面变慢"时往往已上线一阵子 |
+| **探测逻辑抽成 `fetch` / `head_only` 两个函数** | https 要 `--resolve` 指定 SNI（Host 头不参与 server 块选择），http 靠 `-H Host`。两套写法混在一起时，重复的 curl 行迟早会被改错一处、漏一处 |
 
 ---
 
@@ -418,7 +479,7 @@ DIAG_HEADER=1 ./setup-subdomain-proxies.sh # 临时开启 X-Upstream-Port 诊断
 
 | 事项 | 优先级 | 说明 |
 |---|---|---|
-| 把最终 nginx 配置纳入版本管理（`deploy/nginx/subdomain-proxies.conf`） | 中 | 配置即代码，走 PR 评审，但不自动生效 |
+| 把 `setup-subdomain-proxies.sh` 的**生成结果快照**纳入版本管理（`deploy/nginx/subdomain-proxies.conf`） | 中 | 脚本已能幂等重建配置，快照的作用从"照着部署"变成了"review 变更 diff"。改动脚本后跑一次 `--dry-run`，与快照 diff 即可看清改了什么，比直接看脚本 diff 更贴近实际生效配置 |
 | 清理 8080 上已下线的 pmp-admin 残留 | 中 | `PERFORMANCE-OPTIMIZATION.md` 已建议关闭其 `listen`；本文建议改为 `listen 127.0.0.1:8080` |
 | 排查每 3 小时一次的流量尖峰 | 中 | 该文档记录至今未归因，`systemctl list-timers --all` 可查 |
 | 确认 8080-8082 的公网暴露已关闭 | 高 | 见阶段 5 |
@@ -434,3 +495,5 @@ DIAG_HEADER=1 ./setup-subdomain-proxies.sh # 临时开启 X-Upstream-Port 诊断
 | 2026-10-12 | HTTP 分流上线并端到端验证：三个子域名均 200，资源引用全部 200。修正文档中"pmp 静态产物缺失"的过时记录 |
 | 2026-10-12 | HTTPS 上线：SAN 证书（ECC，有效期至 2027-01-10），80→443 跳转，三个子域名端到端 200。修复三处脚本缺陷：https 验证需按 SNI 而非 Host 选择 server 块；`--install-cert` 需先建目录；冲突检测须按 listen 端口分组（80/443 同名是合法的） |
 | 2026-10-12 | 暴露面收紧：8080/8081/8082 由 `0.0.0.0` 改为 `127.0.0.1`，公网直连实测不可达；删除 8082 的 `[::]` 监听。踩坑记录见故障速查表 |
+| 2026-10-13 | **API 缓存双保险**：脚本新增 `location /api/`（`proxy_hide_header` + `add_header Cache-Control "private, no-store, ..."`），与 Cloudflare Bypass cache 规则互为兜底。起因是 CDN 侧 Cache HTML 规则条件写成 `does not contain /assets/`，把 `/api/` 也匹配了，与 Bypass 冲突后 Eligible 胜出，**API 响应被 CDN 缓存了 10 分钟**（`cf-cache-status: HIT` + `Age` 递增）。上线验证：三域 API 均 `DYNAMIC` + `private, no-store, ...`（无 `Age`），HTML 仍 `HIT` + `max-age=600`，静态资源 `HIT`。脚本同时新增 API 头检查与 HTML 缓存回归检查；参数 `API_PATH` / `API_NO_STORE`。设计理由见阶段 6 与第九节 |
+| 2026-10-13 | **模式防呆**：`--dry-run` 曾因未带 `SITE_MODE=https` 而预览出 http 模式配置（片段里一个 443 块都没有），照此执行会让 HTTPS 入口整体消失，且 `nginx -t` 不会报错、脚本仍报「完成」。脚本新增「模式核对」步骤：目标文件已含 `listen 443` 而本次是 http 模式时**直接拒绝执行**并打印正确命令，需显式 `ALLOW_REMOVE_HTTPS=1` 才放行；dry-run 标题标明片段是否含 443。已实测四种场景（阻断 / 显式放行 / https / 首次执行）均符合预期 |

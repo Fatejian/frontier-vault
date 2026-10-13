@@ -10,7 +10,9 @@
 #
 # 特性：幂等（标记块整体替换，可反复执行）、优先写 conf.d 独立文件、
 #       无 include 时内联到 nginx.conf 的 http 块末尾（server 必须嵌在 http 内）、
-#       冲突自动跳过、nginx -t 失败自动回滚
+#       冲突自动跳过、nginx -t 失败自动回滚、
+#       API 路径强制 no-store（源站侧缓存兜底，与 CDN 规则互为保险）、
+#       http 模式下若目标文件已有 443 配置则拒绝执行（ALLOW_REMOVE_HTTPS=1 可放行）
 #
 # 用法：
 #   chmod +x setup-subdomain-proxies.sh
@@ -18,6 +20,10 @@
 #   ./setup-subdomain-proxies.sh                # 仅配置 80（HTTP）
 #   SITE_MODE=https CERT_DIR=/etc/letsencrypt/live/fatejian.icu \
 #       ./setup-subdomain-proxies.sh            # 配置 80 跳转 + 443（需先有证书）
+#
+#   API_NO_STORE=0 ./setup-subdomain-proxies.sh  # 临时不生成 location /api/
+#   API_PATH=/graphql ./setup-subdomain-proxies.sh # API 前缀不是 /api/ 时
+#   ALLOW_REMOVE_HTTPS=1 ./setup-subdomain-proxies.sh # 主动退回 HTTP 模式（会移除 443）
 #
 set -euo pipefail
 
@@ -37,6 +43,16 @@ ENABLE_IPV6="${ENABLE_IPV6:-0}"
 # 诊断响应头 X-Upstream-Port：默认不输出。它能一眼确认请求命中了哪个上游端口，
 # 但属于对外暴露内部结构，需要时用 DIAG_HEADER=1 临时开启即可。
 DIAG_HEADER="${DIAG_HEADER:-0}"
+# API 路径前缀，以及是否生成 location /api/ 块。
+#
+# 为什么要这一层：CDN侧已有 Bypass cache 规则，但规则可能被误改/误删就静默失效。
+# 源站再加一个 no-store，即便规则没了也不至于把 API 响应缓存起来。两层都在时
+# 行为一致（cf-cache-status 呈DYNAMIC），任一层失效另一层仍能挡住。
+API_PATH="${API_PATH:-/api/}"
+API_NO_STORE="${API_NO_STORE:-1}"
+# 安全开关：当目标文件已有 443 配置、而本次却是 SITE_MODE=http 时，默认阻断。
+# 只有确实要主动退回 HTTP 模式时才设1，见下方「模式防呆」。
+ALLOW_REMOVE_HTTPS="${ALLOW_REMOVE_HTTPS:-0}"
 # ===================================
 
 # 子域名 : 端口 : 上游 SNI : 上游协议
@@ -155,6 +171,26 @@ TPL
   fi
 }
 
+# 生成 API 专用 location 块。
+#
+# 与 location / 的唯一差别是末尾几行：先hide 掉上游的缓存头，再统一输出 no-store。
+#
+# ⚠️ proxy_hide_header 绝不能省。nginx 的 add_header 是**追加**而不是覆盖——不先剥离，
+# 响应里会同时存在上游的 `Cache-Control: max-age=600` 和我们加的 no-store，CDN 很可能
+# 取到上游那份并照常缓存，双保险就成了摆设。实测中正是这个坑让绕过规则一度失效。
+gen_api_block() {
+  # $1=端口  $2=上游协议(http|https)  $3=上游 SNI  $4=路径前缀
+  echo "    # API 专用：强制 no-store，挡住 CDN / 浏览器缓存动态响应。"
+  echo "    # 与 CDN 的 Bypass cache 规则互为兜底：规则被误改或误删时，这里仍能生效。"
+  echo "    location ${4} {"
+  gen_proxy_body "$1" "$2" "$3"
+  echo "        proxy_hide_header Cache-Control;"
+  echo "        proxy_hide_header Expires;"
+  echo "        proxy_hide_header Pragma;"
+  echo '        add_header Cache-Control "private, no-store, no-cache, must-revalidate" always;'
+  echo "    }"
+}
+
 for entry in "${DOMAINS[@]}"; do
   # 兼容两种写法：host:port（旧）与 host:port:sni:scheme（新）
   IFS=':' read -r host port sni scheme <<< "$entry"
@@ -188,6 +224,10 @@ for entry in "${DOMAINS[@]}"; do
         echo "    add_header X-Upstream-Port \"${port}\" always;"
       fi
       echo ""
+      if [[ "$API_NO_STORE" == "1" ]]; then
+        gen_api_block "$port" "$scheme" "$sni" "$API_PATH"
+        echo ""
+      fi
       echo "    location / {"
       gen_proxy_body "$port" "$scheme" "$sni"
       echo "    }"
@@ -217,6 +257,12 @@ for entry in "${DOMAINS[@]}"; do
         echo "    add_header X-Upstream-Port \"${port}\" always;"
       fi
       echo ""
+      # API 块放在 location / 之前。nginx 按「前缀最长」匹配，/api/ 比 / 长，
+      # 顺序其实不影响命中，写在前面只是为了读配置时一眼看出优先级。
+      if [[ "$API_NO_STORE" == "1" ]]; then
+        gen_api_block "$port" "$scheme" "$sni" "$API_PATH"
+        echo ""
+      fi
       echo "    location / {"
       gen_proxy_body "$port" "$scheme" "$sni"
       echo "    }"
@@ -291,8 +337,33 @@ else
   fi
 fi
 
+# ---------- 模式防呆 ----------
+# 背景：--dry-run 忠实反映当前 SITE_MODE 下的输出，但很容易被当成"将要执行的内容"。
+# 而 http 模式的片段里一个 443 块都没有——照着它执行，HTTPS 入口会整体消失，
+# 过程中不会有任何报错：nginx -t 照样通过，脚本照样报"完成"。
+step "模式核对"
+if [[ "$SITE_MODE" == "https" ]]; then
+  ok "SITE_MODE=https：每子域名生成 80 跳转 + 443 反代（共 ${FRAG_BLOCKS} 个 server 块）"
+else
+  if [[ -f "$TARGET" ]] && grep -qE '^[[:space:]]*listen[[:space:]]+443' "$TARGET"; then
+    err "目标文件已含 listen 443 配置，但本次 SITE_MODE=http"
+    err "生成的片段不含任何 443 块，执行后 HTTPS 入口会整体消失，且 nginx -t 不会报错。"
+    err "改用：SITE_MODE=https CERT_DIR=${CERT_DIR} $(basename "$0")"
+    err "确需退回 HTTP 模式：显式加 ALLOW_REMOVE_HTTPS=1 跳过本保护。"
+    [[ "${ALLOW_REMOVE_HTTPS:-0}" == "1" ]] || exit 1
+    warn "已设置 ALLOW_REMOVE_HTTPS=1，跳过保护继续执行——请确认你知道在做什么"
+  else
+    warn "SITE_MODE=http：片段只含 80 端口，不含 443（共 ${FRAG_BLOCKS} 个 server 块）"
+    warn "若线上已上 HTTPS，本步骤会移除现有 443 配置。确认无误再继续。"
+  fi
+fi
+
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  step "DRY-RUN：将写入 $TARGET 的内容"
+  if [[ "$SITE_MODE" == "https" ]]; then
+    step "DRY-RUN：将写入 $TARGET 的内容（${FRAG_BLOCKS} 个 server 块，含 443）"
+  else
+    step "DRY-RUN：将写入 $TARGET 的内容（${FRAG_BLOCKS} 个 server 块，**不含 443**）"
+  fi
   cat "$TMPD/frag.txt"
   exit 0
 fi
@@ -371,32 +442,61 @@ sleep 1
 for entry in "${DOMAINS[@]}"; do
   IFS=':' read -r host port _sni _scheme <<< "$entry"
 
+  # 两种模式的探测方式差别很大（https 要 --resolve 指定 SNI，http 靠 Host 头），
+  # 抽象成 fetch / head_only / BASE，下面三项检查才能共用一套逻辑。
   if [[ "$SITE_MODE" == "https" ]]; then
     # 1) https 模式下 80 只做 301 跳转，真正的反代在 443，探 80 一定拿到 3xx。
     # 2) HTTPS 的 server 块由 **SNI** 决定（Host 头不参与选择），必须用 --resolve
     #    把 SNI 设成子域名、连接指向回环；否则三个域名都会落到同一个默认 server 块，
     #    看起来"都通了"其实只测了一个。
     # 3) -k：证书签给域名而非 127.0.0.1，校验必然失败，这里只验连通性。
-    CODE=$(curl -sk --max-time 10 --resolve "${host}:443:127.0.0.1" \
-      -o /dev/null -w '%{http_code}' "https://${host}/" 2>/dev/null || echo "000")
-    HIT=$(curl -skI --max-time 10 --resolve "${host}:443:127.0.0.1" \
-      "https://${host}/" 2>/dev/null \
-      | grep -i '^x-upstream-port' | tr -d '\r' | awk '{print $2}' || true)
+    BASE="https://${host}"
+    fetch()     { curl -sk --max-time 10 --resolve "${host}:443:127.0.0.1" "$@" 2>/dev/null || true; }
+    head_only() { curl -skI --max-time 10 --resolve "${host}:443:127.0.0.1" "$@" 2>/dev/null || true; }
   else
-    CODE=$(curl -s --max-time 10 -o /dev/null -w '%{http_code}' \
-      -H "Host: ${host}" "http://127.0.0.1/" 2>/dev/null || echo "000")
-    HIT=$(curl -sI --max-time 10 -H "Host: ${host}" "http://127.0.0.1/" 2>/dev/null \
-      | grep -i '^x-upstream-port' | tr -d '\r' | awk '{print $2}' || true)
+    BASE="http://127.0.0.1"
+    fetch()     { curl -s --max-time 10 -H "Host: ${host}" "$@" 2>/dev/null || true; }
+    head_only() { curl -sI --max-time 10 -H "Host: ${host}" "$@" 2>/dev/null || true; }
   fi
+
+  CODE=$(fetch -o /dev/null -w '%{http_code}' "${BASE}/")
+  CODE="${CODE:-000}"
+  HIT=$(head_only "${BASE}/" | grep -i '^x-upstream-port' | tr -d '\r' | awk '{print $2}' || true)
 
   if [[ "$CODE" == "000" ]]; then
     err "$host → $port 无响应（检查应用是否在监听）"
   elif [[ "$CODE" =~ ^5 ]]; then
-    err "$host → $port 返回 $CODE（反代未通，看 error.log）"
+    err "$host → $port 返回 $CODE（反代未通，看error.log）"
   elif [[ "$CODE" =~ ^3 ]]; then
     warn "$host → $port 返回 $CODE（跳转而非内容，确认 SITE_MODE 是否已生效）"
   else
     ok "$host → $port 返回 $CODE${HIT:+（响应头确认命中 $HIT）}"
+  fi
+
+  # --- API 缓存兜底自检 ---
+  # 只看响应头、不看业务状态码：/api/ 本身很可能返回 404/500（只是没这条路由），
+  # 但 add_header ... always 照样生效，用状态码判定会误报成失败。
+  if [[ "$API_NO_STORE" == "1" ]]; then
+    CC=$(head_only "${BASE}${API_PATH}" \
+      | grep -i '^cache-control:' | tr -d '\r' | sed 's/^[^:]*:[[:space:]]*//' | head -1)
+    if [[ "${CC,,}" == *"no-store"* ]]; then
+      ok "$host ${API_PATH} 响应头已带 no-store（源站兜底生效）"
+    else
+      warn "$host ${API_PATH} 未见 no-store，实际为 [${CC:-无 Cache-Control}]"
+    fi
+  fi
+
+  # --- 回归检查：HTML 侧不能被误伤 ---
+  # 专门给"手滑把location / 也写成 no-store"兜底：那种情况下 API 检查全绿，
+  # 首页缓存却已静默失效，等发现时往往已上线一阵子。
+  HCC=$(head_only "${BASE}/" \
+    | grep -i '^cache-control:' | tr -d '\r' | sed 's/^[^:]*:[[:space:]]*//' | head -1)
+  if [[ "$HCC" == *"no-store"* ]]; then
+    err "$host / 的 HTML 也带了 no-store —— 首页缓存会失效，检查是不是把 location ${API_PATH} 写成了 location /"
+  elif [[ -n "$HCC" ]]; then
+    ok "$host / HTML 缓存头保持原样（${HCC}）"
+  else
+    warn "$host / HTML 无 Cache-Control 头（若原本就没有可忽略）"
   fi
 done
 

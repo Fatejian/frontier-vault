@@ -2,7 +2,7 @@
 
 > 用途：记录本项目**已经踩过**的坑及其正确处理方式，避免重复发生。
 > 每条包含：现象 / 根因 / 触发条件 / 正确做法 / 禁止做法 / 检查点。
-> 来源：2026-10-12 ~ 10-13 的一次集中修复（子应用上线 + CDN 优化 + 部署排查 + 导航高亮修复），共 23 条。
+> 来源：2026-10-12 ~ 10-13 的一次集中修复（子应用上线 + CDN 优化 + 部署排查 + 导航高亮修复 + CDN 缓存策略修正），共 30 条。
 > 适用范围：修改 `scripts/`、`.github/workflows/`、服务器 Nginx 配置、项目文档时的硬性约束。
 
 ---
@@ -13,6 +13,7 @@
 |---|---|
 | 要改 Nginx / workflow / 部署配置 | 先读「一、部署与 CI」「三、运维与配置」 |
 | 要下结论说「X 是 Y」 | 先读「二、验证方法」，确认判据本身可信 |
+| 要配 CDN 缓存 / 排查缓存命中异常 | 先读 V-05、V-06（判据可信性与规则互斥）、O-04（响应头追加语义） |
 | 要写文档 | 先读「五、文档规范」 |
 | 要改前端样式 / 配置生成器 | 先读「八、前端构建与样式」 |
 | 准备提交代码 | 走文末「提交前自检清单」 |
@@ -193,6 +194,87 @@ grep -cE '^[[:space:]]*server[[:space:]]*\{'        # 统计配置块更可靠
 
 **禁止**：对可能是其他词子串的模式做无锚点计数。
 
+### V-05 判定缓存是否生效：`BYPASS` 是不可信的假阳性
+
+**现象**：给 API 配了 CDN Bypass 规则后，`kb` 域名探测显示 `BYPASS`，据此判定规则生效；
+实际 `plan`/`pmp` 仍在 `HIT`，API 响应被缓存了 10 分钟。
+
+**根因**：`cf-cache-status: BYPASS` 有两种成因——**规则命中**，或**响应本身不可缓存**
+（5xx 且无 `Cache-Control` 时 Cloudflare 默认不缓存）。后者与规则毫无关系。
+
+**触发条件**：用 `cf-cache-status` 单点判定规则是否生效，且测试路径恰好返回 5xx 或缺该响应头。
+
+**正确做法**：purge 后对**同一路径连续请求 2 次以上**，看第 2 次的状态：
+
+```powershell
+# 判决点是第 2 次，不是第 1 次
+foreach($i in 1..3){
+  $r = curl.exe -sI -m 15 "https://$h.fatejian.icu/api/" 2>$null
+  $cs = ($r | Select-String '^cf-cache-status' | ForEach-Object { ($_.Line -split ': ')[-1].Trim() })
+  $ag = ($r | Select-String '^age:'            | ForEach-Object { ($_.Line -split ': ')[-1].Trim() })
+  "  第${i}次 cache=$cs age=[$ag]" }
+# 期望：状态恒为 DYNAMIC/BYPASS 且 age 恒为空；出现 HIT 或 age 递增即未生效
+```
+
+优先挑**返回 200 且带可缓存头**的路径来测，可排除「响应本身不可缓存」这一干扰源。
+
+**禁止**：以单次 `cf-cache-status: BYPASS` 作为规则生效的证据。
+
+**检查点**：`DYNAMIC` + `Age` 为空 = 真的没缓存；`BYPASS` 只说明没命中缓存副本，不说明原因。
+
+### V-06 CDN 缓存规则的条件必须互斥，不能只靠「更精确的规则优先」
+
+**现象**：Bypass API 与 Cache HTML 两组规则并存，Cache HTML 的条件是
+`URI Path does not contain /assets/`。`/api/` 不含 `/assets/`，因此**同时满足**该条件。
+结果 API 请求既命中 Bypass 又命中 Eligible，后者胜出，**API 被 CDN 缓存 10 分钟**。
+
+**根因**：把「规则优先级」当成唯一仲裁手段。但只要两条规则的条件集有交集，
+宽条件就会覆盖窄条件的意图——规则在控制台里显示 Active，行为却与预期相反。
+
+**触发条件**：同一请求可能命中多条缓存规则（Bypass / Eligible 混用），且条件集有交集。
+
+**正确做法**：让规则**互斥**，而不是指望优先级：
+
+```
+Cache HTML:  Hostname equals kb.fatejian.icu
+              AND URI Path does not contain /assets/
+              AND URI Path does not start with /api/      ← 关键补充
+Bypass API:  Hostname equals kb.fatejian.icu
+              AND URI Path starts with /api/
+```
+
+**禁止**：假定「更精确的条件会先匹配」；新增规则时不检查与既有规则的条件交集。
+
+**检查点**：逐条列出规则的命中范围，确认任意两条 Bypass/Eligible 规则不会命中同一请求。
+
+> 关键路径应做**双层保险**：CDN 规则易被误改，且改坏了不会报错；
+> 源站再加一层显式 `Cache-Control`（见 O-04），任一层失效另一层仍能挡住。
+
+### V-07 预览/演练必须与实际执行使用同一组参数
+
+**现象**：`--dry-run` 时未带 `SITE_MODE=https`，脚本按默认 `http` 模式输出——
+片段里**完全没有 443 server 块**，且 80 块是反代而非 301。若照此执行，HTTPS 入口会整体消失。
+
+**根因**：dry-run 忠实反映**当前参数**下的输出，但容易被理解成「将要执行的内容」。
+当脚本默认值与线上现状不一致时，两者差之千里。
+
+**触发条件**：脚本存在模式开关（`SITE_MODE` 等），且默认值与现网配置不同。
+
+**正确做法**：预览后核对**结构性指标**而非「有没有报错」——块数、listen 端口、关键指令：
+
+```bash
+grep -cE '^[[:space:]]*server[[:space:]]*\{' frag.txt   # https 模式应为 6，http 模式为 3
+grep -c 'listen 443' frag.txt                           # https 模式应 > 0
+```
+
+**禁止**：把「dry-run 通过」等同于「执行安全」；预览用的参数与正式执行的不一致。
+
+**检查点**：预览输出的块数/端口与线上一致，再执行。
+
+> **已部分自动化**：`setup-subdomain-proxies.sh` 的「模式核对」步骤会检测「目标文件已有 `listen 443`
+> 而本次是 http 模式」并**直接拒绝执行**，dry-run 标题也标明片段是否含 443。
+> 但这是该脚本专有的保护——**换用其他脚本或手工改配置时，下面的人工核对依然必须做**。
+
 ---
 
 ## 三、运维与配置
@@ -275,6 +357,55 @@ grep -n 'listen' /etc/nginx/conf.d/java-learning-kb.conf | grep 8082   # 确认�
 **禁止**：只替换 IPv4 行而遗漏 `[::]` 行；假设 `nginx -t` 能发现暴露问题。
 
 **检查点**：`ss -tlnp` 中该端口**只出现** `127.0.0.1:<port>`，无 `0.0.0.0` 或 `[::]`。
+
+### O-04 nginx的 `add_header` 是追加，不是覆盖
+
+**现象**：给 `location /api/` 加了
+`add_header Cache-Control "private, no-store, no-cache, must-revalidate" always;`，
+CDN 仍然在缓存 API 响应，且响应里能看到 `max-age=600`。
+
+**根因**：上游应用自己会输出 `Cache-Control: max-age=600`。`add_header` **追加**一个新头，
+于是响应里存在两个 `Cache-Control`，CDN 取到上游那份并照常缓存。
+
+**触发条件**：修改缓存相关响应头，且上游本身会输出该头。
+
+**正确做法**：先剥离再添加，三行缺一不可：
+
+```nginx
+proxy_hide_header Cache-Control;
+proxy_hide_header Expires;
+proxy_hide_header Pragma;
+add_header Cache-Control "private, no-store, no-cache, must-revalidate" always;
+```
+
+**注意**：`proxy_hide_header` 只能剥掉它**自己这一层**的响应头。上游若还有更外层的 nginx
+继续追加，需要逐层排查——先在服务器内用 `curl -sI https://127.0.0.1/... ` 确认只剩一行。
+
+**禁止**：只写 `add_header` 就认为覆盖了上游的值。
+
+**检查点**：`curl -sI <url> | grep -i cache-control` 输出**只有一行**，且值为 `no-store`。
+
+### O-05 location 块内一旦出现 `add_header`，就不再继承 server 级
+
+**现象**：新建 `location /api/` 并自带 `add_header` 后，API 响应丢失了 server 级配置的全部
+安全头（HSTS、`X-Frame-Options` 等）。
+
+**根因**：nginx 的继承规则是**全有或全无**——只要 location 块内出现任意一条 `add_header`，
+server 级的 `add_header` 就**一条都不继承**，而不是只覆盖同名的那几条。
+
+**触发条件**：server 级存在 `add_header`，且新建的 location 块内也写了 `add_header`。
+
+**正确做法**：把 server 级的 `add_header` **逐条复制**到新 location：
+
+```bash
+# 先看server 级有哪些，逐条搬过去，别凭印象抄
+grep -n 'add_header' /etc/nginx/conf.d/subdomain-proxies.conf
+```
+
+**禁止**：认为新 location 只会丢自己没写的那几条；用 `add_header_inherit merge`
+（需 nginx 1.29.3+，多数发行版尚未提供）。
+
+**检查点**：对比新旧两个 location 的实际响应头，缺失项即为漏继承。
 
 ## 四、外部服务与事实核查
 
@@ -504,6 +635,65 @@ DIAG_HEADER="${DIAG_HEADER:-0}"    # 置 1 才输出诊断头
 **检查点**：定稿后 curl 线上响应头确认无诊断字段；
 `grep -rn 'add_header.*Port' /etc/nginx/` 无非预期项。
 
+### SD-04 批量删除文件前，先用内容哈希逐一比对
+
+**现象**：`git pull` 被中止，报
+`The following untracked working tree files would be overwritten by merge`，
+涉及 113 个文件。根因是本地 `git ls-files` 为 0（index 空白，从未正常检出过），
+工作区堆着一整套与远程同名的**未跟踪**副本。
+
+**根因**：未跟踪文件不受版本控制，`rm` 之后无法通过 git 恢复。
+凭「文件名相同」判断内容相同，是把路径当成了内容。
+
+**正确做法**：先备份到工作区之外，再用 blob 哈希逐一比对，只删确定无差异的：
+
+```powershell
+$tracked = @(git ls-files)
+$remote  = @(git ls-tree -r --name-only origin/master)
+$conflict = @($remote | Where-Object { $tracked -notcontains $_ -and (Test-Path -LiteralPath $_) })
+
+foreach ($f in $conflict) {                      # 1. 备份
+  $d = Join-Path $backup $f; $p = Split-Path $d -Parent
+  if (-not (Test-Path $p)) { New-Item -ItemType Directory -Force -Path $p | Out-Null }
+  Copy-Item -LiteralPath $f -Destination $d -Force
+}
+$diff = @()                                      # 2. 比对哈希
+foreach ($f in $conflict) {
+  if ((git hash-object -- $f) -ne (git ls-tree origin/master -- $f | ForEach-Object { ($_ -split '\s+')[2] })) { $diff += $f }
+}
+# 3. $diff 为空 → 删除无风险；非空 → 先与用户确认这些本地改动是否要保留
+```
+
+**禁止**：直接 `git clean -fd`；仅凭路径相同就判定内容相同；先删后比对。
+
+**检查点**：差异清单为空，或其中每个文件都已在备份目录里可还原。
+
+### SD-05 验证脚本自身要先验证
+
+**现象**：两次误判都来自检查脚本本身，而非被测对象——
+① PowerShell 中 `"$s(cc=$cc)"` 被解析为**属性访问**而非字符串拼接，导致整列输出为空，
+一度以为关键配置文件缺失；② awk 正则经 PowerShell 传入 bash 时 `\{` 被吞，
+范围判断失真，报出「location / 内含 6 处 no-store」的假警报。
+
+**根因**：验证逻辑本身没有被验证。跨 shell 传递时引号与转义会被逐层改写，
+这类问题不会报错，只会安静地给出错误答案。
+
+**触发条件**：用一条命令批量产出「检查结果」；或校验脚本跨 shell（PowerShell → WSL/bash）执行。
+
+**正确做法**：关键结论用**第二种方式**交叉验证；异常输出先怀疑脚本：
+
+```bash
+# 复杂正则改用脚本文件承载，避免命令行转义被逐层改写
+bash ./verify.sh
+# 结构类结论用最朴素的方式复核（行号 / grep -c），别依赖同一条 awk
+grep -n 'location /api/ {' frag.txt
+grep -c 'add_header Cache-Control' frag.txt
+```
+
+**禁止**：把批量检查脚本的单次输出直接当结论；看到异常输出立刻去改被测对象。
+
+**检查点**：结论与预期不符时，先用**最简单的单条命令**独立复现一次。
+
 ---
 
 
@@ -631,9 +821,14 @@ bash -n scripts/*.sh && echo ok
 | V-02 | 正则位数写错 | 验证 |
 | V-03 | 搜索工具跳过隐藏目录 | 验证 |
 | V-04 | 计数类 grep 必须加行首锚点 | 验证 |
+| V-05 | 判定缓存生效不能只看 BYPASS | 验证 |
+| V-06 | CDN 缓存规则条件必须互斥 | 验证 |
+| V-07 | 预览必须与实际执行同参数 | 验证 |
 | O-01 | 改 listen 后必须 restart | 运维 |
 | O-02 | 应用站点配置不在 nginx.conf | 运维 |
 | O-03 | IPv6 监听需同步处理 | 运维 |
+| O-04 | add_header 是追加不是覆盖 | 运维 |
+| O-05 | location 的 add_header 不继承 server 级 | 运维 |
 | F-01 | 环境事实以控制台/API 为准 | 事实 |
 | F-02 | 第三方服务状态会漂移 | 事实 |
 | F-03 | CNAME 不继承代理状态 | 事实 |
@@ -644,13 +839,8 @@ bash -n scripts/*.sh && echo ok
 | SD-01 | set -e 下不用 [[ ]] && | 脚本 |
 | SD-02 | 临时文件用 mktemp -d | 脚本 |
 | SD-03 | 诊断配置默认关闭 | 脚本 |
+| SD-04 | 批量删除前先哈希比对 | 脚本 |
+| SD-05 | 验证脚本自身要先验证 | 脚本 |
 | FE-01 | 生成器不透传可选字段 | 前端 |
 | FE-02 | 现代 CSS 伪类可能被构建工具移除 | 前端 |
 | FE-03 | 覆盖 scoped 样式需提升特异性 | 前端 |
-**根因**：为便于开发期排查而默认开启，配置定稿时未回退。
-
-**触发条件**：生成配置片段、响应头或调试字段时。
-
-**禁止**：诊断类响应头默认开启；把端口、域名等可变值散落在生成逻辑中。
-
-**检查点**：定稿后 curl 线上响应头确认无诊断字段；`grep -rn 'add_header.*Port' /etc/nginx/` 无非预期项。

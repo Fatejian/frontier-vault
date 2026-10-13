@@ -131,7 +131,21 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 
 ## 部署
 
-通过 GitHub Actions 自动部署（见 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)）：push 到 `master` 分支后，`npm ci` + `npm run docs:build` 构建静态站点到 `docs/.vitepress/dist`，双路部署到 GitHub Pages 与百度云服务器（`/var/www/frontier-vault/`）。
+通过 GitHub Actions 自动部署（见 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)）：push 到 `master` 分支后自动构建并**双路部署**至 GitHub Pages 与百度智能云 BCC 服务器（`/var/www/frontier-vault/`）。
+
+**两次构建是必需的，不是重复劳动**——两路部署的站点根路径不同：
+
+| 部署目标 | 站点根路径 | 构建命令 |
+|---|---|---|
+| 百度智能云源站 | `https://www.fatejian.icu/` | `npm run docs:build`（`base=/`） |
+| GitHub Pages | `https://fatejian.github.io/frontier-vault/` | `npm run docs:build -- --base /frontier-vault/` |
+
+若 Pages 沿用 `base=/` 的产物，HTML 中资源会写成 `/assets/xxx.js`，浏览器将解析到 `https://fatejian.github.io/assets/xxx.js`（站点根目录）从而全部 404；反之则源站资源 404。workflow 中先 rsync 源站、再以正确 base 重建并推 Pages，顺序不可颠倒（第二次构建会覆盖 `dist/`）。
+
+> **历史记录（2026-10-13 修复）**：2026-08-28 至 10-13 期间，GitHub Pages 的发布源分支为空（`Branch: None`），
+> 导致 `actions-gh-pages` 步骤**静默跳过**却仍报告 success——表现为 CI 全绿但 `gh-pages` 分支停更、
+> `https://fatejian.github.io/frontier-vault/` 返回 404。该期间实际只有 rsync 一路在部署。
+> 分支改回 `gh-pages` / `(root)` 后 Pages 恢复，但又暴露出上表的 base 不匹配问题，本次一并修正。
 
 ## 许可协议
 

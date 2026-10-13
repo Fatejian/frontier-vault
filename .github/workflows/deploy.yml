@@ -26,15 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      # ========== 源站（站点位于域名根路径，base=/）==========
+      - name: Build for origin
         run: npm run docs:build
-
-      # 部署到 GitHub Pages
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/.vitepress/dist
 
       # 部署到百度云服务器
       - name: Deploy to Baidu Cloud Server
@@ -47,3 +41,20 @@ jobs:
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: root
           remote_key: ${{ secrets.SERVER_SSH_KEY }}
+
+      # ========== GitHub Pages（站点位于 /frontier-vault/ 子路径）==========
+      # 必须重新构建并指定 --base，两次构建不可合并为一次：
+      #   Pages 站点在 https://<user>.github.io/frontier-vault/，
+      #   若沿用 base=/ 的产物，HTML 中资源写为 /assets/xxx.js，
+      #   浏览器解析成 https://<user>.github.io/assets/xxx.js → 全部 404；
+      #   反之若 Pages 用 base=/frontier-vault/ 而源站用它，源站资源同样 404。
+      # 顺序也不可颠倒：第二次构建会覆盖 dist，必须先 rsync 源站再构建 Pages。
+      - name: Build for GitHub Pages
+        run: npm run docs:build -- --base /frontier-vault/
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/.vitepress/dist

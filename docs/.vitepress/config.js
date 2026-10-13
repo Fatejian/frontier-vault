@@ -23,18 +23,18 @@ export default defineConfig({
     root: {
       label: '中文',
       lang: 'zh-CN',
-      title: '静学轩',
+      title: 'Frontier Vault',
       description: '面向中高级前端工程师的系统化知识库',
       themeConfig: {
         nav: [
           { text: '首页', link: '/' },
-          { text: '浏览器', link: '/browser/' },
-          { text: 'JavaScript', link: '/javascript/' },
-          { text: '框架生态', link: '/frameworks/' },
-          { text: '性能优化', link: '/performance/' },
-          { text: '测试工程', link: '/testing/' },
-          { text: 'AI 工程', link: '/ai/' },
-          { text: '职业体系', link: '/career/' }
+          { text: '浏览器', link: '/browser/', activeMatch: '^/browser/' },
+          { text: 'JavaScript', link: '/javascript/', activeMatch: '^/javascript/' },
+          { text: '框架生态', link: '/frameworks/', activeMatch: '^/frameworks/' },
+          { text: '性能优化', link: '/performance/', activeMatch: '^/performance/' },
+          { text: '测试工程', link: '/testing/', activeMatch: '^/testing/' },
+          { text: 'AI 工程', link: '/ai/', activeMatch: '^/ai/' },
+          { text: '职业体系', link: '/career/', activeMatch: '^/career/' }
         ],
         sidebar:         {
           "/browser/": [
@@ -225,18 +225,18 @@ export default defineConfig({
       label: 'English',
       lang: 'en-US',
       link: '/en/',
-      title: '静学轩',
+      title: 'Frontier Vault',
       description: 'A systematic knowledge base for advanced frontend engineers',
       themeConfig: {
         nav: [
           { text: 'Home', link: '/en/' },
-          { text: 'Browser', link: '/en/browser/' },
-          { text: 'JavaScript', link: '/en/javascript/' },
-          { text: 'Frameworks', link: '/en/frameworks/' },
-          { text: 'Performance', link: '/en/performance/' },
-          { text: 'Testing', link: '/en/testing/' },
-          { text: 'AI Engineering', link: '/en/ai/' },
-          { text: 'Career', link: '/en/career/' }
+          { text: 'Browser', link: '/en/browser/', activeMatch: '^/en/browser/' },
+          { text: 'JavaScript', link: '/en/javascript/', activeMatch: '^/en/javascript/' },
+          { text: 'Frameworks', link: '/en/frameworks/', activeMatch: '^/en/frameworks/' },
+          { text: 'Performance', link: '/en/performance/', activeMatch: '^/en/performance/' },
+          { text: 'Testing', link: '/en/testing/', activeMatch: '^/en/testing/' },
+          { text: 'AI Engineering', link: '/en/ai/', activeMatch: '^/en/ai/' },
+          { text: 'Career', link: '/en/career/', activeMatch: '^/en/career/' }
         ],
         sidebar:         {
           "/en/browser/": [
@@ -382,7 +382,7 @@ export default defineConfig({
                   "link": "/en/career/capability-model"
                 },
                 {
-                  "text": "Technical Growth Path: The Capability Leap from Junior to Architect",
+                  "text": "Technical Growth Path: Capability Leaps from Junior to Architect",
                   "link": "/en/career/growth-path"
                 },
                 {

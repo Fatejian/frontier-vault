@@ -152,8 +152,15 @@ function formatSidebar(sidebar) {
  * 生成单个语言的 locale 块字符串
  */
 function generateLocaleBlock(lang) {
+  //⚠️ 必须透传 activeMatch：VitePress 的 isActive 默认是精确匹配，
+  //    模块内任意文章页都会匹配不上 /<module>/ 而让顶部导航丢失高亮。
+  //    此处曾硬编码只输出 text 与 link，导致数据源里加了 activeMatch 也被丢弃。
+  //    新增导航可选字段时，同样要在这里补上，否则会静默失效。
   const navLines = uiStrings[lang.code].nav
-    .map(item => `          { text: ${jsString(item.text)}, link: ${jsString(item.link)} }`)
+    .map(item => {
+      const extra = item.activeMatch ? `, activeMatch: ${jsString(item.activeMatch)}` : ''
+      return `          { text: ${jsString(item.text)}, link: ${jsString(item.link)}${extra} }`
+    })
     .join(',\n')
 
   const sidebar = generateSidebarForLang(lang)

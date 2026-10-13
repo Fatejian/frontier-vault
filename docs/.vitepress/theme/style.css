@@ -894,3 +894,31 @@
     display: none;
   }
 }
+
+/* ============================================
+ * 侧边栏分组标题高亮
+ * ============================================
+ * 现象：进入模块内任意页面时，侧边栏只有具体条目高亮，分组标题
+ *      （如「JavaScript 深度」）保持中性色，看不出自己处于哪个模块。
+ *
+ * 根因：VitePress 对两种状态用了不同的 DOM 路径，且默认色不同——
+ *   .level-N.has-active > .item > .text        → 分组标题（level-0），color 为
+ *                                               中性的 --vp-c-text-1
+ *   .level-N.is-active > .item .link > .text  → 具体条目（level-1+），品牌色
+ *   所以条目会亮、分组标题不会亮。这是默认设计，不是状态丢失。
+ *
+ * 实现：用 VitePress 自带的 has-active class（分组内存在激活条目时为 true）。
+ * ⚠️ 两个必须注意的点：
+ *   1. 不要用 :has(> .items > .VPSidebarItem.is-active) —— Lightning CSS 会按
+ *      浏览器目标把:has() 规则整个丢弃，构建产物中查不到，样式静默失效（已实测）。
+ *   2. 必须限定 level-0 并提升特异性。默认规则带 [data-v-*] 属性选择器，
+ *      特异性为 (0,5,2)。本规则需超过它：html + .VPSidebar 两个前缀
+ *      将特异性提到 (0,5,3)，从而无需依赖样式加载顺序即可稳定覆盖。
+ *      （只写 .VPSidebarItem.has-active>.item>.text 只有 (0,4,1)，会被完全压制。）
+ *
+ * 只改文字颜色：分组标题的 indicator 是折叠箭头，染成品牌色会破坏其语义。
+ * 条目自身的 active 样式完全交还给 VitePress 默认值。
+ */
+html .VPSidebar .VPSidebarItem.level-0.has-active > .item > .text {
+  color: var(--vp-c-brand-1);
+}

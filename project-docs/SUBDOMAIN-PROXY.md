@@ -40,7 +40,7 @@ DNS 记录只能把域名映射到 **IP**，协议里没有端口字段。所谓
 
 | 项 | 状态 |
 |---|---|
-| `fatejian.icu` | Cloudflare **橙云代理**，解析到 Cloudflare 边缘 IP（`2606:4700:...`） |
+| `fatejian.icu` | Cloudflare **橙云代理**，解析到 Cloudflare 边缘节点（AS13335） |
 | `kb/plan/pmp.fatejian.icu` | **灰云直连源站**，解析到源站公网 IP，Cloudflare 不参与 |
 | Nginx | 主配置 `/etc/nginx/nginx.conf`（不含下列应用站点）+ `conf.d/` + `sites-available/` 多文件结构 |
 | 80/443 | 已被 `fatejian.icu` 静态站占用 |

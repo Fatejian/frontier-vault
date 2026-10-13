@@ -2,13 +2,19 @@
 
 > 面向中高级前端工程师的系统化深度知识库 —— 从浏览器底层原理到职业成长路径，覆盖 AI 工程实践，构建可落地的工程认知体系
 
-**🌐 在线访问**：<https://www.fatejian.icu/> · Built with [VitePress](https://vitepress.dev/) · Bilingual 中文 / English · GitHub Actions 双路部署（GitHub Pages + Baidu Cloud）
+**🌐 在线访问**：
+- 主站（推荐）：<https://www.fatejian.icu/>
+- 镜像（GitHub Pages）：<https://fatejian.github.io/frontier-vault/>
+
+Built with [VitePress](https://vitepress.dev/) · Bilingual 中文 / English · GitHub Actions 双路部署（GitHub Pages + 百度智能云 BCC）
+
+> 镜像站与主站由同一次 CI 构建产出，但经由不同 CDN 路径——主站走 Cloudflare，镜像为 GitHub Pages 直连。内容一致，主站不可用时可作应急入口。
 
 ---
 
 ## 模块总览
 
-知识库按七大模块组织，每个模块围绕一个核心主题建立完整心智模型，每个语言 20 篇 20+ 分钟深度长文（中英双语一一对应，合计 40 篇）：
+知识库按七大模块组织，围绕核心主题建立完整心智模型，共 **27 篇中英双语文档**（中英一一对应，slug 完全一致）：
 
 | 模块 | 路径 | 核心主题 |
 | --- | --- | --- |
@@ -80,7 +86,7 @@ npm run i18n:home      # 校验各语言 index.md 首页 frontmatter 与 home.js
 | Markdown 扩展 | markdown-it-task-lists（任务清单）、markdown-it-footnote（脚注）、markdown-it-anchor（锚点） |
 | URL 策略 | `cleanUrls: true`，中文源文件统一使用英文 slug 命名（无需 rewrites） |
 | i18n 架构 | 数据驱动单一数据源（`i18n/`）+ 代码生成（`generate-sidebar.js`） |
-| CI/CD | GitHub Actions：push 到 master 自动构建并双路部署 |
+| CI/CD | GitHub Actions：push 到 master 自动构建并双路部署（源站 + Pages，详见[部署](#部署)） |
 | 自定义组件 | Vue 3 单文件组件（`HomePage.vue`），支持图标、链接、hover 动画 |
 | AI 技能资产 | `skills/` 目录自包含版本化（16 个 Skill），`.agents/skills/` 为 IDE 运行时副本 |
 
@@ -98,11 +104,19 @@ frontier-vault/
 │   ├── public/                # 静态资源（favicon 等）
 │   └── index.md               # 中文站点首页
 ├── assets/readme/             # README 视觉资产（hero.svg）
-├── scripts/                   # 工具脚本（generate-sidebar / vite-plugin-auto-sidebar / audit-articles / extract-headings）
+├── scripts/                   # 工具脚本
+│   ├── generate-sidebar.js        # 由 i18n 数据源生成 config.js
+│   ├── vite-plugin-auto-sidebar.js# dev 时监听 md 变更并自动重生成
+│   ├── audit-articles.ps1         # 文章格式审计
+│   ├── extract-headings.js        # 标题层级提取
+│   ├── setup-nginx-perf.sh        # 源站压缩与缓存头配置（幂等）
+│   └── setup-subdomain-proxies.sh # 子应用 Host→端口分流与 TLS（幂等）
 ├── skills/                    # AI 技能资产（自包含、Git 跟踪，克隆即得）
 ├── project-docs/              # 项目层面文档（不进 VitePress 构建）
 │   ├── CONTRIBUTING-i18n.md       # 译者协作规范
-│   └── PERFORMANCE-OPTIMIZATION.md# 加载性能优化执行文档（CDN 接入）
+│   ├── DEPLOYMENT.md              # 部署架构、故障速查与事故记录
+│   ├── PERFORMANCE-OPTIMIZATION.md# CDN、缓存策略与性能实测
+│   └── SUBDOMAIN-PROXY.md         # 子应用端口分流与 HTTPS 上线
 ├── .github/workflows/deploy.yml
 ├── vite.config.js             # Vite 配置（dev 时 auto-sidebar 插件入口）
 ├── LICENSE-CODE / LICENSE-CONTENT
@@ -131,21 +145,18 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 
 ## 部署
 
-通过 GitHub Actions 自动部署（见 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)）：push 到 `master` 分支后自动构建并**双路部署**至 GitHub Pages 与百度智能云 BCC 服务器（`/var/www/frontier-vault/`）。
+push 到 `master` 后由 GitHub Actions 自动构建并**双路部署**至百度智能云 BCC 源站与 GitHub Pages。
 
-**两次构建是必需的，不是重复劳动**——两路部署的站点根路径不同：
+站点构建需要执行两次——两路的站点根路径不同，产物不能复用（源站在 `/`，Pages 在 `/frontier-vault/`）：
 
-| 部署目标 | 站点根路径 | 构建命令 |
+| 部署目标 | 站点地址 | 构建命令 |
 |---|---|---|
-| 百度智能云源站 | `https://www.fatejian.icu/` | `npm run docs:build`（`base=/`） |
-| GitHub Pages | `https://fatejian.github.io/frontier-vault/` | `npm run docs:build -- --base /frontier-vault/` |
+| 百度智能云源站（主） | <https://www.fatejian.icu/> | `npm run docs:build` |
+| GitHub Pages（镜像） | <https://fatejian.github.io/frontier-vault/> | `npm run docs:build -- --base /frontier-vault/` |
 
-若 Pages 沿用 `base=/` 的产物，HTML 中资源会写成 `/assets/xxx.js`，浏览器将解析到 `https://fatejian.github.io/assets/xxx.js`（站点根目录）从而全部 404；反之则源站资源 404。workflow 中先 rsync 源站、再以正确 base 重建并推 Pages，顺序不可颠倒（第二次构建会覆盖 `dist/`）。
+镜像与主站内容同源，但不经 Cloudflare，可作主站不可用时的应急入口。
 
-> **历史记录（2026-10-13 修复）**：2026-08-28 至 10-13 期间，GitHub Pages 的发布源分支为空（`Branch: None`），
-> 导致 `actions-gh-pages` 步骤**静默跳过**却仍报告 success——表现为 CI 全绿但 `gh-pages` 分支停更、
-> `https://fatejian.github.io/frontier-vault/` 返回 404。该期间实际只有 rsync 一路在部署。
-> 分支改回 `gh-pages` / `(root)` 后 Pages 恢复，但又暴露出上表的 base 不匹配问题，本次一并修正。
+> 部署架构、Nginx 配置要点、故障速查与历史事故记录详见 [`project-docs/DEPLOYMENT.md`](project-docs/DEPLOYMENT.md)。
 
 ## 许可协议
 
@@ -154,4 +165,8 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 
 ## 相关链接
 
+- 主站：<https://www.fatejian.icu/> ｜镜像：<https://fatejian.github.io/frontier-vault/>
 - GitHub 仓库：[Fatejian/frontier-vault](https://github.com/Fatejian/frontier-vault)
+- 部署与运维：[`project-docs/DEPLOYMENT.md`](project-docs/DEPLOYMENT.md)
+- 性能与 CDN：[`project-docs/PERFORMANCE-OPTIMIZATION.md`](project-docs/PERFORMANCE-OPTIMIZATION.md)
+- 子应用分流：[`project-docs/SUBDOMAIN-PROXY.md`](project-docs/SUBDOMAIN-PROXY.md)

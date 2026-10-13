@@ -1,6 +1,6 @@
 # 子域名端口分流执行文档
 
-> 站点：`kb.fatejian.icu` / `plan.fatejian.icu` / `pmp.fatejian.icu`（源站 `<ORIGIN_IP>`，阿里云杭州）
+> 站点：`kb.fatejian.icu` / `plan.fatejian.icu` / `pmp.fatejian.icu`（源站 `<ORIGIN_IP>`，百度智能云 BCC 华东-北京）
 > 编制：2026-10-12
 > 执行脚本：`scripts/setup-subdomain-proxies.sh`
 > 关联文档：`PERFORMANCE-OPTIMIZATION.md`（同一台服务器）、`CONTRIBUTING-i18n.md`
@@ -129,7 +129,7 @@ grep -E 'Le_RealFullChainPath|Le_RealKeyPath' /root/.acme.sh/fatejian.icu_ecc/fa
 
 ### 阶段 0 · 准备
 
-**本地**：阿里云控制台确认安全组入方向放行 `80`、`443`、`22`。
+**本地**：百度智能云控制台（BCC）确认安全组入方向放行 `80`、`443`、`22`。
 
 **服务器** —— 确认本机有无全局 IPv6（决定 `ENABLE_IPV6`）：
 
@@ -276,7 +276,7 @@ ss -tlnp | grep -E ':(8080|8081|8082)\b'    # 看是绑 0.0.0.0 还是 127.0.0.1
 
 - 应用侧改成只监听 `127.0.0.1`
 - 8080 那台的 nginx 改为 `listen 127.0.0.1:8080;`——比直接删掉更好：反代仍能用，同时消除公网暴露
-- 阿里云安全组删除 8080-8082 入方向规则
+- 百度智能云安全组（BCC）删除 8080-8082 入方向规则
 
 **2. IPv6**：仅当阶段 0 检测出本机有全局 IPv6 时，才加 `ENABLE_IPV6=1` 重跑脚本。没配 IPv6 却开启会让 nginx **reload/restart 直接失败**。
 

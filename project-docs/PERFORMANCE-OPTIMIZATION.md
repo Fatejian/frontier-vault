@@ -1,34 +1,203 @@
 # frontier-vault 加载性能优化执行文档
 
-> **主站**：`www.fatejian.icu`（VitePress 1.6.4，Cloudflare CDN + Cache Rule）
-> **子应用**：`kb.fatejian.icu`（已纳入 CDN）/ `plan`、`pmp.fatejian.icu`（源站直连）
+> **主站**：`www.fatejian.icu`（VitePress 1.6.4）
+> **子应用**：`kb.fatejian.icu` / `plan.fatejian.icu` / `pmp.fatejian.icu`
 > 源站：`<ORIGIN_IP>`（百度智能云 BCC，华东-北京，nginx 1.24.0）
-> 诊断完成：2026-10-12 ｜ 架构重构：2026-10-12 ｜ CDN 扩面：2026-10-13
+> 诊断完成：2026-10-12 ｜ 架构重构：2026-10-12 ｜ CDN 扩面：2026-10-13 ｜ **摘除 CDN 代理：2026-10-18**
 > 关联文档：[`SUBDOMAIN-PROXY.md`](./SUBDOMAIN-PROXY.md)（子应用分流完整手册）
+
+---
+
+## 零、现行状态：2026-10-18 摘除 Cloudflare 代理
+
+> 🔴 **本节推翻第三节「CDN 是唯一可行方案」的结论 —— 但推翻的是「唯一」二字，不是它的理由。**
+> 第三、五节描述的是 2026-10-12~13 的 CDN 方案，**现已停用**，保留作为历史依据与决策过程记录。
+
+### 0.1 冲突：两个访问地域的需求相反
+
+问题不在配置，在于**访问者分布在两个地理位置上，而 Cloudflare Free 无法按地域分流**。
+
+2026-10-18 实测（同一台机器，`--resolve` 绕开源站做对照，各测 3 次取中位）：
+
+| 场景 | 直连源站 | 走 Cloudflare | 说明 |
+|---|---|---|---|
+| 国内家宽（上海移动 AS9808） | **0.19–0.28 s** | 0.87–1.96 s | CF 无大陆 PoP，国内流量被导到 LAX / LHR |
+| 办公室（香港 VPN 出口） | 1.19 s（见附录 A，未含 2026-10-18 优化） | **0.19 s** | CF 就近 HKG，命中不回源 |
+
+分段耗时（国内家宽）：
+
+| 阶段 | 直连源站 | 走 Cloudflare |
+|---|---|---|
+| TCP 握手 | 0.05–0.08 s | 0.21–0.26 s |
+| TLS 握手 | 0.14–0.23 s | 0.62–0.76 s |
+| 首页 TTFB（命中） | 0.19–0.28 s | 0.88 s |
+| 首页 TTFB（未命中） | 0.22 s | 1.96 s |
+
+根因是两个 RTT 的差异：
+
+| 探测 | 结果 |
+|---|---|
+| 源站 → `223.5.5.5`（国内） | 49 ms |
+| 源站 → CF anycast（`104.16.0.1`） | **188 ms** |
+| `CF-RAY` 实测落点 | `…-LAX`、`…-LHR` |
+
+Cloudflare 在中国大陆没有可用 PoP（除非 Enterprise 的 China Network）。国内用户必须
+出境到海外节点再入境回源；而办公室出口本来就在香港，CF 反而就近服务。
+**同一个配置，对两个地域的效果正好相反。**
+
+### 0.2 决策：国内优先
+
+访客以中国大陆为主，因此保国内。但办公室场景不能就这么放着，需要重新评估它的真实基线：
+
+**附录 A 的 1.19 s 已经过时。** 那个数字是在「每个请求都重建 TCP+TLS」的状态下测的
+（原文自己写了「建连开销 1.6 s 占 TTFB 的 74%」）。39 个请求、每个做一次 798 ms 的 TLS 握手，
+在 4~5% 丢包下必然退避到几十秒。
+
+2026-10-18 的源站修复正好全部打在这个点上：
+
+| 修复 | 对办公室场景的作用 |
+|---|---|
+| 修复 `Connection: close` 缺陷 | 39 次握手 → 1 次（实测 40 请求复用 1 条连接） |
+| 补全 `gzip_types` | 字节数降 70%~86%，丢包暴露次数按比例下降 |
+| 启用 BBR | 丢包时不再把拥塞窗口砍半 |
+| `keepalive_timeout` 65 s → 180 s | 阅读型站点两次点击常超 65 s，连接被回收就要重付一次 800 ms 握手 |
+
+所以办公室现在到底是 300 ms 还是 1.2 s，**必须实测**，不能沿用旧基线。
+测量方法见 0.5 节，脚本为 `scripts/office-latency-test.ps1`。
+
+### 0.3 摘除时同步做的三件事（缺一不可）
+
+**① DNS 改为灰云**
+`fatejian.icu`、`www`、`kb`、`plan`、`pmp` 五条记录 `proxied: true → false`。
+DNS 仍托管在 Cloudflare，只是不再代理。生效 1–5 分钟。
+
+**② 源站补 `limit_conn` 兜底**
+摘掉代理后源站直接面对公网，失去了 CF 的连接层吸收：
+
+```nginx
+limit_conn_zone $binary_remote_addr zone=perip:10m;
+limit_conn perip 50;
+limit_conn_status 429;
+```
+
+不用 `limit_req` 限速：国内大量用户共用 CGNAT 出口 IP，按请求速率限流会误伤整片用户。
+
+**③ HTML 补显式 `Cache-Control` —— 最容易漏的一条**
+
+此前源站 HTML **完全不发** `Cache-Control`，那个 `max-age=600` 一直是 **Cloudflare 在边缘补的**。
+摘掉 CF 后，浏览器会退回启发式缓存（约 `Date - Last-Modified` 的 10%），
+一个发布了几天的页面就是十几小时，用户会长时间看到旧页面且完全无感知。
+
+四处 `location /` 各加一行（`kb` / `pmp-admin` / `pmp-plan` / `frontier-vault`）：
+
+```nginx
+add_header Cache-Control "public, max-age=300";
+```
+
+> ⚠️ 按 O-04 / O-05：`add_header` 是追加不是覆盖，且 location 内一旦出现 `add_header`
+> 就不再继承 server 级。落笔前已核对四个配置文件的 server 块**均无** `add_header`，
+> 因此不会冲掉任何继承来的头。`/assets/` 的 `immutable` 位于独立 location，不受影响。
+
+> ⚠️ `kb` 的配置由 GitHub Actions 覆盖，**必须同步改仓库**
+> `deploy/nginx/java-learning-kb.conf`，否则下次部署会被打回原样。
+
+### 0.4 验收结果（2026-10-18 实测）
+
+| 检查项 | 结果 |
+|---|---|
+| 五个入口 HTTP 状态 | 200 / 200 / 200 / 200 / 200 |
+| 协议协商 | `ALPN protocol: h2`，TLS 1.3 |
+| HTTP → HTTPS 跳转 | 301 正常 |
+| kb 搜索接口 | 200，12 ms |
+| plan / pmp 接口 | 401（与直连后端一致，鉴权正常） |
+| 并发压测 200 请求 × 20 并发 | 200/200 成功，均 58 ms，load 0.25 |
+| ACME 续期路径（80 端口 webroot） | 可达，acme.sh 不受影响 |
+| 源站出向速率 | 约 6 KB/s（出口 10 Mbps） |
+| 旧 DNS 缓存仍指向 CF 的客户端 | 实测仍返回 200，**过渡期无报错** |
+
+### 0.5 办公室场景如何实测
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\office-latency-test.ps1
+```
+
+脚本要点（都是踩过的坑，不要改）：
+
+- **出口 IP 必须走 `curl --noproxy`**：本机装了系统级代理时，`Invoke-RestMethod` 会跟着代理走，
+  查到的出口 IP 是代理节点的，会把网络环境判断带偏。
+- **判定源站不能靠 DNS**：`Resolve-DnsName` 查的是 DNS 服务器的新答案，而 curl 走系统缓存，
+  两者会不一致。脚本改用 `%{remote_ip}` 取实际建连地址，并以四个站点的众数判定源站。
+- 若某站点「实际连到」不是源站，其数据会被排除出结论，并提示 `ipconfig /flushdns` 后重跑。
+
+判读标准：
+
+| p95 最差 | 最大 | 结论 |
+|---|---|---|
+| < 600 ms | < 2000 ms | 直连够用，不需要 CDN |
+| < 1500 ms | < 5000 ms | 勉强可用，建议接国内 CDN |
+| 其余 | | 必须走 CDN |
+
+### 0.6 回滚
+
+Cloudflare → DNS → 把五条记录的云点回橙色即可，1–5 分钟生效。
+
+### 0.7 后续方案：国内 CDN（域名已有 ICP 备案）
+
+摘掉 CF 后失去了四项能力：边缘缓存、Brotli（CF 曾把源站 gzip 转码成 br，实测 -12.8%）、
+HTTP/3、WAF/DDoS 吸收。
+
+**国内 CDN 是唯一能同时服务两个地域的方案**：国内节点给国内用户，香港/海外节点给办公室用户，
+边缘缓存命中即可绕开「香港→北京」那段丢包链路，同时把上面四项能力一并补回。
+
+接入步骤：
+
+1. CDN 控制台添加加速域名，业务类型选**全球加速**（只选国内会导致办公室走不到香港节点）
+2. 源站填 `<ORIGIN_IP>:443`，回源协议 HTTPS，回源 Host 跟随
+3. 缓存规则：`/assets/*` 30 天；HTML 300 s；`/api/*` 不缓存
+4. 开启 Brotli、HTTP/3、Range 回源
+5. `pmp.fatejian.icu` 是管理后台，按第五节的判断**建议单独配置为不缓存，或干脆不接 CDN**
+
+> 🔴 **接入 CDN 前必须补 `set_real_ip_from`，否则全站 429。**
+> `limit_conn perip` 基于 `$remote_addr`；接入 CDN 后它变成 CDN 节点 IP，
+> 几十万用户会被当成一个客户端，50 条连接瞬间打满。
+>
+> ```nginx
+> set_real_ip_from <CDN 回源 IP 段>;
+> real_ip_header X-Forwarded-For;
+> real_ip_recursive on;
+> ```
+>
+> 现在**不要提前加**：没有 CDN 时加了，等于允许任何人用伪造的 XFF 绕过限流。
 
 ---
 
 ## 一、当前架构现状
 
-> 本节为 2026-10-12 重构新增，2026-10-13 更新。**理解后续所有结论的前提**：五个入口走三种不同的流量路径，性能特征不可混为一谈。
 
-### 五个入口，三种路径
+> 本节为 2026-10-12 重构新增，2026-10-13 更新，**2026-10-18 改为灰云直连后重写**。
+> 五个入口现在走**同一条路径**，但保留各入口的端口与配置差异说明。
+
+### 五个入口，一条路径
 
 | 站点 | 用途 | 源站端口 | DNS 代理 | HTML 缓存 | 流量路径 |
 |---|---|---|---|---|---|
-| `www.fatejian.icu` | 主站文档 | 80/443 | 🟠 橙云 | ✅ 已配（600s） | Cloudflare 边缘（**命中不回源**） |
-| `fatejian.icu` | 主站 apex | 80/443 | 🟠 橙云 | ✅ 已配（600s） | 同上 |
-| `kb.fatejian.icu` | 知识库 | 8082 | 🟠 橙云 | ✅ 已配（600s） | 同上 |
-| `plan.fatejian.icu` | 计划工具 | 8081 | ⚪ 灰云 | — | 用户 → 源站（**跨境**） |
-| `pmp.fatejian.icu` | 管理后台 | 8080 | ⚪ 灰云 | — | 同上 |
+| `www.fatejian.icu` | 主站文档 | 80/443 | ⚪ 灰云 | 源站 300s | 用户 → 源站（直连） |
+| `fatejian.icu` | 主站 apex | 80/443 | ⚪ 灰云 | 源站 300s | 同上 |
+| `kb.fatejian.icu` | 知识库 | 8082 | ⚪ 灰云 | 源站 300s | 同上 |
+| `plan.fatejian.icu` | 计划工具 | 8081 | ⚪ 灰云 | 源站 300s | 同上 |
+| `pmp.fatejian.icu` | 管理后台 | 8080 | ⚪ 灰云 | 源站 300s | 同上 |
+
+> 2026-10-18 之前为「主站走 CDN + 三子应用直连」的双路径，原因与实测见第零节。
+> 现全部改为灰云直连，HTML 缓存由源站 `add_header Cache-Control "public, max-age=300"` 提供。
 
 分流由 `scripts/setup-subdomain-proxies.sh` 生成配置（`/etc/nginx/conf.d/subdomain-proxies.conf`）：
 用户始终访问 443，Nginx 按 `Host` 匹配 `server_name` 后 `proxy_pass` 到对应本地端口。
 **DNS 无法指定端口**，端口映射只能由源站 Nginx 完成——详见 `SUBDOMAIN-PROXY.md`。
 
-### 决定性变量是 HTML 有没有被 CDN 缓存
+### 决定性变量是 HTML 有没有被缓存（CDN 时代的结论，仍然成立）
 
 2026-10-13 最终实测（同一网络环境，TTFB 连测 3 次取平均）：
+
 
 | 入口 | 路径 | TTFB 平均 | 最低 | `cf-cache-status` |
 |---|---|---|---|---|
@@ -124,7 +293,11 @@ Linux TCP 重传退避序列正是 1→2→4→8→16→32 秒。11 个请求全
 
 ---
 
-## 三、主站 CDN：已上线
+## 三、主站 CDN：已上线（2026-10-18 已停用）
+
+> ⚠️ **本节描述的 CDN 方案已于 2026-10-18 停用**，现状见第零节。保留原因：Cache Rule
+> 的配置方法、`DYNAMIC` 与 `HIT` 的判据、以及「源站 `max-age` 不会让 CF 缓存 HTML」
+> 这条更正，在将来接入任何 CDN 时仍然适用。
 
 > 状态：**2026-10-12 已完成**。原文档此节为"实施步骤"（未执行态），现更新为完成态与实测结果。
 
@@ -246,9 +419,62 @@ buffer_size 16k;          # 必须加，否则进程间不刷盘
 - 三个子域名已完成 HTTPS 上线，证书有效期至 2027-01-10，acme.sh 自动续期
 - 8080 / 8081 / 8082 已由 `0.0.0.0` 收紧至 `127.0.0.1`，公网直连实测不可达
 
+### 4.3 2026-10-18 内核与 nginx 调优
+
+摘除 CDN 之前先做了一轮源站调优。这一轮的价值不只是「让国内更快」，
+它同时把办公室那条 4~5% 丢包链路的代价压了下来（见第零节 0.2）。
+
+**内核层**（`/etc/sysctl.d/99-web-tuning.conf` + `/etc/modules-load.d/99-tcp-bbr.conf`）
+
+| 项 | 原值 | 现值 | 作用 |
+|---|---|---|---|
+| `tcp_congestion_control` | cubic | **bbr** | 丢包时不再把拥塞窗口砍半 |
+| `net.core.default_qdisc` | fq_codel | **fq** | BBR 的配套 pacing 队列 |
+| `tcp_fastopen` | 1 | 3 | 短连接省一次握手往返 |
+| `tcp_slow_start_after_idle` | 1 | 0 | 空闲连接复用不重置 cwnd |
+| `tcp_mtu_probing` | 0 | 1 | 避免 MTU 黑洞卡死 |
+| `tcp_max_syn_backlog` | 128 | 16384 | 突发并发不丢 SYN |
+| `net.core.rmem_default` / `tcp_rmem` 第二列 | 25 MB | 128 KB | 2 GiB 机器上按 BDP（约 76 KB）取值，避免连接一多就吃光内存 |
+| `vm.swappiness` | 60 | 10 | 不把 JVM 冷页积极换出 |
+
+> `net.core.default_qdisc` 只对**新建**的 qdisc 生效，已运行的网卡需手动替换：
+> `tc qdisc replace dev eth0 root fq`。mq 多队列网卡上直接替换 root 即可。
+
+**nginx 全局**（`/etc/nginx/nginx.conf`）
+
+| 项 | 原值 | 现值 |
+|---|---|---|
+| `worker_connections` | 768 | 8192（+ `multi_accept on`、`use epoll`） |
+| `gzip_types` | **未配置**（只压 text/html） | 补全 js/css/json/svg/font 等 |
+| `gzip_static` | 未开 | on |
+| `ssl_protocols` | TLSv1 / 1.1 / 1.2 / 1.3 | 1.2 / 1.3 |
+| `ssl_session_cache` | 未配 | `shared:SSL:10m`，`timeout 1d` |
+| `ssl_buffer_size` | 默认 16k | 4k（小响应 TTFB 更快出栈） |
+| `open_file_cache` | 未开 | `max=10000 inactive=15s valid=30s` |
+| `server_tokens` | on | off |
+| `keepalive_timeout` | 65 s | 180 s（见第零节 0.2） |
+
+> ⚠️ `gzip_types` 缺省这一条影响最大：实测 `fatejian.icu` 首页 3 个资源原始合计 124 KB，
+> 补全后 24 KB（-81%）；`kb` 文章页 201 KB → 28.8 KB（-86%）。
+> 出口只有约 10 Mbps，这一项直接决定首屏时间。
+
+**反向代理链路**（`/etc/nginx/conf.d/subdomain-proxies.conf`）
+
+修掉一个一直在拖后腿的缺陷：`map $http_upgrade $conn` 对普通请求回的是 `close`，
+等于**每个静态资源都新建一条 TCP+TLS 连接**到内层 nginx。改为空值后配合
+`upstream ... keepalive 32`，实测 40 个请求只复用 1 条连接。
+
+同时：`listen 443 ssl` → `ssl http2`（此前靠「同一 443 socket 上任一 server 开了 h2 就整体生效」
+的隐式行为兜着，很脆弱）；静态 `location /` 的 `proxy_buffering` 由 off 改回 on
+（off 会让内层连接陪慢速客户端走完整个下载）。
+
 ---
 
-## 五、子应用 CDN 状态
+## 五、子应用 CDN 状态（2026-10-18 已全部停用）
+
+> ⚠️ 2026-10-18 起五个入口全部改为灰云直连，本节「kb 橙云 / plan、pmp 灰云」的划分已失效。
+> 保留原因：其中「`pmp` 是管理后台，纳入 CDN 会把后台暴露到边缘」这条判断，
+> 在将来接入国内 CDN 时**仍然适用**——`pmp` 建议单独配置为不缓存，或干脆不接。
 
 `kb` 已于 2026-10-13 纳入 CDN 并验证通过；`plan` / `pmp` 仍为灰云直连。
 **是否纳入需按用途区分，不能一刀切**：
@@ -315,23 +541,27 @@ curl -sk -m 8 -o /dev/null -w "%{http_code}\n" https://<ORIGIN_IP>:8081/   # 期
 
 ## 七、后续加固
 
-### ⚠️ 源站 IP 加固与子应用直连存在冲突（优先决策）
+### ⚠️ 源站 IP 加固与「全部灰云直连」互斥（2026-10-18 更新）
+
+> 🔴 **2026-10-18 起五个入口全部灰云直连，本节原「只放行 Cloudflare IP」方案已彻底不可行。**
+> 现在放行 CF 段等于把全站关停。原表格保留，作为「为什么当初没做这件事」的记录。
 
 子应用为灰云直连，**必须能通过源站 IP 访问 80/443**。因此：
 
 | 方案 | 对主站 | 对子应用 |
 |---|---|---|
-| 安全组只放行 Cloudflare IP 段 | ✅彻底隐藏源站 IP | ❌ **三个子域名全部不可访问** |
+| 安全组只放行 Cloudflare IP 段 | ✅彻底隐藏源站 IP | ❌ **五个入口全部不可访问** |
 
-**结论：在子应用保持灰云的前提下，该加固方案无法执行。** 三条路径互斥：
+**结论：在全站灰云的前提下，该加固方案无法执行。** 三条路径互斥：
 
 | 选项 | 做法 | 代价 |
 |---|---|---|
-| A |放弃源站 IP 加固 | 源站 IP 持续暴露，爬虫可绕 CDN 直连（当前状态） |
-| B | 子应用全部纳入 CDN 后再做加固 | 需先完成第五节决策，且后台类应用暴露面增大 |
+| A | 放弃源站 IP 加固 | 源站 IP 持续暴露，爬虫可绕 CDN 直连（**当前状态**） |
+| B | 接入国内 CDN 后，安全组只放行该 CDN 的回源段 | 需先完成第零节 0.7 的接入，且要同步维护回源段列表 |
 | C | 子应用改用非标准端口 + 独立入口 | 运维复杂度上升，不推荐 |
 
-> 在选项 B 落地前，**不要执行"只放行 Cloudflare IP"**，否则子域名会立即全面中断。
+> 在选项 B 落地前，**不要执行"只放行 CDN IP"**，否则全部入口会立即中断。
+> 现状：源站约一半请求是绕过 CDN 直连的扫描器流量（单个 IP 曾在凌晨一次性打 471 条）。
 
 ### 缓存命中率监控
 
@@ -368,7 +598,7 @@ curl -sk -m 8 -o /dev/null -w "%{http_code}\n" https://<ORIGIN_IP>:8081/   # 期
 |---|---|
 | 当前公网出口线路与带宽 | 百度智能云控制台 → BCC 实例 → 网络信息 |
 | 是否存在跨境优化线路 | 工单咨询销售，确认海外访问是否有优化选配 |
-| 1 Mbps 带宽是否仍为瓶颈 | 结合第〇节实测：丢包 4~5% 才是主因，扩容带宽无效 |
+| 1 Mbps 带宽是否仍为瓶颈 | 结合附录 A 实测：丢包 4~5% 才是主因，扩容带宽无效 |
 
 > 由于 CDN 回源（Cloudflare 边缘 → 源站）会复用该出口，回源频率越低，这条链路对体验的影响越小。
 > 结合第五节结论：**先做缓存优化，线路优化的边际收益有限**。
@@ -519,10 +749,19 @@ content-encoding : 39/39 全部为空（未压缩）
 
 ### E. 遗留问题
 
-**1. 每 3 小时一次的流量尖峰仍未归因**
+**1. 每 3 小时一次的流量尖峰 —— 已归因（2026-10-18）**
 
-`crontab` 与 `/etc/cron.d` 中未找到对应任务，可执行 `systemctl list-timers --all` 排查。
-CDN 上线后对主站影响显著降低，但**子应用走直连，该尖峰仍会全额影响三个子域名**。
+不是系统定时任务。`systemctl list-timers --all` 与 `crontab` / `/etc/cron.d` 中均无对应任务；
+实测为**单个扫描器 IP 在凌晨一次性发起 471 条请求**（`/.env`、`/v3/.env` 一类的漏洞探测）。
+
+```bash
+# 复现方式：按小时看请求量，再按 IP 聚合尖峰那一小时
+awk -F"[:[]" '{print $3}' /var/log/nginx/access.log | sort | uniq -c
+grep ":02:" /var/log/nginx/access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head
+```
+
+源站已对 `.env` / `.git` / `phpunit` / `phpinfo` 等路径返回 444（不记日志、不回响应），
+并加了 `limit_conn perip 50`。该待办可关闭。
 
 **2. pmp-admin 静态产物问题已恢复（2026-10-12 更正）**
 
@@ -544,12 +783,16 @@ open() "/var/www/pmp-admin/dist/vp-icons.css" failed (2: No such file or directo
 curl -sI https://pmp.fatejian.icu/vp-icons.css
 ```
 
-**3. `plan` / `pmp` 未纳入 CDN** —— 见第五节，待决策。
+**3. `plan` / `pmp` 未纳入 CDN** —— 2026-10-18 起已无意义，五个入口全部灰云直连。
 
 **4. 源站 IP 无法隐藏** —— 见第七节，待决策。
 
 > 已于 2026-10-13 关闭的待办：`www` / apex / `kb` 的 HTML Cache Rule 已配置完毕，
 > 三者 `cf-cache-status` 均为 `HIT`，主站 TTFB 由 1411ms 降至 191ms。
+>
+> 已于 2026-10-18 关闭的待办：流量尖峰归因（见本节第 1 条）。
+> 新增待办：**办公室场景需实测**（`scripts/office-latency-test.ps1`），
+> 以及**接入国内 CDN**（域名已有 ICP 备案，方案见第零节 0.7）。
 
 ---
 
@@ -569,3 +812,7 @@ curl -sI https://pmp.fatejian.icu/vp-icons.css
 | 2026-10-13 | **该待办已完成**：`www` / apex / `kb` 三条 Cache Rule 全部配置并验证（`cf-cache-status: HIT`），主站 TTFB 1411ms → **191ms**，静态资源 TTL 未受影响 |
 | 2026-10-13 | 路由分析经实测复核：绕行确实存在（内地→香港→北京），但**总延迟仅 50ms**，「多绕约 1200 公里」不成立。归因修正为——**主因是 4~5% 丢包导致的 TCP 指数退避，而非地理距离**。CDN 结论方向不变，理由表述已更新 |
 | 2026-10-13 | 补充 CN2 条目的实测佐证：路径全程未出现 AS4809，与原记录一致 |
+| 2026-10-18 | **源站修复**：修复 `Connection: close` 缺陷（每请求新建 TLS 连接）、补全 `gzip_types`、启用 BBR、`worker_connections` 768→8192、`ssl_buffer_size 4k`、`open_file_cache`、`server_tokens off`、扫描器路径返回 444。fatejian.icu 首页资源 124 KB → 24 KB，kb 文章页 201 KB → 28.8 KB |
+| 2026-10-18 | **摘除 Cloudflare 代理**：五条 DNS 记录改灰云。国内 TTFB 0.88~1.96 s → 0.19~0.28 s。新增第零节记录冲突、决策、验收、回滚与后续方案；第一、三、五节按现状标注 |
+| 2026-10-18 | 源站补 `limit_conn perip 50`、四处 `location /` 补 `Cache-Control: max-age=300`（原 600 s 由 CF 边缘补，源站从未发过）、`keepalive_timeout` 65 s→180 s |
+| 2026-10-18 | 新增 `scripts/office-latency-test.ps1`：办公室环境下判定直连是否够用。归因文档遗留项「每 3 小时流量尖峰」——实为单个扫描器 IP 一次性 471 条请求，非系统定时任务 |

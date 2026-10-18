@@ -1,8 +1,8 @@
 # 部署架构与运维手册
 
 > 适用范围：`frontier-vault` 主站及其同机子应用
-> 最后更新：2026-10-13
-> 关联文档：[`PERFORMANCE-OPTIMIZATION.md`](./PERFORMANCE-OPTIMIZATION.md)（CDN 与缓存）、[`SUBDOMAIN-PROXY.md`](./SUBDOMAIN-PROXY.md)（子应用分流）
+> 最后更新：2026-10-18
+> 关联文档：[`PERFORMANCE-OPTIMIZATION.md`](./PERFORMANCE-OPTIMIZATION.md)（访问路径与缓存策略）、[`SUBDOMAIN-PROXY.md`](./SUBDOMAIN-PROXY.md)（子应用分流）
 
 ---
 
@@ -10,12 +10,16 @@
 
 | 入口 | 承载内容 | 源站目录 | 出口 | 配置文件 |
 |---|---|---|---|---|
-| `www.fatejian.icu` | 主站文档 | `/var/www/frontier-vault/` | Cloudflare CDN | `nginx.conf` |
-| `fatejian.icu` | 主站 apex | 同上 | Cloudflare CDN | `nginx.conf` |
+| `www.fatejian.icu` | 主站文档 | `/var/www/frontier-vault/` | 源站直连 | `nginx.conf` |
+| `fatejian.icu` | 主站 apex | 同上 | 源站直连 | `nginx.conf` |
 | `fatejian.github.io/frontier-vault/` | 主站镜像 | 同上 | GitHub Pages 直连 | `gh-pages` 分支 |
-| `kb.fatejian.icu` | java-learning-kb | `/var/www/java-learning-kb` | Cloudflare CDN | `conf.d/java-learning-kb.conf` |
+| `kb.fatejian.icu` | java-learning-kb | `/var/www/java-learning-kb` | 源站直连 | `conf.d/java-learning-kb.conf` |
 | `plan.fatejian.icu` | pmp-plan | `/var/www/pmp-plan/dist` | 源站直连 | `sites-available/pmp-plan` |
 | `pmp.fatejian.icu` | pmp-admin | `/var/www/pmp-admin/dist` | 源站直连 | `sites-available/pmp-admin` |
+
+> **2026-10-18 起五个入口全部为灰云直连**，不再经过 Cloudflare 代理。
+> 原因（国内与办公室两个地域的需求相反）与实测见 `PERFORMANCE-OPTIMIZATION.md` 第零节。
+> DNS 仍托管在 Cloudflare，只是记录不再代理；改回橙云即可回滚。
 
 > 源站为百度智能云 BCC（华东-北京），nginx 1.24.0。
 > 应用端口 8080 / 8081 / 8082 均只监听 `127.0.0.1`，公网不可直连。

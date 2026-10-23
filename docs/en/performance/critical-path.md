@@ -14,11 +14,7 @@ outline: deep
 
 # The Critical Path of Modern Frontend Performance
 
-> Subtitle: From TTFB, LCP, and Hydration to ESM, JIT, GC, Rasterization, IPC, and Resource Scheduling
->
-> Target readers: Mid-to-senior frontend engineers, frontend architects, performance optimization leads
->
-> Reading time: ~25 minutes
+A page that feels fast on a local machine can still stall in production: the hero image appears late, a button takes a moment to respond, and scrolling drops frames now and then. Shrinking the bundle does not explain these symptoms, because the delay may sit in the network, the parser, the JavaScript runtime, or the rendering pipeline. This article follows a single navigation in time order and separates waiting, blocking, and repeated work at each stage. It then shows how to record a baseline, which change is worth trying, how to verify the result, and when to roll back.
 
 ::: info In one sentence
 The essence of modern frontend performance optimization is managing waiting, blocking, and repeated work on the critical path.
@@ -44,31 +40,28 @@ The essence of modern frontend performance optimization is managing waiting, blo
 - [15. Site Isolation and Sandbox: Security Architecture Also Affects the Performance Model](#_15-site-isolation-and-sandbox-security-architecture-also-affects-the-performance-model)
 - [16. bfcache and Service Worker: Reducing Repeated Loading and Repeated Work](#_16-bfcache-and-service-worker-reducing-repeated-loading-and-repeated-work)
 - [17. Unified Model: Wait, Block, and Repeated Work](#_17-unified-model-wait-block-and-repeated-work)
-- [18. Advanced Frontend Practice Checklist](#_18-advanced-frontend-practice-checklist)
+- [18. Baseline and Validating Changes](#_18-baseline-and-validating-changes)
+- [19. Cost and Rollback: Optimization Is Not Free](#_19-cost-and-rollback-optimization-is-not-free)
+- [20. Advanced Frontend Practice Checklist](#_20-advanced-frontend-practice-checklist)
 - [Conclusion: Advanced Frontend Optimizes the System, Not a Single Line of Code](#conclusion-advanced-frontend-optimizes-the-system-not-a-single-line-of-code)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ## Introduction
 
-The main reference for this article is Addy Osmani's long post on X, *How modern browsers work*, and its Chinese compilation. Addy Osmani is an engineering leader who has long focused on Web performance, Chrome developer experience, and frontend engineering. He worked at Google for more than 14 years, led Chrome Developer Experience, contributed to DevTools, Lighthouse, and Core Web Vitals, and authored books such as *Learning JavaScript Design Patterns* and *Image Optimization*. (https://addyosmani.com/)
+The main reference for this article is Addy Osmani's long post on X, *How modern browsers work*, and its Chinese compilation. Addy Osmani works on Web performance and Chrome developer experience, has contributed to DevTools, Lighthouse, and Core Web Vitals, and is the author of *Learning JavaScript Design Patterns* and *Image Optimization*. His personal site is [addyosmani.com](https://addyosmani.com/).
 
-This article will not explain browser internals as a string of isolated terms. Instead, it tries to build a performance model truly useful for advanced frontend engineers:
+One term runs through the whole article: the **Critical Rendering Path** is the sequence of steps that must complete between the arrival of HTML and CSS and the first screen pixels. It is narrower than the full loading process, but it decides how long the user waits before seeing the page.
 
-::: info In one sentence
-The essence of modern frontend performance optimization is managing waiting, blocking, and repeated work on the critical path.
-:::
+Panel observations in this article refer to Chromium DevTools; block names and colors vary by version and theme.
 
-This central thread can be broken down into three groups of problems:
+A single navigation can be split into five stages in time order. Each stage can introduce waiting, blocking, or repeated work:
 
-- **Waiting**: TTFB is waiting on the network and server; LCP is waiting for the main content to actually appear; Hydration is waiting for the page to go from "viewable" to "usable."
-- **Blocking**: synchronous scripts block HTML parsing; CSS blocks first render; long tasks block the main thread; GC pauses block interaction.
+- **Waiting**: TTFB waits on the network and server; LCP waits for the main content to actually appear; Hydration waits for the page to go from "viewable" to "usable."
+- **Blocking**: synchronous scripts block HTML parsing; CSS blocks first render; long tasks block interaction; GC pauses block the main thread.
 - **Repeated work**: repeated layout, repeated paint, repeated rasterization, repeated hydration of static regions, repeated resource requests.
 
-Understanding these three groups requires first understanding the complete pipeline from request to pixel in a modern browser. The diagram below shows the full path of this pipeline; each segment can introduce waiting, blocking, or repeated work:
-
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6'}}}%%
 flowchart LR
     Start([User initiates navigation])
 
@@ -120,35 +113,36 @@ flowchart LR
 
     Start --> Network --> Discovery --> Runtime --> Render --> Experience
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
     classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
     classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
-    class Start start;
-    class N1,N2,N3,N4,D1,D2,D3,D4 wait;
-    class R1,R2,R3,R4 block;
-    class P1,P2,P3,P4,P5 work;
-    class E1,E3 metric;
-    class E2,E4 block;
+    class Start core;
+    class N1,N2,N3,D3 wait;
+    class N4,E1,E3 metric;
+    class R4,E2,E4 block;
+    class D1,D2,D4,R1,R2,R3,P1,P2,P3,P4,P5 work;
 ```
+
+Read from left to right: the first four stages determine when the page can appear, and the fifth determines whether it stays reliable after it appears. Purple nodes are metrics you can collect directly; amber nodes are the stages most likely to occupy the main thread or interrupt the critical path. In the fourth stage, Style, Layout, Paint, Raster, and Composite stand for style calculation, layout, paint, rasterization, and compositing.
 
 ---
 
 ## 1. From "Framework Perspective" to "Browser Pipeline Perspective"
 
-When many frontend engineers approach performance optimization, their first reaction is:
+When many frontend engineers approach performance optimization, they start from the framework and the build output:
 
 - Are React components re-rendering too much?
 - Is the Vue reactivity system triggering too many updates?
-- Is the Webpack bundle too large?
+- Is the bundle too large?
 - Are images not compressed?
 - Are API responses too slow?
 
-These questions matter, but they remain local. Advanced frontend engineers need to dig deeper:
+These questions are worth checking, but they only answer "where a problem might be"; they do not answer "which stage this slowdown is in." The next questions are:
 
-- Does the slowness happen in the network stage, the server stage, or the browser stage?
+- Does the slowness happen in the network, the server, or the browser?
 - Is TTFB slow, or is resource discovery late?
 - Is CSS blocking first render, or is synchronous JS blocking HTML parsing?
 - Is the LCP image downloading slowly, or is decoding, layout, or rasterization slow?
@@ -156,9 +150,9 @@ These questions matter, but they remain local. Advanced frontend engineers need 
 - Is Hydration too heavy, making the page "visible but unclickable"?
 - Is JIT deoptimization, GC pauses, or IPC and compositing-layer cost being amplified?
 
-A modern browser is not a simple HTML/CSS/JS execution box; it is a complex software system. It handles network communication, resource scheduling, HTML/CSS/JS parsing, JavaScript execution, layout, paint, GPU compositing, multi-process isolation, and security sandboxes.
+A modern browser is not a simple HTML/CSS/JS execution box; it is a software system. It handles network communication, resource scheduling, HTML/CSS/JS parsing, JavaScript execution, layout, paint, GPU compositing, multi-process isolation, and security sandboxes.
 
-Therefore, what advanced frontend engineers really optimize is not a single line of code, but the complete pipeline from request to interactivity. The following path can be used to understand modern page loading (each stage may involve waiting/blocking/repeated work):
+Expanded into an order you can check item by item:
 
 1. User initiates navigation
 2. URL parsing / DNS / TCP / TLS / HTTP request
@@ -167,17 +161,13 @@ Therefore, what advanced frontend engineers really optimize is not a single line
 5. DOM / CSSOM / module dependency graph
 6. JS parse / compile / execute
 7. Style calculation / layout / paint records
-8. Layering / tile rasterization / GPU compositing
+8. Layering / tile rasterization / GPU composite
 9. LCP
 10. Hydration
 11. Page truly interactive
 12. Ongoing JIT / GC / IPC / Layout / Paint / Composite costs
 
-::: tip Core conclusion of this section
-
-The performance optimization perspective needs to upgrade from "framework-local" to "browser-pipeline-global." Only by locating the problem at a specific stage of the pipeline can the right optimization be chosen.
-
-:::
+The first step in diagnosis is not choosing an optimization technique, but attaching a stage label to this particular slowdown. A wrong label usually leads to a technique that misses the real bottleneck.
 
 ---
 
@@ -185,57 +175,27 @@ The performance optimization perspective needs to upgrade from "framework-local"
 
 **TTFB (Time to First Byte)** is the time between the browser initiating a request and receiving the first byte returned by the server.
 
-Many people simplify TTFB as "backend response time," but that is incomplete. Before the first byte arrives, the browser usually already goes through:
+Reading TTFB as "backend response time" is incomplete. Before the first byte arrives, the browser has usually gone through URL parsing, security checks, DNS lookup, TCP connection establishment, the TLS handshake in HTTPS scenarios, sending the HTTP request, server processing, and the start of the response headers.
 
-1. URL parsing
-2. Security checks
-3. DNS lookup
-4. TCP connection establishment
-5. TLS handshake in HTTPS scenarios
-6. HTTP request sent
-7. Server processing
-8. Response headers and response body start to return
+Addy Osmani notes in his original post that the modern Chromium network stack usually runs in a dedicated network service or network process. The renderer process cannot access the network directly; it obtains resources through the browser process or network process. This is both an architectural division and part of security isolation.
 
-Addy Osmani noted in his original X post that the modern Chromium network stack usually runs in a dedicated network service or network process. The renderer process cannot access the network directly; it obtains resources through the browser process or network process. This is both an architectural division and part of security isolation.
+TTFB can therefore be slow for three groups of reasons:
 
-So TTFB can be slow for many reasons:
+- **Network and connection**: slow DNS, slow TCP/TLS handshake, a user far from the server, a CDN cache miss.
+- **Server processing**: cold start, slow SSR execution, slow database queries, serial backend APIs, a heavy BFF aggregation layer.
+- **Caching and protocol**: HTML that cannot be cached, an edge node without a cached copy, a response that must go back to the origin.
 
-- Slow DNS
-- Slow TCP/TLS handshake
-- User far from the server
-- CDN cache miss
-- Server cold start
-- Slow SSR execution
-- Slow database queries
-- Backend serial API calls
-- Heavy BFF aggregation layer
-- Edge node not cached
-- HTML not cacheable
+Optimization directions follow the same three groups:
 
-Common directions for optimizing TTFB:
+- Shorten distance: use a CDN or edge rendering.
+- Reduce server work: cache HTML or data APIs, remove serial requests, optimize SSR cold start, use streaming SSR, defer non-critical data.
+- Prepare earlier: use Early Hints for critical resources, or `preconnect` to establish connections sooner.
 
-- Use a CDN to shorten network distance
-- Cache HTML or data APIs
-- Reduce serial server-side requests
-- Optimize SSR cold start
-- Use streaming SSR
-- Defer non-critical data
-- Use edge rendering
-- Use Early Hints for critical resources
+**Early Hints (HTTP 103)** allows the server to tell the browser in advance which resources can be preconnected or preloaded before the main response is fully generated. It requires server or CDN support and is not suitable as the only measure.
 
-**Early Hints (HTTP 103)** allows the server to tell the browser in advance which resources can be preconnected or preloaded before the main response is fully generated, letting the browser prepare critical resources while the server is still "thinking."
+TTFB is a composite metric. In the Network panel or through `PerformanceResourceTiming`, it can be split into Redirect, DNS, TCP, Request, and Response phases to tell whether the delay is in the connection or the server.
 
-::: tip Core conclusion of this section
-
-TTFB is not equal to backend response time; it includes DNS, TCP, TLS, server processing, and other stages. Optimizing TTFB requires network distance, caching strategy, and server-side concurrency.
-
-:::
-
-::: warning Common misconception
-
-Attributing slow TTFB entirely to slow backend interfaces while ignoring network stages such as DNS, TLS handshake, and CDN cache hit.
-
-:::
+The conclusion of this chapter is not "optimize TTFB" but "find which segment of TTFB is the most expensive."
 
 ---
 
@@ -245,7 +205,7 @@ In first-screen performance, an often underestimated problem is: **when does the
 
 Many pages have slow LCP not because the image itself downloads slowly, but because the browser learns of the image's existence very late.
 
-Modern browsers have a very important mechanism: the **preload scanner**. Addy Osmani explained that Chromium's preload scanner scans raw HTML tokens ahead of the main HTML parser. Even if the main parser is blocked by CSS or synchronous JavaScript, the preload scanner can continue discovering images, scripts, stylesheets, and other resources, and initiate parallel requests early.
+The **preload scanner** is the key mechanism here. Chromium's preload scanner scans raw HTML tokens ahead of the main HTML parser. Even if the main parser is blocked by CSS or synchronous JavaScript, the preload scanner can continue discovering images, scripts, stylesheets, and other resources, and initiate parallel requests early.
 
 This means the following pattern is browser-friendly:
 
@@ -265,11 +225,9 @@ document.body.appendChild(img)
 
 The browser must wait for the JS to download, parse, compile, and execute before it knows the image exists. This pushes the LCP image behind JS execution, creating a typical resource-discovery delay.
 
-Advanced frontend engineers should remember one principle:
-
 > **First-screen critical resources should not be hidden behind JavaScript execution.**
 
-For first-screen critical resources, the following techniques can be used (think in terms of "let the browser know earlier / start working earlier"):
+Common techniques for starting earlier:
 
 - `rel="preload"`: load critical resources early
 - `rel="modulepreload"`: load critical ESM modules early
@@ -277,41 +235,35 @@ For first-screen critical resources, the following techniques can be used (think
 - `rel="preconnect"`: establish connections early
 - Early Hints: get resource hints to the browser earlier
 
-Addy Osmani also noted that browsers assign priorities to resources. HTML and CSS usually have higher priority, images may have lower priority, and developers can influence scheduling through `rel=preload` and Fetch Priority.
+Addy Osmani also notes that browsers assign priorities to resources: HTML and CSS usually have higher priority, images may have lower priority, and developers can influence scheduling through `rel=preload` and Fetch Priority.
 
-::: tip Core conclusion of this section
+Preload only solves discovery and priority; it does not solve dependency chains. If the resource URL must be computed by JS, there is nothing to preload yet.
 
-The root cause of slow LCP is often "late discovery" rather than "slow download." First-screen critical resources should appear directly in the initial HTML, or be announced early via preload / modulepreload.
-
-:::
-
-::: info Engineering insight
-
-When auditing performance, first check whether the LCP element appears in the initial HTML, then check whether it is delayed by JS insertion. This is one of the highest-ROI optimization points.
-
+::: tip Verification
+In the Network panel, check the `Initiator` of the LCP image. If the HTML parser initiated it, discovery is normal. If a JavaScript file initiated it and the timestamp is late, resource discovery was delayed.
 :::
 
 ---
 
 ## 4. HTTP/2 and HTTP/3 Have Changed Resource Organization, but Haven't Eliminated the Critical Path
 
-In the past, frontend performance optimization often emphasized:
+In the HTTP/1.1 era, common performance advice was:
 
-- Reducing request count
-- Merging JS
-- Merging CSS
-- Sprite images
-- Domain sharding
+- Reduce request count
+- Merge JS
+- Merge CSS
+- Use sprite images
+- Shard domains
 
-These practices were important in the HTTP/1.1 era because browsers had a limited number of concurrent connections to the same domain, and too many requests easily caused blocking.
+That advice assumed a limited number of concurrent connections to the same domain, where too many requests easily caused queuing.
 
-But modern browsers widely support HTTP/2 and HTTP/3. Addy Osmani's original article also emphasizes that HTTP/2 allows multiple resource requests to be multiplexed over a single TCP/TLS connection, while HTTP/3 is based on QUIC and can further reduce connection-establishment latency.
+Modern browsers widely support HTTP/2 and HTTP/3. HTTP/2 multiplexes multiple resource requests over a single TCP/TLS connection, while HTTP/3 is based on QUIC, reducing connection-establishment latency and TCP-level head-of-line blocking.
 
-This means:
+This changes a few things:
 
 - "The fewer requests the better" is no longer absolute
 - Many small files are not necessarily a disaster
-- But dependency chains on the critical path remain very important
+- Dependency chains on the critical path remain important
 - Deep module graphs can still create waterfalls
 - Resource priorities still affect first paint
 
@@ -329,17 +281,7 @@ HTML
 
 Even if HTTP/3 is fast, users still have to wait for a series of serial dependencies to complete.
 
-::: tip Core conclusion of this section
-
-HTTP/2/3 alleviated the "number of concurrent requests" problem, but did not eliminate the "critical-path dependency chain" problem. Deep module graphs are still LCP killers.
-
-:::
-
-::: warning Common misconception
-
-Thinking that HTTP/2 makes request count irrelevant and ignoring the impact of module dependency depth on first paint.
-
-:::
+Protocol improvements address transfer efficiency. They usually do not remove dependencies that must be satisfied in order.
 
 ---
 
@@ -353,39 +295,31 @@ There are two important blocking points here.
 
 By default, when the HTML parser encounters a normal `<script>`, it pauses parsing, waits for the script to download and execute, and then continues. The reason is that scripts may modify the DOM or even use `document.write()` to change the subsequent document structure.
 
-For example:
-
 ```html
 <script src="/large-app.js"></script>
 ```
 
-A more reasonable approach is to use `defer`, `type="module"`, or `async` in suitable scenarios.
+A more reasonable approach is to use `defer` or `type="module"`, or `async` in suitable scenarios.
 
-Addy Osmani notes: `defer` lets scripts download in parallel but delays execution until HTML parsing is complete, preserving order; `async` downloads in parallel and executes as soon as possible after download; ES modules have defer-like behavior by default.
+`defer` lets scripts download in parallel but delays execution until HTML parsing is complete, preserving order; `async` downloads in parallel and executes as soon as possible after download; ES modules have defer-like behavior by default. The execution timing of `async` is unpredictable, so it is unsuitable for code with ordering dependencies.
 
 ### 2. CSS blocks first render
 
 CSS does not necessarily block HTML parsing, but it usually blocks first render. The browser wants to avoid showing an unstyled version first, then repainting a different version after CSS arrives.
 
-::: tip Core conclusion of this section
+Synchronous scripts are stricter: they block both parsing and subsequent DOM construction. The preload scanner can still discover resources, but the script itself must wait for the download to finish before it executes.
 
-There are two main blocking points in the HTML parsing phase: synchronous scripts and CSS. Prefer `defer` or `type="module"` by default, inline critical CSS, and load non-critical CSS asynchronously.
-
-:::
-
-::: info Engineering insight
-
-In the Performance panel, if you see a long blue "Parse HTML" block followed by a red "Evaluate Script" block, it indicates that synchronous scripts are blocking parsing.
-
+::: tip Observation signal
+In the Performance panel, a long blue "Parse HTML" block followed immediately by a yellow "Evaluate Script" block, with parsing continuing afterwards, usually means a synchronous script is blocking parsing. Block names and colors vary between Chrome versions; rely on the call stack and timing.
 :::
 
 ---
 
 ## 6. LCP Is an Outcome Metric, Not a Single-Resource Metric
 
-**LCP (Largest Contentful Paint)** measures when the largest and most important visible content on the page finishes rendering.
+**LCP (Largest Contentful Paint)** measures when the largest and most important visible content in the viewport finishes rendering. It may be a large image, a video first frame, a large block of text, or the main above-the-fold content.
 
-LCP may be a large image, a video first frame, a large block of text, or the main above-the-fold content.
+LCP stops recording after the user's first interaction, so it measures the loading phase, not the whole session. An element that grows during loading can also become a new LCP candidate.
 
 A more effective way to break down LCP:
 
@@ -394,10 +328,7 @@ A more effective way to break down LCP:
 3. **When does the LCP resource finish downloading?**
 4. **When does the browser have time to lay it out, paint it, rasterize it, and composite it?**
 
-The diagram below shows the complete LCP breakdown pipeline:
-
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B'}}}%%
 flowchart LR
     subgraph Phase1[Discovery Phase]
         A[HTML Arrival]
@@ -427,34 +358,26 @@ flowchart LR
     D -. "Download slow" .-> E
     I -. "Main thread or render pipeline busy" .-> J
 
-    classDef discovery fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef loading fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef render fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
     classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class A,B discovery;
-    class C,D loading;
-    class E,F,G,H,I render;
+    class A,B,C,D wait;
+    class E,F,G,H,I work;
     class J metric;
 ```
 
-::: tip Core conclusion of this section
+The dotted lines mark the three most common sources of delay. They are parallel candidate causes, not a fixed order; first measure which segment is longest, then choose the technique.
 
-LCP is an outcome metric, not a single-resource metric. Optimizing LCP requires breaking it into "discovery time + download time + render time" and locating the bottleneck in each segment.
-
-:::
-
-::: warning Common misconception
-
-Attributing slow LCP entirely to large image size while ignoring resource-discovery delay, main-thread blocking, rasterization cost, and other factors.
-
+::: tip Verification
+Find the LCP marker on the Timings track in the Performance panel and compare it with the resource loading and main-thread activity to its left. If the LCP marker is much later than image download completion, the bottleneck is usually rendering or the main thread, not the network.
 :::
 
 ---
 
 ## 7. From DOM to Pixels: The Real Cost of Layout, Paint, Raster, and Composite
 
-A page usually goes through:
+A style or DOM change usually goes through the following steps:
 
 1. DOM construction
 2. CSSOM construction
@@ -464,12 +387,12 @@ A page usually goes through:
 6. Paint record generation (Paint record / Display list)
 7. Layer construction (Layering)
 8. Tile splitting
-9. Rasterization
-10. GPU compositing (Composite)
+9. Rasterization (turning paint commands into pixels)
+10. GPU compositing (Composite, combining layers onto the screen in order)
 
 Addy Osmani notes: the layout tree omits elements that do not produce layout boxes, such as `display:none`, but keeps elements that still occupy space, such as `visibility:hidden`.
 
-This gives frontend optimization a very important insight:
+This gives frontend optimization an important insight:
 
 > What is truly expensive is not "changing a style," but whether that style change forces the entire subsequent rendering pipeline to redo work.
 
@@ -496,18 +419,12 @@ Different CSS properties may enter different rendering paths (simplified):
 
 - Changing `width` / `height` / `top` / `left`: may trigger layout
 - Changing `color` / `background` / `box-shadow`: may trigger paint
-- Changing `transform` / `opacity`: can usually stay in the compositing stage
+- Changing `transform` / `opacity`: in most cases can stay in compositing when the element already has its own composite layer
 
-::: tip Core conclusion of this section
+The last point has a precondition: if the element has no independent composite layer, changing `transform` can still trigger paint. The property only decides the minimum stage required; the actual path depends on layer state.
 
-The cost of the rendering pipeline depends on which segment a change triggers. Prefer properties that only trigger compositing (`transform` / `opacity`) and avoid interleaved layout reads and writes.
-
-:::
-
-::: info Engineering insight
-
-In the Performance panel, continuous purple Layout blocks and green Paint blocks usually mean the rendering pipeline is being triggered repeatedly.
-
+::: tip Observation signal
+In the Performance panel, consecutive purple Layout blocks and green Paint blocks usually mean the rendering pipeline is being triggered repeatedly. Colors vary by theme and version; look at block names and the call stack first.
 :::
 
 ---
@@ -516,19 +433,17 @@ In the Performance panel, continuous purple Layout blocks and green Paint blocks
 
 **Rasterization** is the process of turning paint instructions into real pixels.
 
-Addy Osmani notes: in Chrome, the compositor thread splits layers into smaller tiles, dispatches those tiles to multiple raster worker threads for concurrent processing, and the rasterized tiles enter GPU memory as textures. Finally, the GPU process composites them onto the screen.
+In Chrome, the compositor thread splits layers into smaller tiles, dispatches those tiles to multiple raster worker threads for concurrent processing, and the rasterized tiles enter GPU memory as textures. The GPU process finally composites them onto the screen.
 
 This means:
 
 - The rasterization completion time of the LCP element directly affects the LCP metric
 - If re-rasterization is triggered during animations, it consumes GPU bandwidth and compositor thread time
-- Large layers (such as long lists or complex backgrounds) increase rasterization cost
+- Large layers (such as long lists or complex backgrounds) increase tile management and rasterization pressure
 
-::: tip Core conclusion of this section
+The entire layer is not rasterized at once. The browser usually prioritizes tiles near the viewport and fills in new regions during scrolling. The problem with a very large layer is therefore more about memory, tile management, and continuous rasterization during scrolling than about painting the whole layer at startup.
 
-Rasterization is a key link for LCP and animation performance. Controlling layer count and avoiding large-area frequent repaints are the core means of reducing rasterization cost.
-
-:::
+To judge whether rasterization is the bottleneck, first check whether the LCP element still waits a long time after download completes, then check whether Raster work keeps appearing during animations.
 
 ---
 
@@ -545,9 +460,9 @@ Many teams measure JS cost only by bundle size, but JS cost in the browser inclu
 7. Memory allocation
 8. GC collection
 
-In Addy Osmani's introduction to the V8 execution pipeline, V8 parses source code into an AST, compiles it into bytecode through Ignition, and executes it. Hot code may enter different tiers of JIT compilers such as Sparkplug, Maglev, and TurboFan.
+In the V8 execution pipeline, source code is parsed into an AST, compiled into bytecode by Ignition, and executed; hot code may enter different tiers of JIT compilers such as Sparkplug, Maglev, and TurboFan. Which compilers are enabled varies by Chrome version and platform.
 
-Example: keeping object shapes stable helps the optimization path stay stable.
+Keeping object shapes stable helps keep the optimization path stable:
 
 ```javascript
 // Best practice: stable object shape lets V8 take the fast path
@@ -563,22 +478,16 @@ update({ score: 3 })
 Anti-pattern (object shape / type keeps changing):
 
 ```javascript
-// Anti-pattern: changing object shape triggers V8 deoptimization
+// Anti-pattern: changing object shape may trigger deoptimization
 update({ score: 1 })
 update({ score: 1, name: 'Ken' })
 update({ score: '1' })
 ```
 
-::: tip Core conclusion of this section
+This example only illustrates the precondition for optimization; it does not represent a fixed timing difference. The actual impact depends on whether the function becomes hot, how often it is called, and the V8 version.
 
-JS cost is more than bundle size; it also includes parsing, compilation, JIT, and GC runtime costs. Keeping object shapes stable and avoiding long tasks are key to lowering runtime cost.
-
-:::
-
-::: info Engineering insight
-
-In the Performance panel, the size of the yellow "Evaluate Script" block and the purple "Function Call" block reflects JS execution and JIT cost.
-
+::: tip Observation signal
+In the Performance panel, look for `Deoptimize` events, or start the browser with `--trace-deopt` to record deoptimization reasons. The size of yellow Evaluate Script blocks and purple Function Call blocks helps estimate execution cost.
 :::
 
 ---
@@ -587,10 +496,8 @@ In the Performance panel, the size of the yellow "Evaluate Script" block and the
 
 GC (garbage collection) exists so business code does not need to manually free memory, but storms of short-lived objects on high-frequency interaction paths still need to be watched.
 
-Example (continuously creating short-lived objects on a high-frequency path increases GC pressure):
-
 ```javascript
-// Anti-pattern: creating new objects on every move triggers frequent GC
+// Anti-pattern: creating new objects on every move increases GC pressure
 function handleMove(points) {
   return points.map((point) => ({
     x: point.x * 2,
@@ -606,28 +513,22 @@ Optimization directions:
 - Use object pools to manage short-lived objects
 - Stabilize references to frequently called callback functions to avoid creating new closures each time
 
-::: tip Core conclusion of this section
+Each of these has a cost. An object pool adds state-management complexity and keeps objects in memory longer; if the call frequency is low, the gain may not justify the complexity. Decide based on the share of GC events in the Performance panel.
 
-GC optimization is not about "not creating objects"; it is about controlling the production rate of short-lived objects on high-frequency paths.
-
-:::
+The specific GC algorithm and pause time vary with the V8 version, heap size, and object survival rate. There is no universal "pause threshold."
 
 ---
 
 ## 11. Module Runtime: The Browser Is Taking Over Some of the Bundler's Former Responsibilities
 
-Browsers natively support ES Modules. When encountering a module entry, the browser recursively builds the module dependency graph; only after the entire module graph is fetched and parsed will the browser execute modules in dependency order.
+Browsers natively support ES Modules. When encountering a module entry, the browser recursively builds the module dependency graph; only after the entire module graph is fetched and parsed does the browser execute modules in dependency order.
 
 Key differences between static `import` and dynamic `import()`:
 
 - Static `import`: the dependency graph must be built before execution
 - Dynamic `import()`: triggered at runtime, more suitable for route-level / component-level / feature-level splitting
 
-::: tip Core conclusion of this section
-
-Static imports force the full dependency graph to be built; dynamic `import()` is suitable for on-demand loading. Route-level and feature-level code should prefer dynamic `import()`.
-
-:::
+The depth of the module graph determines the length of the critical path. Splitting the entry does not necessarily reduce total bytes, but it can reduce the part of the graph the first screen must wait for.
 
 ---
 
@@ -635,7 +536,7 @@ Static imports force the full dependency graph to be built; dynamic `import()` i
 
 SSR lets users see HTML earlier, but the client still needs to download JS, restore state, and bind events to make the static HTML interactive. This process is **Hydration**.
 
-A typical Hydration problem is "it looks ready, but clicks don't work" (zombie page).
+A typical Hydration problem is "it looks ready, but clicks don't work" (zombie page). Its cost includes component code download, execution, state restoration, and event binding; the larger the static HTML, the more content must be processed again.
 
 Modern solutions include:
 
@@ -648,23 +549,15 @@ Modern solutions include:
 
 The common goal: reduce JS execution, main-thread blocking, and repeated work on the critical path.
 
-::: tip Core conclusion of this section
-
-SSR is not free, and Hydration cost is often underestimated. Modern framework features such as Selective Hydration, Islands, and Resumability all exist to reduce Hydration cost.
-
-:::
-
-::: warning Common misconception
-
-Thinking that SSR is always fast and ignoring main-thread occupation during the Hydration phase.
-
-:::
+Whether SSR is faster depends on the gap between HTML arrival and Hydration completion. If Hydration is long, the time to interactivity can be later than with CSR.
 
 ---
 
 ## 13. INP: From "Page Appears" to "Interaction Reliability"
 
-INP focuses more on whether subsequent interactions on the page are smooth. Poor INP usually comes from:
+**INP (Interaction to Next Paint)** measures the delay between a user interaction and the next visual update. It focuses on interaction reliability after the page has appeared.
+
+Poor INP usually comes from:
 
 - JS long tasks
 - A large number of initialization tasks after Hydration
@@ -673,11 +566,9 @@ INP focuses more on whether subsequent interactions on the page are smooth. Poor
 - Forced synchronous layout
 - Third-party scripts competing for the main thread
 
-::: tip Core conclusion of this section
+INP is a field metric and requires real user data. A fixed interaction script can approximate it in the lab, but a single local recording cannot infer the overall distribution.
 
-INP measures interaction reliability. The core of optimizing INP is splitting long tasks, deferring non-critical initialization, and keeping the main thread idle.
-
-:::
+To optimize, first find the long tasks that overlap the interaction, then decide whether to split tasks, defer initialization, or move computation off the main thread.
 
 ---
 
@@ -692,23 +583,15 @@ The following scenarios require more attention to IPC cost:
 - Multi-window collaboration
 - Large amounts of `postMessage`
 
-::: tip Core conclusion of this section
-
-Multi-process architecture brings security isolation, but also IPC cost. High-frequency cross-process communication should be batched and asynchronous; avoid synchronous IPC blocking the main thread.
-
-:::
+The structured clone cost of `postMessage` depends on payload size. Large data can use transferables to move ownership instead of copying. High-frequency cross-process communication should be batched and asynchronous; avoid synchronous IPC blocking the main thread.
 
 ---
 
 ## 15. Site Isolation and Sandbox: Security Architecture Also Affects the Performance Model
 
-Site Isolation makes different sites run in different renderer processes. Cross-site iframes may become OOPIFs (out-of-process iframes), improving security but also bringing more resource overhead and communication cost.
+Site Isolation makes different sites run in different renderer processes. Cross-site iframes may become OOPIFs (out-of-process iframes), improving security but also bringing more process overhead and communication cost.
 
-::: tip Core conclusion of this section
-
-Security architecture (site isolation, sandbox) affects the performance model. Cross-site iframes become OOPIFs, bringing extra process overhead and IPC cost.
-
-:::
+This does not mean every cross-site iframe immediately becomes a separate process. Whether and when it happens depends on the isolation policy and memory pressure. Evaluate the cost by actual process count and IPC frequency, not by iframe count alone.
 
 ---
 
@@ -718,6 +601,8 @@ Security architecture (site isolation, sandbox) affects the performance model. C
 
 If a page can enter bfcache, back/forward navigation does not need to re-download, re-parse, re-execute, or re-hydrate; it can recover almost instantly.
 
+A page may lose bfcache eligibility because of an `unload` listener, `Cache-Control: no-store`, or an open connection. Before optimizing, confirm in the DevTools Application panel that the page actually enters bfcache.
+
 ### 2. Service Worker: controlling network wait and caching strategy
 
 Suitable for:
@@ -726,27 +611,21 @@ Suitable for:
 - Weak-network fallback and offline availability
 - Stale-while-revalidate and other caching strategies
 
-It also brings complexity: cache updates, version management, stale caches, etc.
+It also brings complexity: cache updates, version management, stale caches, and old caches that are hard to clear during debugging.
 
-::: tip Core conclusion of this section
-
-The essence of bfcache and Service Worker is reducing repeated work. bfcache is browser-level instant recovery; Service Worker is a developer-controlled caching layer.
-
-:::
+bfcache and Service Worker both reduce repeated work, but one is hosted by the browser and the other is built by the developer, with different costs and maintenance responsibilities.
 
 ---
 
 ## 17. Unified Model: Wait, Block, and Repeated Work
 
-The diagram below summarizes the three groups of problems from the whole article into a unified model:
+The earlier chapters each handle one stage. Putting them together reveals three groups of recurring problems:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFFFFF', 'fontSize': '13px', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#94A3B8'}}}%%
 flowchart TB
     Core(("Frontend Performance Optimization<br/>Critical Path Management"))
 
     subgraph Wait["Wait: Make Critical Things Start Earlier"]
-        direction TB
         W1["DNS / TCP / TLS"]
         W2[TTFB]
         W3[Resource Discovery]
@@ -755,7 +634,6 @@ flowchart TB
     end
 
     subgraph Block["Block: Keep the Main Thread Free"]
-        direction TB
         B1[Sync Script]
         B2[CSS First Render]
         B3[JS Long Tasks]
@@ -764,7 +642,6 @@ flowchart TB
     end
 
     subgraph Repeat["Repeated Work: Avoid Doing the Same Thing Over and Over"]
-        direction TB
         R1[Repeat Layout]
         R2[Repeat Paint]
         R3[Repeat Hydrate]
@@ -783,133 +660,166 @@ flowchart TB
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef repeat fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef strategy fill:#F8FAFC,stroke:#64748B,color:#172033,stroke-dasharray: 4 3;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
     class Core core;
     class W1,W2,W3,W4,W5 wait;
     class B1,B2,B3,B4,B5 block;
-    class R1,R2,R3,R4,R5 repeat;
-    class Strategy1,Strategy2,Strategy3 strategy;
+    class R1,R2,R3,R4,R5 work;
+    class Strategy1,Strategy2,Strategy3 work;
 ```
 
-### 1. Wait
+The upper half groups symptoms into three observation surfaces; the lower half gives the strategy direction for each surface. It is not a strict taxonomy: the same problem can belong to waiting and blocking at once, because Hydration both completes inside a wait queue and occupies the main thread. Use it as an order for diagnosis, not as a set of exclusive labels.
 
-Waiting includes: DNS, TCP/TLS, server, HTML/CSS/JS, module dependency graph, images/fonts, data, Hydration, cross-process messages, etc.
-
-### 2. Block
-
-Blocking includes: synchronous scripts, CSS first-render blocking, long tasks, Hydration occupying the main thread, layout thrashing, GC pauses, synchronous IPC, etc.
-
-### 3. Repeated work
-
-Repeated work includes: repeated layout/paint/rasterization, repeated object creation, repeated module parsing, repeated resource requests, repeated hydration of static regions, etc.
-
-::: tip Core conclusion of this section
-
-All performance problems can be classified into the three groups of "wait, block, and repeated work." This unified model is the mental framework for advanced frontend performance optimization.
-
-:::
+Most performance problems fall into these three groups. Deciding which group a problem belongs to, then returning to the relevant chapter for a technique, is more reliable than picking an item from a generic optimization list.
 
 ---
 
-## 18. Advanced Frontend Practice Checklist
+## 18. Baseline and Validating Changes
 
-### 1. First-screen resource design
+The easiest way for a practice-oriented optimization to fail is being unable to prove that it actually made the page faster. Four steps avoid that outcome.
 
-- [ ] LCP elements should appear directly in the HTML as much as possible
-- [ ] LCP images should use appropriate sizes and formats
-- [ ] Critical images should use `fetchpriority="high"`
-- [ ] Critical CSS should be placed first; non-critical CSS deferred
-- [ ] First-screen modules should use `modulepreload`
-- [ ] Analyze the Critical Request Chain
+### 1. Fix the measurement conditions
 
-### 2. JS loading and execution
+Record the page URL, build version, browser version, device or CPU throttling multiplier, network profile, cache state, and viewport size. Data collected under different conditions cannot be compared directly.
 
-- [ ] Prefer `defer` or `type="module"` by default
-- [ ] Use dynamic `import()` for non-critical logic
-- [ ] Avoid large-scale synchronous initialization on first screen
-- [ ] Split long tasks; put heavy computation in Workers
+### 2. Use field data to judge the symptom and lab data to locate the stage
 
-### 3. Module graph governance
+Field data (RUM, CrUX) answers "are users actually slow"; lab data answers "which segment is slow." With field data but no lab breakdown, it is easy to choose the wrong technique; with lab data only, you may optimize locally without improving production.
 
-- [ ] Avoid deep dependency chains
-- [ ] Avoid large utility libraries entering the first screen
-- [ ] `modulepreload` critical modules
-- [ ] Design cache granularity and update strategies reasonably
+### 3. Record a reproducible baseline
 
-### 4. Rendering pipeline optimization
+Record the same interaction or load sequence several times, and record the median and the variation range rather than a single result. The baseline should include at least TTFB, LCP, total long-task duration, and the time of key stages.
 
-- [ ] Avoid interleaved layout reads and writes
-- [ ] Prefer `transform` / `opacity` for animations
-- [ ] Use `will-change` carefully
-- [ ] Control DOM size and avoid large-area frequent repaints
+### 4. Compare changes with the same script
 
-### 5. Hydration optimization
+Use the same interaction script, the same throttling settings, and the same sample count before and after the change. Compare distributions, not the best run.
 
-- [ ] Do not hydrate static regions
-- [ ] Hydrate interactive regions on demand (prioritize restoring first-screen critical interactions)
-- [ ] Reduce repeated client-side computation
+```javascript
+// Run in the console of the target page for local diagnosis; it cannot replace real user monitoring
+new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.log('LCP candidate', Math.round(entry.startTime), entry.size)
+  }
+}).observe({ type: 'largest-contentful-paint', buffered: true })
 
-### 6. Runtime stability
+new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.log('Long task', Math.round(entry.startTime), Math.round(entry.duration))
+  }
+}).observe({ type: 'longtask', buffered: true })
+```
 
-- [ ] Keep object shapes and parameter types stable
-- [ ] Create fewer temporary objects on high-frequency paths
-- [ ] Release caches in time to avoid memory leaks
+This code is only for local observation. LCP stops reporting after the user's first interaction; the Long Task API is currently available mainly in Chromium and may not be supported by other engines. Real conclusions should still come from field data.
 
-### 7. Multi-process and IPC scenarios
+| Metric | Question it answers | Collection method |
+| --- | --- | --- |
+| TTFB | How long the network and server waited | Network panel, `PerformanceResourceTiming` |
+| LCP | When the main content finished rendering | Field data, Performance panel marker |
+| INP | Whether interactions are reliable | Mainly field data; approximated by a lab interaction script |
+| Long task | What occupies the main thread | Performance panel, Long Task API |
 
-- [ ] Batch high-frequency communication
-- [ ] Avoid synchronous IPC
-- [ ] Use transferables for large object transfer
-- [ ] Throttle, merge, and prioritize iframe communication protocols
+---
+
+## 19. Cost and Rollback: Optimization Is Not Free
+
+Every optimization moves cost somewhere else. Writing down the rollback condition before the change is more effective than fixing things afterwards.
+
+| Technique | Main benefit | Cost | Rollback signal |
+| --- | --- | --- | --- |
+| `preload` / Early Hints | Critical resources start earlier | Too many preloads compete for bandwidth; Early Hints depends on the server or CDN | Other resources queue longer and LCP does not improve |
+| Code splitting / dynamic `import()` | Less code must execute on the first screen | Adds request levels and waterfall risk | The first-screen critical path deepens and the request count before interaction rises |
+| SSR / streaming SSR | HTML appears earlier | Server rendering cost and Hydration cost | Time to interactivity is later than CSR, or the server error rate rises |
+| bfcache / Service Worker | Less repeated loading | Cache invalidation, version management, and debugging complexity | Users see stale versions, or cache cleanup depends on manual work |
+| Object pools / object reuse | Lower GC pressure on high-frequency paths | Retained memory and state-management complexity | Memory rises while total GC time does not fall |
+| Composite layer promotion | Limits repaint area and stabilizes animation | GPU memory and layer-management cost | Layer count grows by an order of magnitude, and low-end devices drop more frames |
+
+A rollback condition should be tied to an observable signal, such as "field p75 shows no improvement," "the frame-drop rate on low-end devices rises," or "memory use is clearly above the baseline." Specific thresholds depend on the device and the project's tolerance. "Let's watch it for a while" is not a rollback condition.
+
+---
+
+## 20. Advanced Frontend Practice Checklist
+
+### 1. First-screen resources
+
+- [ ] Confirm the LCP element exists in the initial HTML source instead of being inserted by JS
+- [ ] Confirm in the Network panel that the LCP image's Initiator is the HTML parser
+- [ ] Set `fetchpriority="high"` on only one LCP candidate
+- [ ] Inline or front-load critical CSS, and load non-critical CSS asynchronously
+- [ ] Cover first-screen entry dependencies with `modulepreload`, and confirm in the Network panel that they start early
+
+### 2. JS loading and the main thread
+
+- [ ] Use `defer` or `type="module"` for first-screen scripts, and confirm in the Performance panel that parsing is not interrupted by Evaluate Script
+- [ ] Use dynamic `import()` for non-critical routes and features, and record the depth of the first-screen request chain
+- [ ] Count first-screen long tasks with the Long Task API or the Performance panel
+- [ ] Move computations longer than 50ms into a Worker or split them across multiple tasks
+
+### 3. Modules and caching
+
+- [ ] Draw the dependency chain from the first-screen entry to the LCP resource and mark the serial levels
+- [ ] Check whether the first screen imports utility libraries used only by later pages
+- [ ] Configure long-term caching with hashed file names for static assets, and confirm HTML is not cached long-term
+- [ ] After a build change, compare module graph depth and first-screen request count
+
+### 4. Rendering pipeline
+
+- [ ] Use the Performance panel to confirm there are no interleaved read-write Layout blocks
+- [ ] Animate only `transform` / `opacity`, and confirm in the Layers panel that the element is its own layer
+- [ ] Enable `will-change` only before an animation and remove it afterwards
+- [ ] Compare Layout and Paint total time and composite layer count before and after the change
+
+### 5. Hydration and interaction
+
+- [ ] Mark Hydration start and end in the Performance panel, and confirm first-screen critical interactions are not queued after a long task
+- [ ] Keep static regions out of Hydration and restore interactive regions by priority
+- [ ] Record first-screen initialization script duration and compare it with the baseline
+- [ ] Approximate INP with a fixed interaction script, then use field data to judge improvement
+
+### 6. Runtime and multi-process
+
+- [ ] Keep object shapes and parameter types stable in hot functions, and recheck with `--trace-deopt`
+- [ ] Count short-lived allocations on high-frequency paths, and decide on an object pool only after checking the GC share
+- [ ] Batch high-frequency `postMessage` calls, and use transferables for large payloads
+- [ ] In Electron or micro-frontend scenarios, record IPC frequency and payload size
 
 ---
 
 ## Conclusion: Advanced Frontend Optimizes the System, Not a Single Line of Code
 
-A modern browser is more like a small operating system: network stack, resource scheduler, preload scanner, HTML/CSS parser, module loader, JS virtual machine, JIT, GC, rendering pipeline, GPU compositing, multi-process and IPC, DevTools observability...
+Once the browser is treated as a pipeline from request to pixel, a performance problem stops being "some code is slow" and becomes "this pipeline waited somewhere, something occupied it, or one piece of work happened more than once." The value of that view is that it turns a vague stutter into specific stages and collectible signals.
 
-Therefore, advanced frontend performance optimization cannot stop at "writing faster code." What really works is understanding how a piece of code enters the browser, how it is discovered / downloaded / parsed / compiled / executed, how it triggers layout and paint, how it becomes pixels, and how it continues to affect experience during Hydration and interaction.
-
-In the end, the center of this article remains:
-
-> **The essence of modern frontend performance optimization is managing waiting, blocking, and repeated work on the critical path.**
+The next step is not to apply a checklist immediately. Pick one real page, fix the measurement conditions, record a baseline, and locate the longest stage. Re-measure under the same conditions after the change; if nothing improves, or the cost exceeds the gain, roll back using the conditions written down beforehand.
 
 ---
 
 ## FAQ
 
-### 1. Why can LCP be slow even when the image download is not slow?
+### 1. Why does a local optimization look effective while production shows no change?
 
-LCP is an outcome metric that includes three segments: "discovery time + download time + render time." If the LCP image is dynamically inserted by JS, the browser must wait for JS to download, parse, and execute before discovering the image, pushing LCP behind JS execution. Even if the image itself downloads quickly, LCP can still be slow.
+A local environment usually lacks real network jitter, low-end devices, and competition from third-party scripts. First confirm that field data points to the same bottleneck, then reproduce with the same device and network conditions. If lab metrics improve while field metrics do not, the optimization may not target the bottleneck users actually hit.
 
-### 2. Do we still need to care about request count in the HTTP/2 era?
+### 2. When the LCP element is a text block, can it still be split into discovery, download, and rendering?
 
-HTTP/2 alleviated the concurrent-request-count problem but did not eliminate critical-path dependency chains. Deep module graphs still create waterfalls and affect first paint. The focus should be on "dependency depth on the critical path," not simply "request count."
+Yes, but "download" becomes font loading and text layout. Text LCP is often affected by font blocking, style calculation, and main-thread long tasks. First check when HTML arrives, then whether a font blocks first paint, and finally whether the text region finishes late because of layout changes.
 
-### 3. Why does Hydration make the page "visible but unclickable"?
+### 3. After HTTP/2 multiplexing, is merging resources still meaningful?
 
-HTML generated by SSR is static and has no event bindings. The client needs to download JS, restore state, and bind events. This process is Hydration. Before Hydration completes, the page looks ready but does not respond to clicks. This is the "zombie page" problem.
+Conditionally. Merging reduces request overhead and dependency levels, but it lowers cache granularity, so a change to one file invalidates the whole bundle. Focus on critical-path depth and cache hits rather than minimizing request count alone.
 
-### 4. What is JIT deoptimization? Why does it slow down performance?
+### 4. Why does INP still not improve after splitting long tasks?
 
-V8 optimizes hot code based on runtime feedback. But if the shape of the passed object changes (for example, the number or type of properties changes), V8 discards the previous optimization and falls back to bytecode interpretation. This is deoptimization, and it causes a sudden performance drop.
+INP covers the whole process from input to the next paint, not just the event callback. Splitting long tasks reduces main-thread occupancy, but if rendering, style calculation, or third-party scripts still queue in the same frame, the next paint is still delayed. Use the Performance panel to inspect all work between the input event and the next frame, not just the duration of a single task.
 
-### 5. How can I quickly locate which segment of the pipeline contains the performance bottleneck?
+### 5. How can I judge whether an optimization works without real user data?
 
-Use Chrome DevTools' Performance panel to record page load and observe:
-
-- Whether blue blocks (HTML parsing) are interrupted by yellow blocks (JS execution) → synchronous script blocking
-- Whether purple blocks (Layout) appear frequently → layout thrashing
-- Whether the LCP marker is after JS execution → resource-discovery delay
-- Whether yellow blocks (JS) are large and continuous → long tasks blocking the main thread
+You can build a reproducible lab baseline, but be clear that it only proves the mechanism works; it does not prove a production gain. Record multiple runs under the same conditions and their variation range, and prefer changes that directly shorten the critical path or reduce main-thread occupancy.
 
 ---
 
 ## Sources
 
-1. Addy Osmani's profile and experience:
+1. Addy Osmani's profile:
    
     [https://addyosmani.com/](https://addyosmani.com/)
 

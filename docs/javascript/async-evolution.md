@@ -1,5 +1,5 @@
 ---
-title: "异步编程的演进：从回调地狱到 async/await"
+title: "异步编程的演进：从回调地狱到 async/await"
 description: 从单线程事件循环、宏任务与微任务调度、回调信任问题、Promise 状态机到 async/await 执行模型的深度解析
 category: JavaScript
 tags:
@@ -13,11 +13,7 @@ outline: deep
 
 # 异步编程的演进：从回调地狱到 async/await
 
-> 副标题：从单线程事件循环、宏任务与微任务调度、回调信任问题、Promise 状态机到 async/await 执行模型
->
-> 目标读者：中高级前端工程师、前端架构师
->
-> 阅读时间：约 26 分钟
+异步代码的问题很少出在 API 记不住，而是对执行权归谁没有模型：定时器为何排在后面、`await` 暂停了什么、`forEach` 为何不等待回调，答案都在同一条调度链上。本文先建立事件循环的直觉，再沿回调、Promise 与 async/await 的控制权转移展开，最后落到错误处理与并发控制。读完后，你能从调度规则推导顺序，而不是背结论。
 
 ::: info 一句话
 JavaScript 异步编程的每一次演进，本质上都是在解决同一个问题——"如何在不阻塞主线程的前提下，可靠地表达'以后会发生的事'"。
@@ -25,23 +21,21 @@ JavaScript 异步编程的每一次演进，本质上都是在解决同一个问
 
 ## 目录
 
-- [写在前面](#写在前面)
+- [现象：为什么异步代码的顺序总与直觉相反](#现象-为什么异步代码的顺序总与直觉相反)
 - [一、单线程与事件循环：异步的物理基础](#一、单线程与事件循环-异步的物理基础)
 - [二、宏任务与微任务：被忽略的执行顺序](#二、宏任务与微任务-被忽略的执行顺序)
 - [三、回调时代：控制反转与信任问题](#三、回调时代-控制反转与信任问题)
-- [四、Promise：从状态机角度理解](#四-promise-从状态机角度理解)
-- [五、async/await：语法糖还是革命？](#五-async-await-语法糖还是革命)
-- [六、异步错误处理的最佳实践](#六-异步错误处理的最佳实践)
-- [七、常见异步陷阱与并发控制](#七-常见异步陷阱与并发控制)
+- [四、Promise：从状态机角度理解](#四、promise-从状态机角度理解)
+- [五、async/await：语法糖还是革命？](#五、async-await-语法糖还是革命)
+- [六、异步错误处理：捕获、传播与兜底](#六、异步错误处理-捕获、传播与兜底)
+- [七、常见异步陷阱与并发控制](#七、常见异步陷阱与并发控制)
 - [结语：异步的本质是调度](#结语-异步的本质是调度)
 - [FAQ](#faq)
 - [来源](#来源)
 
-## 写在前面
+## 现象：为什么异步代码的顺序总与直觉相反
 
-写异步代码是前端工程师的日常：请求接口、读本地存储、定时器、动画、消息通信……几乎都离不开"等一会儿再执行"。但能把异步写得正确、清晰、可靠的人并不算多。
-
-很多问题看起来是"语法不熟"，其实是"模型不清"：
+异步代码的 bug 常常不是"语法不熟"，而是"模型不清"。下面几个问题，几乎每个前端工程师都遇到过：
 
 - 为什么 `setTimeout(fn, 0)` 不会立即执行？它到底排在谁后面？
 - `Promise.then` 和 `setTimeout` 谁先执行？为什么？
@@ -49,13 +43,7 @@ JavaScript 异步编程的每一次演进，本质上都是在解决同一个问
 - `async` 函数里的 `await` 到底"阻塞"了什么？它会卡住主线程吗？
 - `Promise.all` 和 `Promise.allSettled` 在错误处理上有什么本质区别？
 
-要回答这些问题，必须先理解 JavaScript 单线程模型与事件循环，再理解回调为什么会有信任问题，Promise 如何用状态机解决它，最后看 async/await 又在 Promise 之上做了什么。本文沿这条演进主线展开。
-
-::: tip 本节核心结论
-
-异步编程的演进不是"语法越来越简洁"那么简单，而是从"回调传递控制权"到"Promise 用不可逆状态夺回控制权"，再到"async/await 让异步代码拥有同步的可读性"。每一次演进都在重新分配"谁掌握调度的主动权"。
-
-:::
+这些问题分别涉及队列、暂停、迭代协议和组合语义，但都能放回同一张图里解释。下面的顺序按依赖关系展开：先有事件循环，才谈任务队列；先有任务队列，才解释回调、Promise 与 async/await 各自解决了什么。
 
 ---
 
@@ -75,41 +63,41 @@ JavaScript 是**单线程**的——它只有一个调用栈，同一时刻只�
 4. **事件循环（Event Loop）**：不断检查"调用栈是否为空"和"队列里是否有任务"，把就绪的任务推入调用栈执行。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    subgraph JS[JS 主线程]
+    subgraph JS["JS 主线程"]
         Stack["调用栈<br/>同步代码执行"]
+        Micro["Promise / queueMicrotask"]
     end
 
-    subgraph Host[宿主环境 Web APIs]
-        Timer[定时器]
-        Net[网络请求]
-        DOM[DOM 事件]
+    subgraph Host["宿主环境 Web APIs"]
+        Timer["定时器"]
+        Net["网络请求"]
+        DOM["DOM 事件"]
     end
 
     MQ["宏任务队列<br/>setTimeout / I/O / UI 事件"]
     uQ["微任务队列<br/>Promise / queueMicrotask"]
 
-    Stack -- 调用 Web API --> Host
-    Host -- 条件满足,回调入队 --> MQ
-    Host -- 条件满足,回调入队 --> uQ
+    Stack -- "调用 Web API" --> Host
+    Host -- "条件满足，回调入队" --> MQ
+    Micro -- "回调入队" --> uQ
 
-    Loop{事件循环<br/>栈空?} -- 取一个宏任务 --> Stack
-    Loop -- 栈空后清空全部微任务 --> uQ
-    uQ -- 微任务依次入栈 --> Stack
-    MQ -- 下一个宏任务 --> Stack
+    Loop{"事件循环<br/>栈是否为空？"} -- "取一个宏任务" --> Stack
+    Loop -- "栈空后清空全部微任务" --> uQ
+    uQ -- "微任务依次入栈" --> Stack
+    MQ -- "下一个宏任务" --> Stack
 
-    classDef js fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef host fill:#F8FAFC,stroke:#94A3B8,color:#172033,stroke-width:1.5px;
-    classDef macro fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef micro fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef loop fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    class Stack js;
-    class Timer,Net,DOM host;
-    class MQ macro;
-    class uQ micro;
-    class Loop loop;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    class Stack block;
+    class Timer,Net,DOM,MQ wait;
+    class Micro,uQ work;
+    class Loop metric;
 ```
+
+读图时先看左侧：调用栈只执行同步代码；定时器、网络、DOM 等异步操作交给宿主环境，完成后回调进入宏任务队列，而 Promise 与 `queueMicrotask` 由引擎排入微任务队列。事件循环只在栈空时取任务，并且在取下一个宏任务之前先清空微任务队列。
 
 ### 2. 一次循环的执行流程
 
@@ -117,7 +105,7 @@ flowchart LR
 
 1. 从宏任务队列取出**一个**任务执行。
 2. 执行过程中产生的所有微任务，在当前宏任务结束后**全部清空**。
-3. 必要时进行 UI 渲染（浏览器会按刷新率决定是否渲染，约 16.67ms 一次）。
+3. 必要时进行 UI 渲染（浏览器按屏幕刷新率决定是否渲染，60Hz 屏幕上约 16.67ms 一次）。
 4. 回到第 1 步，取下一个宏任务。
 
 ```javascript
@@ -133,20 +121,14 @@ Promise.resolve().then(() => {
 
 console.log('2. 同步结束')
 
-// 输出顺序: 1 → 2 → 3 → 4
+// 预期输出顺序: 1 → 2 → 3 → 4
 ```
 
 `setTimeout` 的回调进入宏任务队列，`Promise.then` 的回调进入微任务队列。同步代码（1、2）先执行完，然后清空微任务（3），最后才轮到下一个宏任务（4）。
 
-::: tip 本节核心结论
+::: warning 0 毫秒不等于立刻执行
 
-JS 单线程 + 事件循环是异步的物理基础。同步代码在调用栈执行，异步回调被宿主环境托管，就绪后进入任务队列等待主线程空闲时执行。理解"队列"和"轮询"是理解一切异步行为的前提。
-
-:::
-
-::: warning 常见误区
-
-认为 `setTimeout(fn, 0)` 会"立即"执行。实际上 0 只是"最早可执行时间"，回调仍要等当前同步代码和所有微任务执行完才会入栈，且浏览器有最小延迟钳制（HTML5 规范为 4ms，嵌套层级更深时更长）。
+`setTimeout(fn, 0)` 中的 0 只是"最早可执行时间"。回调仍要等当前同步代码和所有微任务执行完才可能入栈；HTML 标准还规定，定时器嵌套超过 5 层后，最小延迟为 4ms。
 
 :::
 
@@ -190,7 +172,7 @@ setTimeout(() => {
 浏览器的渲染发生在宏任务之间、微任务清空之后。这意味着：如果你在一个宏任务里改了 DOM，紧接着用微任务继续改，浏览器可以在渲染前看到合并后的结果；但如果用 `setTimeout` 排程后续修改，浏览器可能在两次修改之间渲染一次，造成"闪烁"。
 
 ```javascript
-// 用微任务批量更新，渲染前合并
+// 示意片段：假设 element 已存在
 function batchUpdate() {
   element.style.left = '10px'
   queueMicrotask(() => {
@@ -199,16 +181,8 @@ function batchUpdate() {
 }
 ```
 
-::: tip 本节核心结论
-
-宏任务和微任务的核心差异是"调度时机"：宏任务一轮执行一个，微任务在一轮内全部清空。微任务总是先于下一个宏任务、也先于渲染执行。掌握这条规则，就能预测绝大多数异步代码的输出顺序。
-
-:::
-
-::: info 工程启示
-
-需要"尽快但异步"执行的逻辑用 `queueMicrotask`；需要"让出主线程给渲染"的逻辑用 `setTimeout(fn, 0)` 或 `requestAnimationFrame`。两者不可混用。
-
+::: info 选择微任务还是宏任务
+需要"尽快但异步"执行、且必须在渲染前完成的逻辑，用 `queueMicrotask`；需要让出主线程、给渲染或其他任务机会的逻辑，用 `setTimeout(fn, 0)` 或 `requestAnimationFrame`。选择取决于目标，而不是哪个"更高级"。
 :::
 
 ---
@@ -259,23 +233,17 @@ getUser(userId, function (err, user) {
 
 这种"金字塔厄运"不只是难看，更致命的是：**控制流被切碎了**。错误处理要每层重复，无法统一；想在中间加一步或调整顺序，要重排整个嵌套结构；想在多步之间共享变量，只能靠闭包层层传递。
 
-::: tip 本节核心结论
+回调真正的问题不是嵌套难看，而是控制权外流、信任不可控、控制流被切碎。Promise 要解决的是这三件事，而不是把代码排版得更整齐。
 
-回调的问题不是"嵌套丑"，而是"控制权外流 + 信任不可控 + 控制流被切碎"。Promise 的出现正是为了夺回控制权，并用统一模型解决信任问题。
-
-:::
-
-::: warning 常见误区
-
-认为"用命名函数代替匿名函数就能解决回调地狱"。命名函数只解决了可读性，没有解决控制反转和信任问题——回调被调用几次、何时调用，依然不受你控制。
-
+::: warning 命名函数不解决控制权
+用命名函数代替匿名函数，只改善了可读性和堆栈信息；回调被调用几次、何时调用、传什么参数，依然由第三方决定。
 :::
 
 ---
 
 ## 四、Promise：从状态机角度理解
 
-理解 Promise 最好的方式不是把它当作"回调的语法糖"，而是把它看作一个**有限状态机**。
+把 Promise 当作**有限状态机**，比把它当作"回调的语法糖"更能解释它的行为。
 
 ### 1. 三态与不可逆转换
 
@@ -291,7 +259,6 @@ getUser(userId, function (err, user) {
 2. 决议只能发生**一次**。再次 resolve / reject 会被静默忽略。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 stateDiagram-v2
     [*] --> pending: new Promise(executor)
     pending --> fulfilled: resolve(value)
@@ -309,6 +276,8 @@ stateDiagram-v2
         未捕获会触发 unhandledrejection
     end note
 ```
+
+图中只有两条离开 `pending` 的边，没有任何返回边，这就是"决议不可逆"；`then` / `catch` 只是订阅终态，不会改变状态。
 
 ### 2. 状态机如何解决信任问题
 
@@ -346,17 +315,7 @@ Promise.resolve(1)
   .catch((err) => console.log(err.message)) // 'boom'
 ```
 
-::: tip 本节核心结论
-
-Promise 是一个"状态不可逆 + 一次性决议 + 异步触发"的有限状态机。它通过状态规则夺回了回调失去的控制权，通过 `then` 返回新 Promise 实现了扁平化链式调用。理解状态机，才能理解 Promise 的错误传播和组合 API。
-
-:::
-
-::: warning 常见误区
-
-认为 `.then(a).then(b)` 里 a、b 修改的是同一个 Promise。实际上每个 `then` 都返回一个**新的** Promise，原 Promise 决议后状态就固定了，链上的每一步都是独立的新 Promise。
-
-:::
+Promise 这套"决议不可逆 + 回调一定异步 + 链式返回新 Promise"的规则，正是它相对回调最核心的增量：控制权被语言机制锁定，而不是依赖第三方守约。
 
 ---
 
@@ -383,7 +342,6 @@ async function loadDetail(userId) {
 ### 2. await 的执行时序
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 sequenceDiagram
     participant Main as 主线程
     participant AF as async 函数
@@ -403,7 +361,7 @@ sequenceDiagram
 
 关键点：`await` 暂停的是**这个 async 函数**，不是主线程。暂停期间主线程完全可以响应用户输入、执行其他回调。函数的"剩余部分"在 Promise 决议后作为微任务恢复。
 
-### 3. 为什么说它是革命
+### 3. 它真正改变了什么
 
 Promise 解决了信任和嵌套，但链式 `.then` 仍有几个痛点：变量作用域被切碎（每步只能拿到上一步的值，跨步共享变量要靠闭包）、控制流（条件、循环）难以表达、错误处理分散。
 
@@ -423,21 +381,11 @@ async function loadAll() {
 
 这段逻辑用纯 Promise 写会非常别扭——你需要手动递归或用 `reduce` 串起链。`async/await` 把"异步流程控制"还原成了最熟悉的同步控制流语法。
 
-::: tip 本节核心结论
-
-`async/await` 是 Promise 之上的语法糖，但它让异步代码获得了同步的可读性：变量作用域连贯、控制流（条件/循环）自然、错误处理统一。它的本质是用"函数暂停 + 微任务恢复"模拟了同步语义，但底层依然是 Promise 和事件循环。
-
-:::
-
-::: warning 常见误区
-
-认为 `await` 会阻塞主线程。它只阻塞当前 async 函数的执行，主线程在等待期间是空闲的、可响应的。如果你在 await 一个很慢的操作时整个页面卡住，那一定是别处有同步长任务，而不是 await 本身的问题。
-
-:::
+`async/await` 没有改变底层的 Promise 与微任务语义，它改变的是开发者组织异步流程的方式：把回调式控制流还原成顺序、分支和循环。**`await` 只暂停当前 async 函数，不阻塞主线程**；如果等待期间页面卡住，应该去别处找同步长任务。
 
 ---
 
-## 六、异步错误处理的最佳实践
+## 六、异步错误处理：捕获、传播与兜底
 
 异步错误处理是事故高发区。核心原则：**错误必须被显式捕获，且永远不要静默吞掉**。
 
@@ -484,9 +432,9 @@ someAsync().catch((err) => {
 | API | 成功条件 | 失败行为 | 适用场景 |
 | --- | --- | --- | --- |
 | `Promise.all` | 全部成功 | 任意一个失败即 reject（fail-fast） | 多个必须全部成功 |
-| `Promise.allSettled` | 永远 resolve | 返回每个的状态描述符 | 想知道每一个的结果 |
+| `Promise.allSettled` | 不会因单个失败而 reject | 返回每个的状态描述符 | 想知道每一个的结果 |
 | `Promise.any` | 任意一个成功 | 全部失败才 reject | 取最快成功的那个 |
-| `Promise.race` | 第一个 settle | 第一个 settle（无论成败） | 超时/取消控制 |
+| `Promise.race` | 第一个决议 | 第一个决议（无论成败） | 超时判断；不会取消其余 Promise |
 
 ```javascript
 // allSettled: 即使部分失败也不丢信息
@@ -499,16 +447,8 @@ const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value)
 const failed = results.filter((r) => r.status === 'rejected')
 ```
 
-::: tip 本节核心结论
-
-异步错误处理三原则：用 try/catch 包裹 await；永不静默吞错（至少记日志）；按需选择 all / allSettled / any / race。其中 `allSettled` 最适合"部分失败也要继续"的场景。
-
-:::
-
-::: info 工程启示
-
-在应用入口处注册一个全局 `unhandledrejection` 监听器，把所有未被捕获的 Promise 错误上报到监控平台。这是发现"忘记 catch"的最后一道防线。
-
+::: info 全局兜底
+在应用入口处注册一个全局 `unhandledrejection` 监听器，把未被捕获的 Promise 错误上报到监控平台。它不能替代局部 `catch`，但能暴露"忘记 catch"的代码。
 :::
 
 ```javascript
@@ -574,7 +514,7 @@ async function fast() {
 }
 ```
 
-只有当请求之间**有依赖**时才需要串行 `await`；彼此独立就该用 `Promise.all` 并行。
+只有当请求之间**有依赖**时才需要串行 `await`；彼此独立就该用 `Promise.all` 并行。另外，`Promise.all` 只聚合结果，不会取消已经发出的请求；需要真正中断时，要配合 `AbortController` 和 `fetch` 的 `signal`。
 
 ### 3. 并发限流：用 Promise 池控制
 
@@ -618,51 +558,35 @@ async function save() {
 syncToRemote().catch((err) => tracker.report(err))
 ```
 
-::: tip 本节核心结论
-
-并发控制要点：`forEach` 不等待 await，要用 `for...of` 或 `Promise.all`；独立任务用 `Promise.all` 并行，有依赖才串行；大批量任务用并发限流器控制；任何 fire-and-forget 的 Promise 都要 `.catch`，避免静默 rejection。
-
-:::
+并发控制可以归结为三个判断：任务是否独立、是否等待结果、同时在途的数量上限。前两个决定用 `for...of` 还是 `Promise.all`，第三个决定是否需要限流器。
 
 ---
 
 ## 结语：异步的本质是调度
 
-把演进主线串起来：
+异步代码的可预测性来自调度模型，而不是 API 记忆。事件循环决定谁可以运行，微任务决定一轮之内谁先完成，Promise 和 async/await 则把控制权以可组合的方式交还给调用方。
 
-1. **单线程 + 事件循环**是异步的物理基础：调用栈执行同步代码，宿主环境托管异步操作，就绪回调排队等主线程空闲。
-2. **宏任务与微任务**的调度时机决定了执行顺序：宏任务一轮一个，微任务在一轮内全部清空，渲染夹在两者之间。
-3. **回调**通过控制反转完成异步，但带来了信任问题（调用次数、时机、错误）和回调地狱（控制流被切碎）。
-4. **Promise** 用"不可逆 + 一次性 + 异步触发"的状态机夺回控制权，用 `then` 返回新 Promise 实现扁平链式。
-5. **async/await** 在 Promise 之上恢复了同步语义：变量连贯、控制流自然、错误统一，但底层依然是 Promise 和微任务。
-
-> **异步编程的每一次演进，本质上都是在回答同一个问题——"谁掌握调度的主动权"。从交出控制权的回调，到用状态机夺回控制权的 Promise，再到让开发者用同步思维写异步的 async/await。**
-
-理解了调度，你就不再需要死记"谁先谁后"的输出题——你能从模型本身推出一切。
+下一步，挑一段你项目里的异步链路，按"任务从哪里来、进入哪个队列、在哪个 `await` 点让出、错误在哪一层被接住"画一遍。能画清楚，这套模型就已经能用于排查，而不只是解释输出题。
 
 ---
 
 ## FAQ
 
-### 1. `setTimeout(fn, 0)` 和 `Promise.then(fn)` 谁先执行？
+### 1. `async` 函数在第一个 `await` 之前的代码是同步执行的吗？
 
-`Promise.then` 先执行。`setTimeout` 的回调进入宏任务队列，`Promise.then` 的回调进入微任务队列。每个宏任务执行完后会清空所有微任务，然后才取下一个宏任务。所以即使两者都"立即"排程，微任务也总是先于下一个宏任务执行。
+是。调用 `async` 函数时，函数体会同步执行到第一个 `await`；只有遇到 `await` 才会暂停并把控制权交还调用方。所以 `async` 函数里 `await` 之前的代码如果包含同步长任务，依然会阻塞主线程。
 
-### 2. `await` 会阻塞主线程吗？
+### 2. `await` 一个普通值也会让出执行权吗？
 
-不会。`await` 只暂停当前 async 函数的执行，把控制权交还给主线程。等待期间主线程可以处理其他任务、响应用户输入、执行渲染。函数的剩余部分作为微任务，在等待的 Promise 决议后恢复。如果你发现页面卡住，问题在于别处的同步长任务，而非 await 本身。
+会。`await 42` 会经过 `Promise.resolve(42)` 一类处理，函数在 `await` 处暂停，剩余部分进入微任务队列。因此即使右侧不是 Promise，`await` 后面的代码也不会在当前同步片段里继续执行。
 
-### 3. 为什么 `forEach` 里的 `await` 不生效？
+### 3. `queueMicrotask` 和 `Promise.resolve().then` 都能排微任务，应该选哪个？
 
-`forEach` 的实现不关心回调返回值（包括 Promise），它同步地把每个元素交给回调后就立即返回。所以回调里的 `await` 只暂停了那个回调函数，不会暂停 `forEach` 本身。需要串行用 `for...of`，需要并行用 `Promise.all` 配合 `map`。
+两者进入同一个微任务队列，执行顺序取决于入队顺序。`queueMicrotask` 不创建 Promise，适合纯调度；`Promise.resolve().then` 自带链式错误传播。异常行为也不同：`queueMicrotask` 回调抛错会成为未捕获异常，`then` 回调抛错会让返回的 Promise 进入 rejected。
 
-### 4. `Promise.all` 和 `Promise.allSettled` 有什么本质区别？
+### 4. `async` 函数里写 `return await p` 和 `return p` 有什么区别？
 
-`Promise.all` 是 fail-fast：任意一个 Promise 失败，整个 `all` 立即 reject，其余结果被忽略。`Promise.allSettled` 永远 resolve，返回一个数组，每个元素描述对应 Promise 的状态（fulfilled/rejected）和值。需要"部分失败也要继续处理成功结果"时用 `allSettled`；需要"要么全成功要么整体失败"时用 `all`。
-
-### 5. 如何让 1000 个异步任务不压垮服务端？
-
-用并发限流器控制同时在途的任务数（如 5~10）。核心思路是维护一个固定大小的"运行池"，每个 worker 完成一个任务后从队列取下一个，直到队列清空。手写实现可用上面的 `mapWithConcurrency`，或使用 `p-limit` 等成熟库。
+`return p` 会直接让返回的 Promise 采纳 `p` 的状态；`return await p` 则先等待 `p` 决议，再多经过一次微任务调度。后者在 `try/catch` 中是必要的——它能确保 `p` 的 rejection 被当前 `catch` 捕获，而不是直接穿透到调用方。
 
 ---
 
@@ -672,4 +596,5 @@ syncToRemote().catch((err) => tracker.report(err))
 2. Kyle Simpson《You Don't Know JS》关于异步与性能、回调信任问题的讨论
 3. HTML 规范关于事件循环与任务队列的定义：[HTML Standard Event loops](https://html.spec.whatwg.org/multipage/webappapis.html#event-loops)
 4. ECMAScript 规范关于 Promise 与 async/await 的语义：[ECMA-262 Promises](https://tc39.es/ecma262/#sec-promise-objects)
-5. 本文基于公开技术文档（MDN、ECMAScript/HTML 规范、《You Don't Know JS》）和作者工程实践总结。
+5. Node.js 文档关于事件循环与 `process.nextTick` 的说明：[Node.js process.nextTick](https://nodejs.org/api/process.html#processnexttickcallback-args)
+6. 本文基于公开技术文档（MDN、ECMAScript/HTML 规范、Node.js 文档、《You Don't Know JS》）和作者工程实践总结。

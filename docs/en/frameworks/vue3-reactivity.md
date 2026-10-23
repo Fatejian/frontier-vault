@@ -13,11 +13,7 @@ outline: deep
 
 # Vue 3 Reactivity System: The Complete Implementation of Proxy and Dependency Collection
 
-> Subtitle: From Object.defineProperty to Proxy — the dependency collection mechanisms of reactive / ref / computed / effect.
->
-> Target readers: Intermediate and senior frontend engineers, advanced Vue users, anyone interested in reactivity-system design.
->
-> Reading time: about 26 minutes.
+Changing data and watching the view update looks like the whole story until two components read the same object and only one of them should rerender. Vue 3 decides that at runtime by recording which effect read which key, which explains both its precision and its surprising failure modes. This article starts from the limits of `Object.defineProperty`, then follows Proxy interception, dependency tracking, and the scheduler that turns synchronous writes into batched updates. It ends with boundary cases you can verify with a small experiment.
 
 ::: info In one sentence
 The essence of Vue 3's reactivity system is to use Proxy to intercept reads and writes, and to use a three-layer WeakMap structure to record "who depends on what," so that when data changes, every effect is notified precisely.
@@ -26,45 +22,40 @@ The essence of Vue 3's reactivity system is to use Proxy to intercept reads and 
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [1. The Fundamental Limitations of Vue 2 Object.defineProperty](#1-the-fundamental-limitations-of-vue-2-objectdefineproperty)
-- [2. Proxy and Reflect: The Physical Foundation of Reactivity](#2-proxy-and-reflect-the-physical-foundation-of-reactivity)
-- [3. Implementation Principles of reactive, ref, and computed](#3-implementation-principles-of-reactive-ref-and-computed)
-- [4. Dependency Collection (track) and Triggering Updates (trigger)](#4-dependency-collection-track-and-triggering-updates-trigger)
-- [5. effect and Scheduler: The Execution Entry of Side Effects](#5-effect-and-scheduler-the-execution-entry-of-side-effects)
-- [6. Comparison with React's Reactive Model](#6-comparison-with-reacts-reactive-model)
-- [7. Several Easy-to-Miss Details](#7-several-easy-to-miss-details)
+- [1. The Fundamental Limitations of Vue 2 Object.defineProperty](#_1-the-fundamental-limitations-of-vue-2-object-defineproperty)
+- [2. Proxy and Reflect: The Physical Foundation of Reactivity](#_2-proxy-and-reflect-the-physical-foundation-of-reactivity)
+- [3. Implementation Principles of reactive, ref, and computed](#_3-implementation-principles-of-reactive-ref-and-computed)
+- [4. Dependency Collection (track) and Triggering Updates (trigger)](#_4-dependency-collection-track-and-triggering-updates-trigger)
+- [5. effect and Scheduler: The Execution Entry of Side Effects](#_5-effect-and-scheduler-the-execution-entry-of-side-effects)
+- [6. Comparison with React's Reactive Model](#_6-comparison-with-react-s-reactive-model)
+- [7. Several Easy-to-Miss Details](#_7-several-easy-to-miss-details)
+- [Conclusion: Reactivity Is a Dependency Contract, Not Automatic Magic](#conclusion-reactivity-is-a-dependency-contract-not-automatic-magic)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ## Introduction
 
-Many frontend engineers understand "reactivity" as "when data changes, the view updates automatically," but they cannot clearly answer the following questions:
+Many engineers understand reactivity as "when data changes, the view updates automatically" but cannot clearly answer these questions:
 
-- Why can't Vue 2 detect the addition or deletion of object properties?
-- Why did Vue 3's switch to Proxy improve performance? Where exactly is the improvement?
-- What is the real difference between `reactive` and `ref`? Why not unify them into one?
-- What exactly is the "dependency" in dependency collection? Where is it stored?
-- What is the relationship among `effect`, `watch`, and `computed`?
-- Why does `reactive` lose reactivity after destructuring, while `ref` does not?
-- What is the essential difference between Vue's reactivity and React's state update mechanism?
+- Why can Vue 2 not detect the addition or deletion of object properties?
+- Why does initialization cost drop after Vue 3 switches to Proxy?
+- What is the real difference between `reactive` and `ref`, and why not unify them?
+- What exactly is the "dependency" in dependency collection, and where is it stored?
+- How are `effect`, `watch`, and `computed` related?
+- Why does destructuring `reactive` lose reactivity while `ref` does not?
+- What is the essential difference between Vue's reactivity and React's state updates?
 
-This article aims to build a complete and self-consistent mental model of Vue 3 reactivity. It does not pursue line-by-line source-code interpretation; instead, it focuses on core data structures and design motivations — after reading, you should be able to compare details with the `@vue/reactivity` source code yourself.
+First, fix one term: **effect**. An effect here is not a DOM operation. It is a function that reads reactive data and needs to run again when that data changes. Component rendering, `watch`, and `computed` all reuse this abstraction.
 
-::: tip Core argument of this article
-
-Vue 3's reactivity system is a "precise dependency tracking + push-style update" system. It intercepts reads and writes through Proxy, maintains a three-layer WeakMap mapping of "target → key → side-effect set," and directly pushes notifications to relevant effects when data changes. This is the most fundamental difference from React's "component-level pull rendering" model.
-
-:::
-
----
+The code below follows the structure of `@vue/reactivity` with detail removed, keeping only the dependencies that support the main line. It explains the mechanism and is not directly runnable.
 
 ## 1. The Fundamental Limitations of Vue 2 Object.defineProperty
 
-Vue 2's reactivity is based on `Object.defineProperty`:
+Vue 2's reactivity is based on `Object.defineProperty`.
 
 ```javascript
 function defineReactive(obj, key, val) {
-  let dep = new Dep() // one Dep per key
+  let dep = new Dep() // one Dep per key, holding the Watchers that depend on it
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
@@ -75,7 +66,7 @@ function defineReactive(obj, key, val) {
     set(newVal) {
       if (newVal === val) return
       val = newVal
-      observe(newVal) // new value must also be reactive
+      observe(newVal) // the new value must also become reactive
       dep.notify() // notify all Watchers
     },
   })
@@ -89,15 +80,15 @@ function observe(obj) {
 }
 ```
 
-This implementation works, but it has four fundamental limitations.
+The implementation works but has four fundamental limitations.
 
 ### 1. Cannot Detect Property Addition or Deletion
 
-`defineProperty` can only intercept properties that already exist. If a developer does `obj.newKey = 1` on a reactive object, Vue 2 cannot detect it; they must use `Vue.set(obj, 'newKey', 1)`. This is a frequently criticized API ergonomics issue.
+`defineProperty` intercepts only properties that already exist. When a developer writes `obj.newKey = 1` on a reactive object, Vue 2 cannot detect it and requires `Vue.set(obj, 'newKey', 1)`. Deleting a property has the same problem and requires `Vue.delete`.
 
 ### 2. Array Observation Requires a Hack
 
-`defineProperty` cannot listen to array index assignment (`arr[0] = x`) or `length` changes. Vue 2's solution is to override seven mutating array methods (`push` / `pop` / `shift` / `unshift` / `splice` / `sort` / `reverse`) and manually trigger notifications inside those methods.
+`defineProperty` cannot observe array index assignment (`arr[0] = x`) or `length` changes. Vue 2 overrides seven mutating methods and manually triggers notifications inside them.
 
 ```javascript
 const methodsToPatch = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
@@ -106,7 +97,7 @@ methodsToPatch.forEach((method) => {
   arrayMethods[method] = function (...args) {
     const result = original.apply(this, args)
     const ob = this.__ob__
-    // elements added by push/unshift/splice must also be reactive
+    // elements added by push / unshift / splice must also become reactive
     let inserted
     switch (method) {
       case 'push':
@@ -124,25 +115,19 @@ methodsToPatch.forEach((method) => {
 })
 ```
 
-### 3. Recursive Traversal at Initialization, Poor Deep-Observation Performance
+### 3. Recursive Traversal at Initialization Makes Deep Observation Expensive
 
-`observe` recursively traverses the entire object at initialization, installing getter/setter for every key. For large objects, initialization cost is high, and many deep properties may never be read during their lifetime.
+`observe` recursively walks the whole object at initialization and installs a getter and setter for every key. Larger objects cost more to initialize, and many deep properties may never be read.
 
-### 4. Cannot Listen to Map / Set / WeakMap
+### 4. Cannot Observe Map / Set / WeakMap
 
-`defineProperty` is designed for plain objects and is powerless against collection types such as `Map` and `Set`. In Vue 2, they can only be treated as non-reactive data.
+`defineProperty` is designed for plain objects and cannot handle collection types such as `Map` and `Set`. Vue 2 can only treat them as non-reactive data.
 
-::: tip Core conclusion of this section
-
-The limitations of Vue 2's reactivity are not due to a "bad implementation," but to the `Object.defineProperty` API itself. It can only intercept reads and writes of "already existing properties" and cannot cover arrays or collection types. The fundamental solution to all these problems is to switch to a stronger interception mechanism — Proxy.
-
-:::
-
----
+These limitations are not a failure of Vue 2's implementation. They are the boundary of the `Object.defineProperty` API: it can intercept only reads and writes of existing properties and cannot cover arrays or collections. The solution is a more general interception mechanism.
 
 ## 2. Proxy and Reflect: The Physical Foundation of Reactivity
 
-Vue 3 switches to `Proxy`. Proxy can intercept 13 operations (including `get`, `set`, `has`, `deleteProperty`, `ownKeys`, etc.), covering every "cannot be detected" scenario in Vue 2.
+Vue 3 uses `Proxy`. Proxy can intercept thirteen operations, including `get / set / has / deleteProperty / ownKeys`, covering every scenario Vue 2 could not observe.
 
 ### 1. What Proxy Solves
 
@@ -167,7 +152,7 @@ const handler = {
     return result
   },
   has(target, key) {
-    track(target, key) // 'in' operation also collects
+    track(target, key) // 'in' operations also collect
     return Reflect.has(target, key)
   },
   ownKeys(target) {
@@ -181,41 +166,39 @@ function reactive(target) {
 }
 ```
 
-Comparison with Vue 2's limitations:
+Compared with Vue 2's limitations:
 
 | Limitation | Vue 2 | Vue 3 |
-|------------|-------|-------|
-| Property addition | `Vue.set` | Direct `obj.newKey = 1` is automatically detected |
-| Property deletion | `Vue.delete` | Direct `delete obj.key` is automatically detected |
-| Array index assignment | Cannot detect | `arr[0] = x` is automatically detected |
-| `length` change | Cannot detect | Automatically detected |
-| Map / Set | Not supported | Native support |
+|------|-------|-------|
+| Property addition | `Vue.set` | `obj.newKey = 1` is observed automatically |
+| Property deletion | `Vue.delete` | `delete obj.key` is observed automatically |
+| Array index | Not observable | `arr[0] = x` is observed automatically |
+| `length` changes | Not observable | Observed automatically |
+| Map / Set | Unsupported | Native support |
 | Initialization cost | Recursive traversal | Lazy (proxied only when used) |
 
 ### 2. Why Reflect Is Used
 
-The third parameter of `Reflect.get` / `Reflect.set`, `receiver`, solves a subtle problem: when an object has inheritance, the correct `this` should point to the proxy object rather than the original object.
+The third parameter of `Reflect.get` and `Reflect.set`, `receiver`, solves a subtle problem: when an object has an inheritance relationship, the correct `this` should point to the proxy rather than the original object.
 
 ```javascript
 const obj = { _value: 0, get value() { return this._value } }
 const proxy = new Proxy(obj, {
   get(target, key, receiver) {
-    // Without receiver, this points to the original obj, and obj._value is not reactive.
-    // With receiver, this points to the proxy, and proxy._value triggers reactivity.
+    // Without receiver, this points to the original obj, and obj._value bypasses the proxy.
+    // With receiver, this points to the proxy, so proxy._value can trigger reactivity.
     return Reflect.get(target, key, receiver)
   },
 })
 ```
 
 ::: warning Common misconception
-
-Many people write `return target[key]` directly when using Proxy. For objects with getters, this loses reactivity (because `this` is wrong). You must use `Reflect.get(target, key, receiver)`.
-
+Writing `return target[key]` directly in a Proxy loses reactivity for objects with getters because `this` points to the original object. Use `Reflect.get(target, key, receiver)` instead.
 :::
 
-### 3. Lazy Reactivity: The Real Source of Performance Advantage
+### 3. Lazy Reactivity: The Real Source of the Performance Advantage
 
-Vue 3's `reactive` does not recursively traverse at initialization. It only returns a proxy for child objects when `get` is called:
+Vue 3's `reactive` does not recursively walk the object at initialization. It returns a proxy for a child object only when `get` runs.
 
 ```javascript
 get(target, key, receiver) {
@@ -227,13 +210,13 @@ get(target, key, receiver) {
 }
 ```
 
-And `reactive` has internal caching:
+`reactive` also caches proxies:
 
 ```javascript
 const reactiveMap = new WeakMap()
 function reactive(target) {
   if (reactiveMap.has(target)) {
-    return reactiveMap.get(target) // same object is proxied only once
+    return reactiveMap.get(target) // the same object is proxied only once
   }
   const proxy = new Proxy(target, handler)
   reactiveMap.set(target, proxy)
@@ -241,23 +224,17 @@ function reactive(target) {
 }
 ```
 
-This means Vue 3's initialization cost is O(1), not Vue 2's O(n). Deep properties enter the reactivity system only when they are read — this is the real source of Vue 3's performance advantage.
+Initialization cost for one object is therefore O(1) instead of Vue 2's O(n). Deep properties enter the reactive system only when they are read.
 
-::: tip Core conclusion of this section
-
-Proxy is the physical foundation of Vue 3 reactivity. It solves Vue 2's inability to detect addition, deletion, arrays, and collections, and reduces initialization cost from O(n) to O(1) through "lazy proxying + WeakMap caching."
-
-:::
-
----
+Proxy solves the inability to observe addition, deletion, arrays, and collections, and lazy proxying plus WeakMap caching lowers initialization cost. The benefit comes mainly from laziness, not from a single Proxy interception being faster than `defineProperty`.
 
 ## 3. Implementation Principles of reactive, ref, and computed
 
-Vue 3 exposes three main reactivity APIs: `reactive`, `ref`, and `computed`. They correspond to different usage scenarios, but behind them is the same dependency collection mechanism with different wrappers.
+Vue 3 exposes three main reactivity APIs: `reactive`, `ref`, and `computed`. They serve different scenarios and are different wrappers around the same dependency collection mechanism.
 
 ### 1. reactive: Proxy for Objects
 
-`reactive` is used for objects (including arrays, Map, and Set). Its implementation is the Proxy + handler shown above. A simplified complete implementation:
+`reactive` is used for objects, including arrays, Map, and Set. Its implementation is the Proxy plus handler shown above.
 
 ```javascript
 const reactiveMap = new WeakMap()
@@ -274,11 +251,11 @@ function reactive(target) {
 }
 ```
 
-Note: `reactive` only makes sense for object types. Primitive values (`string`, `number`, `boolean`) cannot be directly proxied by Proxy — this is why `ref` is needed.
+`reactive` only makes sense for object types. Primitive values (string, number, boolean) cannot be proxied directly by Proxy, which is why `ref` exists.
 
 ### 2. ref: A Wrapper for Primitive Values
 
-JavaScript primitive values (`string`, `number`, `boolean`, `symbol`, `bigint`, `null`, `undefined`) cannot be directly intercepted by Proxy. Vue 3's solution is to wrap them in an object:
+JavaScript primitive values cannot be intercepted by Proxy. Vue 3 wraps them in an object.
 
 ```javascript
 class RefImpl {
@@ -307,17 +284,13 @@ function ref(value) {
 }
 ```
 
-::: info Engineering insight
+The essence of `ref` is holding a primitive value in an object's `.value` property so that object accessors can track changes. The `.value` syntax is not a design preference; it is the necessary choice under JavaScript's language constraints.
 
-The essence of `ref` is "using an object's `.value` property to hold a primitive value." This allows the object's get/set interception to track changes to the primitive value. The `ref.value` syntax is not a design preference, but an inevitable choice under JavaScript language constraints.
-
-:::
-
-`ref` can also hold objects; in that case, `_value` will be the result of `reactive(value)`. This is why `ref({ count: 0 })` allows both wholesale replacement (`ref.value = { count: 1 }`) and direct internal modification (`ref.value.count++`).
+`ref` can also hold objects. In that case `_value` is the result of `reactive(value)`, so `ref({ count: 0 })` supports both wholesale replacement (`state.value = { count: 1 }`) and internal mutation (`state.value.count++`).
 
 ### 3. computed: Cached Derived State
 
-`computed` adds a layer of caching on top of effect:
+`computed` adds a cache on top of effect.
 
 ```javascript
 class ComputedRefImpl {
@@ -327,7 +300,7 @@ class ComputedRefImpl {
     this.dep = new Dep()
 
     this.effect = new ReactiveEffect(getter, () => {
-      // scheduler: when dependencies change, do not recompute immediately, just mark dirty
+      // scheduler: on dependency change, do not recompute; only mark dirty
       if (!this._dirty) {
         this._dirty = true
         triggerRefValue(this) // notify computed subscribers
@@ -339,7 +312,7 @@ class ComputedRefImpl {
     trackRefValue(this)
     if (this._dirty) {
       this._dirty = false
-      // run effect: dependencies will be recollected
+      // run the effect: dependencies are collected again
       this._value = this.effect.run()
     }
     return this._value
@@ -355,34 +328,28 @@ function computed(getter, setter) {
 }
 ```
 
-Key design points of `computed`:
+`computed` has four key designs:
 
-1. **Lazy**: not computed at construction time, only when read.
-2. **Cached**: directly returns the old value when `_dirty = false`.
-3. **Auto-invalidated**: when dependencies change, the scheduler marks `_dirty` as true but does not recompute immediately.
-4. **Chain subscription**: computed itself can also be depended on by other effects, forming a dependency chain.
+1. **Lazy**: it computes nothing at construction and only computes when read;
+2. **Cached**: it returns the old value while `_dirty = false`;
+3. **Invalidated**: the scheduler marks `_dirty` when dependencies change but does not recompute immediately;
+4. **Chained subscription**: a computed value can itself be depended on by other effects, forming a dependency chain.
 
-::: tip Core conclusion of this section
-
-`reactive` is object proxying, `ref` is primitive-value wrapping, and `computed` is cached derived state. Behind the three is the same track/trigger mechanism in different packaging. Understanding this is understanding the design unity of Vue 3's reactivity APIs.
-
-:::
-
----
+`reactive` proxies objects, `ref` wraps primitives, and `computed` caches derived state. All three are different wrappers around the same track/trigger mechanism.
 
 ## 4. Dependency Collection (track) and Triggering Updates (trigger)
 
-Dependency collection is the core of Vue 3's reactivity system. The question it answers is: "When a certain key changes, who needs to be notified?"
+Dependency collection answers one question: when a key changes, who needs to be notified?
 
 ### 1. Three-Layer WeakMap Structure
 
-Vue 3 uses a three-layer structure to store dependency relationships:
+Vue 3 stores dependencies in three layers.
 
 ```javascript
-// global dependency mapping
+// Global dependency map
 const targetMap = new WeakMap()
 // targetMap: target -> keyMap
-// keyMap:    key   -> depSet
+// keyMap:    key    -> depSet
 // depSet:    set of effects
 
 function track(target, key) {
@@ -401,7 +368,7 @@ function track(target, key) {
   }
 
   depSet.add(activeEffect)
-  activeEffect.deps.push(depSet) // reverse reference for cleanup
+  activeEffect.deps.push(depSet) // reverse reference for cleaning old dependencies
 }
 
 function trigger(target, key) {
@@ -411,10 +378,10 @@ function trigger(target, key) {
   const depSet = keyMap.get(key)
   if (!depSet) return
 
-  // copy before iterating to avoid modifying the set during iteration
+  // copy before iterating so the set can be modified during execution
   const effectsToRun = new Set(depSet)
   effectsToRun.forEach((effect) => {
-    // avoid an effect triggering itself internally (infinite loop)
+    // avoid an effect triggering itself
     if (effect !== activeEffect) {
       effect.run()
     }
@@ -422,10 +389,9 @@ function trigger(target, key) {
 }
 ```
 
-This structure is illustrated below:
+The structure looks like this:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     TM["targetMap<br/>WeakMap"]
 
@@ -452,32 +418,30 @@ flowchart TB
 
     K2A --> E2
 
-    classDef root fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef target fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef keymap fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef dep fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef effect fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class TM root;
-    class T1,T2 target;
-    class K1,K2 keymap;
-    class K1A,K1B,K1C,K2A dep;
-    class E1,E2,E3 effect;
+    class TM core;
+    class T1,T2 metric;
+    class K1,K2 wait;
+    class K1A,K1B,K1C,K2A block;
+    class E1,E2,E3 work;
 ```
 
-### 2. Why WeakMap Is Used
+Read from `targetMap` downward: the first layer buckets by object, the second by key, and the third holds the effect set. One effect can appear in several sets, which is why the `deps` reverse reference is needed to clean old dependencies.
 
-The outermost layer uses `WeakMap` instead of `Map` because: **when the reactive object itself is destroyed and no other references remain, the corresponding entry in the WeakMap is automatically garbage-collected.** If `Map` were used, it would hold a strong reference to the target, preventing the target from ever being collected — a memory leak.
+### 2. Why the Outer Layer Uses WeakMap
 
-::: info Design detail
+The outer layer uses `WeakMap` instead of `Map` so that when a reactive object is destroyed and has no other references, its entry can be collected automatically. A `Map` would hold a strong reference to the target and keep it alive forever.
 
-The second layer uses `Map` (keys are strings or symbols), and the third layer uses `Set` (a set of effects). These two layers do not leak, because their lifecycles follow the target.
+The second layer uses `Map` (keys are strings or symbols), and the third uses `Set` (the effect set). Their lifetimes follow the target and do not leak on their own.
 
-:::
+### 3. activeEffect: The Effect Currently Running
 
-### 3. activeEffect: The Currently Executing Side Effect
-
-The key question in dependency collection is: "Who should be added during track?" Vue 3 maintains a global variable `activeEffect` pointing to "the effect currently being executed":
+The key question in dependency collection is: who gets added during track? Vue 3 keeps a global `activeEffect` pointing at the effect currently running.
 
 ```javascript
 let activeEffect = null
@@ -493,7 +457,7 @@ class ReactiveEffect {
     const prevEffect = activeEffect
     activeEffect = this
     try {
-      return this.fn() // while fn reads reactive data, track adds this to the sets
+      return this.fn() // reads inside fn make track add this effect to the sets
     } finally {
       activeEffect = prevEffect
     }
@@ -501,11 +465,11 @@ class ReactiveEffect {
 }
 ```
 
-So the real meaning of "dependency collection" is: **when an effect is running, it reads certain reactive data, and it registers itself as a subscriber to those data.**
+So dependency collection really means: an effect registers itself in the subscriber sets of every reactive value it reads while running.
 
-### 4. Nested effect and effectScope
+### 4. Nested Effects
 
-Effects can be nested (for example, a computed is triggered during component rendering). Vue 3 uses a stack to manage this:
+Effects can nest, for example when component rendering triggers a computed value. Vue 3 manages the stack by saving and restoring `activeEffect`.
 
 ```javascript
 function run() {
@@ -514,24 +478,18 @@ function run() {
   try {
     return this.fn()
   } finally {
-    activeEffect = prevEffect // restore outer effect
+    activeEffect = prevEffect // restore the outer effect
   }
 }
 ```
 
-The outer effect continues to be `activeEffect` after the inner effect finishes, and data read by the inner effect is not collected by the outer effect — this is the correct behavior.
+After the inner effect finishes, the outer effect becomes `activeEffect` again. Data read by the inner effect is not collected by the outer effect, which is the correct behavior.
 
-::: tip Core conclusion of this section
-
-Dependency collection is stored in a three-layer structure of `WeakMap(target) -> Map(key) -> Set(effect)`. During track, the "currently running effect" is added to the corresponding set; during trigger, that set is retrieved and each effect is executed. This is the "skeleton" of Vue's reactivity system.
-
-:::
-
----
+Dependency collection is stored as `WeakMap(target) -> Map(key) -> Set(effect)`. `track` adds the running effect to the set, and `trigger` takes the set and runs each effect. This is the skeleton of Vue's reactivity system.
 
 ## 5. effect and Scheduler: The Execution Entry of Side Effects
 
-`effect` is the lowest-level concept in the reactivity system. `watch`, `computed`, and component render functions are essentially effects.
+`effect` is the lowest-level concept in the reactivity system. `watch`, `computed`, and component render functions are all effects.
 
 ### 1. Basic Structure of effect
 
@@ -539,36 +497,35 @@ Dependency collection is stored in a three-layer structure of `WeakMap(target) -
 function effect(fn, options = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler)
   if (!options.lazy) {
-    _effect.run() // execute immediately once to establish dependencies
+    _effect.run() // run once immediately to establish dependencies
   }
   return _effect
 }
 ```
 
-After calling `effect(fn)`:
+After `effect(fn)` is called:
 
-1. `fn` is executed immediately once; during this time, reactive data read will add `_effect` to their subscriber sets.
-2. Afterward, any dependency change will call `_effect.run()` and re-execute `fn`.
-3. When re-executing, dependencies are read again, and dependency relationships are refreshed (old dependencies may be cleaned up).
+1. `fn` runs once immediately, and any reactive data it reads adds `_effect` to the corresponding sets;
+2. Any later dependency change calls `_effect.run()`;
+3. During the rerun, reads refresh the dependency relationships, and old dependencies may be cleaned up.
 
-### 2. Scheduler: Controlling When Side Effects Execute
+### 2. Scheduler: Controlling When Side Effects Run
 
-If no scheduler is specified, trigger directly calls `effect.run()`. But in many scenarios, we do not want immediate execution:
+Without a scheduler, `trigger` calls `effect.run()` directly. Many scenarios do not want immediate execution:
 
-- Component rendering: we want to batch it to the next microtask to avoid multiple synchronous re-renders.
-- computed: we want to delay recomputation until the next read.
-- watch: we want the callback to execute asynchronously.
+- Component rendering should batch into the next microtask to avoid several synchronous rerenders;
+- `computed` should delay recomputation until the next read;
+- `watch` should run its callback asynchronously.
 
-The scheduler is this control point:
+The scheduler is that control point.
 
 ```javascript
-const _effect = new ReactiveEffect(fn, (/* args */) => {
-  // when dependencies change, do not call fn; call the scheduler instead
-  // the scheduler decides when and how to call fn
+const _effect = new ReactiveEffect(fn, () => {
+  // on dependency change, do not call fn directly; let the scheduler decide when to run it
 })
 ```
 
-Vue's component render effect uses the scheduler to implement asynchronous batched updates:
+Vue's component render effect uses the scheduler to implement asynchronous batched updates.
 
 ```javascript
 function setupRenderEffect(instance, container) {
@@ -579,7 +536,7 @@ function setupRenderEffect(instance, container) {
   }
 
   const effect = new ReactiveEffect(update, () => {
-    // scheduler: push update into the queue and flush uniformly on next tick
+    // scheduler: push the update into the queue and flush on the next tick
     queueJob(update)
   })
 
@@ -589,7 +546,7 @@ function setupRenderEffect(instance, container) {
 
 ### 3. nextTick and Batched Updates
 
-Vue's updates are asynchronous: multiple `setState` calls within the same tick are merged into a single re-render. The core of this mechanism is `queueJob`:
+Vue updates asynchronously: multiple assignments in the same tick are merged into one rerender. The core is `queueJob`.
 
 ```javascript
 const queue = []
@@ -622,12 +579,11 @@ export function nextTick(cb) {
 }
 ```
 
-Execution flow:
+The execution flow is:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 sequenceDiagram
-    participant Code as App Code
+    participant Code as Application Code
     participant T as trigger
     participant S as scheduler
     participant Q as queueJob
@@ -642,57 +598,50 @@ sequenceDiagram
     Code->>T: state.count = 2
     T->>S: dep.forEach(run scheduler)
     S->>Q: queueJob(update)
-    Note over Q: already exists / deduplicated
+    Note over Q: already queued and deduplicated
 
     Code->>T: state.name = 'x'
     T->>S: another dep
     S->>Q: queueJob(update2)
 
     Note over P: current synchronous code ends
-    P->>R: flushJobs: execute update, update2 in order
-    R->>R: one render updates all changes
+    P->>R: flushJobs runs update and update2 in order
+    R->>R: one render applies all changes
 ```
 
+The key is `queueJob` deduplication plus the `Promise.then` deferral: the same update function enters the queue once per tick, and DOM work waits for the microtask. `nextTick` shares that microtask timing.
+
 ::: info Engineering insight
-
-Vue's batched updates are not based on the "event loop" but on the "microtask queue." Therefore, `nextTick` is also implemented with `Promise.then`. This differs from React 18's Automatic Batching — React's batching is based on the Lane model + scheduler and covers a broader scope (including `setState` inside asynchronous callbacks).
-
+Vue's batched updates are based on the microtask queue, and `nextTick` also uses `Promise.then`. React 18's Automatic Batching is based on Lane and the scheduler, covering a broader scope that includes `setState` inside asynchronous callbacks. Both are called batching, but they trigger at different layers.
 :::
 
 ### 4. The Relationship Among effect, computed, and watch
 
-All three are variants of effect:
+All three are variants of effect.
 
 | API | Internal implementation | Scheduler behavior |
-|-----|------------------------|--------------------|
-| `effect(fn)` | Directly creates ReactiveEffect | Executes synchronously by default |
-| `computed(fn)` | Creates an effect with a dirty flag | Only marks dirty, does not recompute immediately |
-| `watch(source, cb)` | Creates an effect with a cb callback | Executes cb asynchronously |
-| render effect | Creates the component's rendering side effect | queueJob for asynchronous batching |
+|-----|---------|---------------|
+| `effect(fn)` | Creates a ReactiveEffect directly | Runs synchronously by default |
+| `computed(fn)` | Creates an effect with a dirty flag | Marks dirty only, does not recompute immediately |
+| `watch(source, cb)` | Creates an effect with a callback | Runs the callback asynchronously by default |
+| Render effect | Creates the component render effect | `queueJob` for asynchronous batching |
 
-::: tip Core conclusion of this section
-
-`effect` is the underlying abstraction of Vue reactivity; `computed`, `watch`, and component rendering are all variants of effect. The scheduler is the key hook that controls "when to execute side effects," allowing Vue to turn synchronous triggers into asynchronous batched updates.
-
-:::
-
----
+`effect` is the underlying abstraction of Vue reactivity. `computed`, `watch`, and component rendering are its variants. The scheduler controls when a side effect runs, which lets Vue turn synchronous triggers into asynchronous batched updates.
 
 ## 6. Comparison with React's Reactive Model
 
-Vue's reactivity system and React's state update mechanism are two completely different models. Understanding this difference helps make correct technology choices in intermediate-to-advanced projects.
+Vue's reactivity system and React's state update mechanism are two different models. Understanding the difference helps decide which update semantics a project should rely on.
 
 ### 1. Push vs Pull
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Vue["Vue: Push Model"]
         V1["state.count = 1"]
         V2["setter interception"]
-        V3["trigger: find the dep for this key"]
-        V4["execute subscribed effect"]
-        V5["only update affected components"]
+        V3["trigger finds the dep for this key"]
+        V4["run subscribed effects"]
+        V5["update only affected components"]
 
         V1 --> V2 --> V3 --> V4 --> V5
     end
@@ -700,81 +649,75 @@ flowchart TB
     subgraph React["React: Pull Model"]
         R1["setState(1)"]
         R2["mark component dirty"]
-        R3["scheduler arranges task"]
-        R4["re-render entire component"]
+        R3["scheduler arranges a task"]
+        R4["re-render the whole component"]
         R5["Virtual DOM diff"]
         R6["commit real DOM updates"]
 
         R1 --> R2 --> R3 --> R4 --> R5 --> R6
     end
 
-    classDef vue fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef react fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class V1,V2,V3,V4,V5 vue;
-    class R1,R2,R3,R4,R5,R6 react;
+    class V1,V2,V3,V4,V5 work;
+    class R1,R2,R3,R4,R5,R6 wait;
 ```
 
-**Vue (Push)**: when data changes, the setter immediately finds subscribers and notifies them. Updates are "precise" — only effects that depend on that data are executed.
+The upper half is push: the setter finds the dependency and runs the effects directly. The lower half is pull: `setState` only marks the component, and the scheduler reruns the component function. The difference is not speed but who decides the update scope.
 
-**React (Pull)**: `setState` only marks the component as "needs update"; real rendering happens when the scheduler decides to execute it. React does not know "which data changed," so it can only re-run the entire component function and then use Virtual DOM diff to find the real changes.
+**Vue (push)**: when data changes, the setter finds subscribers and notifies them. Updates are precise, and only effects that depend on that data run.
+
+**React (pull)**: `setState` only marks a component as needing an update, and rendering happens when the scheduler decides to run it. React does not know which data changed, so it reruns the component function and uses Virtual DOM diff to find the real changes.
 
 ### 2. Immutable vs Mutable
 
 ```javascript
-// React: immutable, returns a new object each time
+// React: immutable, returns a new object on every update
 const [user, setUser] = useState({ name: 'A', age: 18 })
-setUser({ ...user, age: 19 }) // must create a new object
+setUser({ ...user, age: 19 })
 
 // Vue: mutable, direct modification
 const user = reactive({ name: 'A', age: 18 })
-user.age = 19 // direct modification
+user.age = 19
 ```
 
-React's immutable model makes "object reference change" the signal for "data change" — because React has no ability to intercept writes. Vue can be mutable because it intercepts writes through Proxy.
+React's immutable model makes a changed object reference the signal for changed data, because React cannot intercept writes. Vue intercepts writes through Proxy and can therefore allow direct mutation.
 
 ### 3. Component-Level vs Field-Level
 
-- React: state changes trigger **re-rendering of the entire component**, then diff decides which DOM to update.
-- Vue: state changes trigger **a specific effect** (possibly a render effect, a watch, or a computed).
+- React: a state change rerenders the whole component, and diff decides which DOM nodes to update;
+- Vue: a state change triggers a specific effect, which may be a render effect, a `watch`, or a `computed`.
 
-This is why Vue performs excellently in scenarios with a large number of fine-grained updates — it does not need to re-run the entire component; it only needs to trigger the corresponding effect.
+This is why Vue does less work in scenarios with many fine-grained updates: it does not rerun the component, only the affected effect.
 
 ### 4. Dependency Tracking: Manual vs Automatic
 
 ```javascript
-// React: manually declare dependencies
+// React: declare dependencies manually
 useEffect(() => {
   console.log(count, name)
-}, [count, name]) // dependency array required
+}, [count, name])
 
-// Vue: automatic tracking
+// Vue: track automatically
 watchEffect(() => {
-  console.log(count.value, name.value) // automatically collected
+  console.log(count.value, name.value)
 })
 ```
 
-Vue's automatic dependency tracking comes from the track mechanism — data read while an effect is running automatically become dependencies. React's `useEffect` has no reactivity system support, so the dependency array must be written manually; this is an important source of React Hooks mental burden.
+Vue's automatic tracking comes from `track`: data read while an effect runs automatically becomes a dependency. React's `useEffect` has no reactivity system behind it and must declare the dependency array by hand, which is a major source of Hooks mental overhead.
 
 ::: warning Trade-offs
+Vue's automatic tracking is not absolutely better. Its costs are:
 
-Vue's automatic tracking is not "absolutely better." Its costs are:
+- Reactive data must be accessed explicitly (`.value` or `reactive`) to be tracked;
+- Destructuring a `reactive` object loses reactivity;
+- Reads after `await` are not tracked because `activeEffect` has already left the stack.
 
-- Reactive data must be accessed explicitly (`.value`, `reactive` wrapping) to be tracked.
-- Destructuring a reactive object loses reactivity.
-- Reads inside asynchronous code are not tracked (because `activeEffect` has already left the stack).
-
-React's manual dependency array is tedious, but its semantics are clearer and easier to statically analyze.
-
+React's manual dependency array is verbose, but its semantics are clearer and easier to analyze statically.
 :::
 
-::: tip Core conclusion of this section
-
-Vue is a "precise dependency tracking + push" model; React is a "component dirty marking + pull re-rendering" model. Neither is absolutely superior; they are trade-offs under different design philosophies: Vue uses Proxy to gain fine-grained updates and automatic dependency tracking, while React uses immutability and manual dependencies to gain clearer semantics and more statically analyzable code.
-
-:::
-
----
+Vue is a "precise dependency tracking plus push" model, and React is a "mark the component dirty plus pull render" model. Neither is universally better; they differ in who declares dependencies and who decides update granularity.
 
 ## 7. Several Easy-to-Miss Details
 
@@ -783,12 +726,12 @@ Vue is a "precise dependency tracking + push" model; React is a "component dirty
 ```javascript
 const state = reactive({ count: 0 })
 const { count } = state // after destructuring, count is a plain number
-// later changes to state.count will not update count
+// later changes to state.count do not update count
 ```
 
-Reason: destructuring executes `Reflect.get`, which returns the primitive value and is no longer intercepted by Proxy.
+The reason is that destructuring runs `Reflect.get`, which returns the primitive value that Proxy no longer intercepts.
 
-Solution: use `toRefs` to turn each property into a ref:
+Use `toRefs` to turn each property into a ref:
 
 ```javascript
 const state = reactive({ count: 0 })
@@ -796,114 +739,106 @@ const { count } = toRefs(state)
 count.value // reactive
 ```
 
-### 2. ref Is Automatically Unwrapped in Templates, but Not in JS
+### 2. ref Is Automatically Unwrapped in Templates, Not in JavaScript
 
 ```html
 <template>
-  <div>{{ count }}</div> <!-- auto unwrapped, no .value needed -->
+  <div>{{ count }}</div> <!-- auto-unwrapped; no .value needed -->
 </template>
 
 <script setup>
 const count = ref(0)
 console.log(count) // RefImpl object
-count.value = 1    // in JS, .value is required
+count.value = 1    // in JavaScript, .value is required
 </script>
 ```
 
-This is because Vue's template compiler creates an auto-unwrapping proxy for top-level refs.
+This is the template compiler automatically unwrapping top-level refs, not a behavior of `ref` itself.
 
-### 3. Replacing the Entire reactive Object Does Not Trigger Updates
+### 3. Replacing the Whole reactive Object Does Not Trigger Updates
 
 ```javascript
-const state = reactive({ count: 0 })
-state = reactive({ count: 1 }) // ❌ wrong: state is const, and replacing the reference does not update the view
+let state = reactive({ count: 0 })
+state = reactive({ count: 1 }) // wrong: the view still subscribes to the old object
 ```
 
-Correct approaches:
+The correct approach is to replace a ref's value or assign properties one by one.
 
 ```javascript
 const state = ref({ count: 0 })
-state.value = { count: 1 } // ✅ replace value, trigger update
+state.value = { count: 1 } // correct: replacing value triggers the update
 
 // or
-const state = reactive({ count: 0 })
-Object.assign(state, { count: 1 }) // ✅ assign property by property
+const state2 = reactive({ count: 0 })
+Object.assign(state2, { count: 1 }) // correct: assign properties one by one
 ```
 
 ### 4. Dependency Collection Fails in Asynchronous Code
 
 ```javascript
 watchEffect(async () => {
-  const data = await fetchData() // after await, activeEffect has already been cleared
-  console.log(state.count) // ❌ will not be collected as a dependency
+  const data = await fetchData() // after await, activeEffect has been cleared
+  console.log(state.count) // wrong: this read is not collected as a dependency
 })
 ```
 
-Reason: after `await`, the effect has already exited, and `activeEffect` has been restored to its previous value (usually null). Therefore, reading `state.count` does not trigger track.
+The reason is that after `await`, the effect has exited and `activeEffect` is restored to its previous value (usually `null`). Reading `state.count` at that point does not call `track`.
 
-Solution: read reactive values before await:
+Read reactive values before `await`:
 
 ```javascript
 watchEffect(async () => {
-  const count = state.count // ✅ read before await
+  const count = state.count // correct: read before await
   const data = await fetchData()
   console.log(count)
 })
 ```
 
-### 5. Side-Effect Pitfalls in computed
+### 5. The Side-Effect Trap in computed
 
 ```javascript
 const double = computed(() => {
-  console.log('computing') // ❌ do not perform side effects in computed
+  console.log('computing') // wrong: do not perform side effects in computed
   return state.count * 2
 })
 ```
 
-`computed` should be a pure function. Under the `scheduler` mechanism, computed may be recomputed at unpredictable times (marked dirty on every dependency change, but only recalculated on next read), and side effects may "execute repeatedly" or "be out of order."
+A computed value should be a pure function. On dependency change it only marks itself dirty and computes on the next read. Putting side effects inside makes their timing unpredictable and the benefit hard to reason about.
 
-::: tip Core conclusion of this section
+Common Vue reactivity pitfalls all come from the boundary of Proxy interception: destructuring loses reactivity, ref unwrapping differs by context, object replacement fails, async reads are missed, and computed side effects run at the wrong time. They are not isolated tricks but the same dependency rules showing up in different places.
 
-Common pitfalls in Vue reactivity all come from the "boundaries of Proxy interception": destructuring loses reactivity, differential ref unwrapping behavior, object replacement, asynchronous code, and computed side effects. Understanding why these pitfalls happen is the watershed between "knowing how to use Vue" and "mastering Vue."
+## Conclusion: Reactivity Is a Dependency Contract, Not Automatic Magic
 
-:::
+Thinking of Vue 3 reactivity as a subscription table is more useful than memorizing APIs. Proxy leaves a record on each read and write, `track` writes the current effect into the set for that key, and `trigger` pushes to the set. `ref`, `computed`, and `watch` are different entry points on the same table; they differ in wrapping and scheduling.
 
----
+A small verification is worth running next: wrap code in `effect` that reads two properties, change each property, and observe which change fires and which does not because the property was never read. That experiment explains destructuring failures, missed async reads, and computed's lazy cache at the same time.
+
+The real risk is not forgetting an API but mistaking "read once" for "depends forever." Dependencies are rebuilt every time an effect reruns, and conditionals, early `return`, and `await` can all change them.
 
 ## FAQ
 
-### 1. Why Doesn't Vue 3 Use Proxy to Directly Proxy Primitive Values?
+### 1. Is Vue 3 reactivity faster than React?
 
-A Proxy target must be an object; it cannot proxy `string` / `number` / `boolean`. Therefore, Vue 3 uses `ref` to wrap primitive values in an object's `.value` property, and uses the object's get/set interception to achieve reactivity. This is a JavaScript language limitation, not a design preference.
+They cannot be compared in one dimension. Vue has an advantage in fine-grained updates because it triggers only the relevant effects and does not diff the whole component. React's Virtual DOM and scheduling model also has room in large component trees with many coexisting state values. The difference depends on update patterns, component granularity, and state distribution; no conclusion holds outside a scenario.
 
-### 2. Should I Choose `ref` or `reactive`?
+### 2. Why are dependencies read inside conditional branches lost?
 
-Simple rule: use `ref` for primitive values and `reactive` for objects. But in fact `ref` can also hold objects (internally it will call `reactive`). If you want "replaceable as a whole" semantics (`state.value = newObj`), use `ref`; if you want "modify by property" semantics (`state.count++`), use `reactive`. Combining them is also common: `const state = ref(reactive({ ... }))`.
+An effect rebuilds its dependency set on every run and records only the reads that actually executed. If a branch is skipped this time, its properties are not read, and the old dependencies are removed during cleanup. When the condition changes again, the effect may not be triggered by that property, which looks like a lost dependency. Make the condition itself reactive data that is tracked, or split the logic into separate effects.
 
-### 3. Is Vue 3 Reactivity Faster Than React?
+### 3. Can Vue's reactivity system be used outside Vue?
 
-It cannot be simply compared. Vue has advantages in "fine-grained update" scenarios (only triggering relevant effects, no need to diff the entire component); React also has advantages in "large component tree + lots of state" scenarios (Virtual DOM diff uses less memory than Vue's dependency tracking). The performance differences are more reflected in different usage patterns; conclusions cannot be drawn independent of scenario.
+Yes. `@vue/reactivity` is an independent package and works in non-Vue projects. You can use `reactive` plus `effect` to build a state manager, or use `computed` for derived-state caching in Node.js. Vue 3 split reactivity into its own package specifically so it could be reused outside the framework.
 
-### 4. Why Is `watch` Asynchronous by Default, and Is `watchEffect` Also Asynchronous?
+### 4. Can effects be stopped manually, and what happens to dependencies after a component unmounts?
 
-Both use the scheduler to push callbacks into the queue and execute them on the next tick. This allows multiple state changes within the same tick to be merged into a single callback execution. If synchronous execution is needed, use the `flush: 'sync'` option.
-
-### 5. Is Proxy Really Faster Than defineProperty?
-
-Initialization performance is better (Vue 3 uses lazy proxying, O(1); Vue 2 uses recursive traversal, O(n)). However, the single-read interception cost of Proxy is not necessarily faster than defineProperty — Proxy trap calls themselves have overhead. Overall, Vue 3's performance advantage mainly comes from "laziness" and "precise dependency tracking," not from Proxy itself being faster than defineProperty.
-
-### 6. Can Vue's Reactivity System Be Used Without Vue?
-
-Yes. `@vue/reactivity` is an independent package and can be used in non-Vue projects. For example, you can use `reactive` + `effect` to implement your own state manager, or use `computed` to cache derived state in Node.js. Vue 3 split the reactivity system into an independent package precisely so that it can be used outside the framework.
-
----
+Yes. `ReactiveEffect` provides `stop()`, which clears the dependencies it registered and removes the effect. When a component unmounts, Vue stops its render effect. When effects are created in groups, `effectScope()` can stop them together instead of cleaning them up one by one. A stopped effect no longer responds to dependency changes, but any closures it created still follow normal JavaScript garbage-collection rules.
 
 ## Sources
 
 1. Vue 3 Official Docs - Reactivity Fundamentals: <https://vuejs.org/guide/essentials/reactivity-fundamentals.html>
 2. Vue 3 Official Docs - Reactivity in Depth: <https://vuejs.org/guide/extras/reactivity-in-depth.html>
-3. Evan You - Vue 3 Reactivity Design Discussions: <https://github.com/vuejs/rfcs/discussions/categories/reactivity>
-4. Vue Source Code (packages/reactivity): <https://github.com/vuejs/core/tree/main/packages/reactivity>
+3. Vue 3 Reactivity design discussions: <https://github.com/vuejs/rfcs/discussions/categories/reactivity>
+4. Vue source code (packages/reactivity): <https://github.com/vuejs/core/tree/main/packages/reactivity>
 5. MDN - Proxy: <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy>
 
-This article is also based on the author's practical reading and summarization of the Vue source code.
+This article is also based on the author's reading and synthesis of the Vue source code.

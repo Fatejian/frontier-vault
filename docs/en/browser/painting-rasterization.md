@@ -14,62 +14,51 @@ outline: deep
 
 # Painting and Rasterization: From Layer Composition to Screen Display
 
-> Subtitle: The complete pipeline from Paint Record generation, layer splitting, tile rasterization to GPU compositing, explaining why transform/opacity don't trigger Layout
->
-> Target readers: intermediate to advanced frontend engineers, frontend architects, animation and rendering performance optimization leads
->
-> Reading time: about 26 minutes
+A page can keep animating while the main thread is blocked, and an image can finish downloading without appearing. Both facts are often blamed on "GPU acceleration" or a slow network, but they belong to the same stretch of the rendering pipeline. After Paint, work is divided across threads and processes, and the layer is the unit that makes that division possible. This article follows paint commands, layers, tiles, and the compositor in order. The payoff is a model that explains when work leaves the main thread, which cost you are actually paying, and how to read that split in DevTools.
 
 ::: info In one sentence
-From Paint to screen is an "instruction generation → layer splitting → tile rasterization → GPU compositing" pipeline; understanding this pipeline is the only way to explain why transform animations can stay silky smooth even when the main thread is choked.
+Paint to screen is not one straight thread: drawing commands, rasterization, and compositing are distributed across threads and processes, and layers decide which work can bypass the main thread. Smooth animation depends on that division, not just on how much is painted.
 :::
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [1. What the Paint Stage Does](#1-what-the-paint-stage-does)
-- [2. Layers and Stacking Contexts](#2-layers-and-stacking-contexts)
-- [3. Rasterization: From Vector to Bitmap](#3-rasterization-from-vector-to-bitmap)
-- [4. Compositing: GPU Compositing Principles](#4-compositing-gpu-compositing-principles)
-- [5. Why transform/opacity Don't Trigger Layout](#5-why-transformopacity-dont-trigger-layout)
-- [6. The Correct Understanding of Hardware Acceleration](#6-the-correct-understanding-of-hardware-acceleration)
-- [7. How the Compositor Thread Cooperates with the Main Thread](#7-how-the-compositor-thread-cooperates-with-the-main-thread)
-- [8. Practice: Pinpointing Paint and Raster Bottlenecks](#8-practice-pinpointing-paint-and-raster-bottlenecks)
-- [Conclusion: Compositing Is the Ultimate Battlefield of Performance Optimization](#conclusion-compositing-is-the-ultimate-battlefield-of-performance-optimization)
+- [Starting from a Few Symptoms](#starting-from-a-few-symptoms)
+- [1. What the Paint Stage Does](#_1-what-the-paint-stage-does)
+- [2. Layers and Stacking Contexts](#_2-layers-and-stacking-contexts)
+- [3. Rasterization: From Vector to Bitmap](#_3-rasterization-from-vector-to-bitmap)
+- [4. Compositing: GPU Compositing Principles](#_4-compositing-gpu-compositing-principles)
+- [5. Why transform/opacity Do Not Trigger Layout](#_5-why-transform-opacity-do-not-trigger-layout)
+- [6. Understanding Hardware Acceleration Correctly](#_6-understanding-hardware-acceleration-correctly)
+- [7. How the Compositor Thread Cooperates with the Main Thread](#_7-how-the-compositor-thread-cooperates-with-the-main-thread)
+- [8. Practice: Locating Paint and Raster Bottlenecks](#_8-practice-locating-paint-and-raster-bottlenecks)
+- [Conclusion](#conclusion)
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Introduction
+## Starting from a Few Symptoms
 
-In the previous article "Rendering Pipeline" we covered the stages before Layout. This article focuses on the second half after Layout: **the complete path from paint commands to screen pixels**.
-
-This path is often overlooked by frontend engineers because it "seems far from business logic." Yet it is precisely the key to explaining many phenomena:
+The same rendering pipeline leaves behind phenomena that look unrelated in daily frontend work:
 
 - Why can `transform: translate()` animations stay smooth even when the main thread is choked by JavaScript?
 - Why can't `will-change` be abused, yet it really works?
-- Why does a large blurred `box-shadow` cause FPS to crash?
+- Why does a large blurred `box-shadow` make FPS collapse?
 - Why do `position: fixed` elements sometimes "flicker"?
 - Why isn't GPU acceleration free?
-- Why does an LCP image still need a few hundred milliseconds to display after it has downloaded?
+- Why does an LCP image still need a few hundred milliseconds to appear after it has downloaded?
 
-Understanding this path is understanding "how the browser turns an abstract layer model into concrete pixels." This article will walk you through every step from Paint to screen, and finally build a model that can explain all the phenomena above.
-
-::: tip Core conclusion of this section
-
-Paint and Raster are two different things: Paint generates drawing commands (on the main thread), while Raster turns commands into pixels (on worker threads + GPU). Compositing assembles multiple layers (in the GPU process). The reason `transform/opacity` don't trigger Layout is that they act in the compositing stage, not the Paint stage.
-:::
+All of these point to one question: how does the abstract layer model become pixels on screen?
 
 ---
 
 ## 1. What the Paint Stage Does
 
-### 1.1 Paint Does Not Produce Pixels Directly
+### 1. Paint does not produce pixels directly
 
-A common misconception is that "Paint is drawing the page." But strictly speaking, **the Paint stage does not produce pixels directly**; it produces a **list of drawing commands** (Paint Record, Display List, Paint Ops).
+A common misconception is that "Paint is drawing the page." Strictly speaking, **the Paint stage does not produce pixels directly**; it produces a **list of drawing commands** (Paint Record, Display List, Paint Ops).
 
 A Paint Record looks like this set of abstract commands:
 
-```
+```text
 pushClip(0, 0, 1440, 900)
   drawRect(0, 0, 1440, 900, color=#ffffff)
   drawRect(20, 20, 200, 50, color=#3b82f6)
@@ -80,98 +69,94 @@ pushClip(0, 0, 1440, 900)
 popClip()
 ```
 
-These commands tell the rasterizer: what to draw at which coordinates, in what order, and with what parameters. The order follows the painter's algorithm — later drawings cover earlier ones.
+These commands tell the rasterizer what to draw at which coordinates, in what order, and with which parameters. The order follows the painter's algorithm: later draws cover earlier ones.
 
-### 1.2 Why Not Produce Pixels Directly
+### 2. Why pixels are not produced directly
 
-Separating "command generation" from "command execution" has several benefits:
+Separating command generation from command execution has several benefits:
 
-- **Parallelism**: commands can be distributed to multiple rasterization threads and executed concurrently
-- **Reuse**: if only the layer transform changes, old commands can be reused, skipping Paint
-- **Layering**: each layer generates commands independently, rasterizes independently, and composites independently
-- **Caching**: identical command sequences can be cached as GPU textures and composited directly next time
+- **Parallelism**: commands can be distributed to multiple rasterization threads and executed concurrently.
+- **Reuse**: if only a layer's transform changes, old commands can be reused and Paint skipped.
+- **Layering**: each layer generates commands, rasterizes, and composites independently.
+- **Caching**: identical command sequences can be cached as GPU textures and composited directly next time.
 
-### 1.3 Where Paint Cost Comes From
+### 3. Where Paint cost comes from
 
-The cost of the Paint stage mainly comes from:
+Paint cost mainly comes from:
 
-- **Repaint area**: how many pixels are redrawn each time
-- **Paint complexity**: complexity of shadows, blur, gradients, and filters
-- **Layer count**: each layer must generate its own Paint Record
+- **Repaint area**: how many pixels are redrawn each time.
+- **Paint complexity**: the complexity of shadows, blur, gradients, and filters.
+- **Layer count**: each layer must generate its own Paint Record.
 
-One of the most expensive operations is **large-area blurred shadows**. A shadow like `box-shadow: 0 0 100px rgba(0,0,0,0.5)` forces the browser to either blur in software on the CPU (expensive) or sample multiple times on the GPU (also expensive). If the element is also re-painted repeatedly during animation, FPS will drop sharply.
+One of the most expensive operations is **large-area blurred shadows**. For a shadow like `box-shadow: 0 0 100px rgba(0,0,0,0.5)`, the browser either blurs in software on the CPU (expensive) or samples multiple times on the GPU (also expensive). If the element is repainted repeatedly during an animation, FPS drops sharply.
 
-### 1.4 Paint Output: Paint Layer and Graphics Layer
+### 4. Paint output: Paint Layer and Graphics Layer
 
-In addition to producing the Paint Record, the Paint stage also **splits the page into multiple layers based on stacking contexts**:
+Besides producing Paint Records, the Paint stage **splits the page into layers according to stacking contexts**:
 
-- **Paint Layer**: the basic unit that participates in painting, corresponding to a stacking context
-- **Graphics Layer**: a compositing layer that the compositor can handle independently; each Graphics Layer has its own GPU texture
+- **Paint Layer**: the unit that participates in painting, corresponding to a stacking context.
+- **Graphics Layer**: a layer the compositor can handle independently; each Graphics Layer has its own GPU texture.
 
-Not every Paint Layer is promoted to a Graphics Layer. Only layers that meet specific conditions (such as 3D transforms, `will-change`, animated transform/opacity) are promoted to compositing layers.
+Not every Paint Layer becomes a Graphics Layer. Only layers that meet specific conditions, such as 3D transforms, `will-change`, or animated transform/opacity, are promoted to compositing layers.
 
-::: tip Core conclusion of this section
-
-Paint produces drawing commands rather than pixels, organized by layer. The most expensive Paint operations are large-area blurred shadows and complex filters. The output of Paint is the Paint Record plus a layer list, which is then handed over to rasterization and compositing.
-:::
+Paint therefore outputs two things: drawing commands and a layer list. Rasterization and compositing both use layers as their unit of organization.
 
 ---
 
 ## 2. Layers and Stacking Contexts
 
-### 2.1 Stacking Context
+### 1. Stacking Context
 
-Stacking context is a CSS concept: certain elements become a "stacking context root," whose child elements are stacked internally according to z-order, while the element itself is treated as a whole from the outside.
+Stacking context is a CSS concept: certain elements become a stacking context root. Their children stack internally by z-order, while the element is treated as a whole from the outside.
 
 Common conditions that create a stacking context:
 
-- `position: absolute/relative` + `z-index` not auto
+- `position: absolute/relative` with `z-index` other than auto
 - `position: fixed/sticky`
 - `opacity < 1`
-- `transform` not none
-- `filter` not none
+- `transform` other than none
+- `filter` other than none
 - `will-change` with certain values
-- `<video>`, `<canvas>`, and other replaced elements
+- Replaced elements such as `<video>` and `<canvas>`
 
-### 2.2 From Stacking Context to Layer
+### 2. From stacking context to layer
 
-During the Paint stage the browser maps stacking contexts to layers (Paint Layers). But **not every stacking context becomes an independent layer** — that is the browser's optimization space.
+During Paint, the browser maps stacking contexts to Paint Layers. But **not every stacking context becomes an independent layer**; that gap is where the browser optimizes.
 
-A simple page may have only 1 layer (all content painted together). But when a page has:
+A simple page may have only one layer, with all content painted together. But a page containing:
 
 - a `position: fixed` navigation bar
 - a card with `transform: translateZ(0)`
 - a `<video>` element
 - an overlay with `opacity: 0.5`
 
-each of these may become an independent layer.
+may give each of these its own layer.
 
-### 2.3 Compositing Layer
+### 3. Compositing Layer
 
-A compositing layer is the "VIP" among layers: it has its own independent GPU texture and can be processed directly by the compositor without main-thread involvement.
+A compositing layer is a layer the compositor can handle independently: it has its own GPU texture, so transform and opacity changes do not need the main thread.
 
-Common conditions that trigger compositing layer promotion:
+Common triggers for promotion to a compositing layer:
 
-| Trigger condition | Description |
+| Trigger | Description |
 | --- | --- |
 | 3D transform | `transform: translateZ(0)`, `translate3d`, `rotateX/Y` |
-| `will-change: transform/opacity` | provided real animation is about to happen |
-| Animated `transform/opacity` | at least one animation frame |
+| `will-change: transform/opacity` | provided a real animation is about to happen |
+| Animated `transform/opacity` | at least one animated frame |
 | `<video>`, `<canvas>`, WebGL | replaced elements are composited by nature |
-| `position: fixed` + software compositing | partial browser implementation |
-| `opacity < 1` + already a compositing layer | combined with transform or other conditions |
-| CSS `filter` | partial browser implementation |
+| `position: fixed` with software compositing | in some browser implementations |
+| `opacity < 1` on an existing compositing layer | combined with transform or another condition |
+| CSS `filter` | in some browser implementations |
 
-### 2.4 Side Effects of Compositing Layer Promotion
+### 4. Side effects of promotion
 
-More compositing layers is not always better. Each compositing layer brings:
+More compositing layers is not always better. Each one brings:
 
-- **GPU memory**: each texture costs at least a few hundred KB to several MB
-- **Compositing cost**: the compositor must process more textures; more is slower
-- **Repaint cost**: when a compositing layer's content changes, the entire layer must be re-rasterized
+- **GPU memory**: each texture costs at least a few hundred KB to several MB.
+- **Compositing cost**: the compositor handles more textures, and more is slower.
+- **Repaint cost**: when a compositing layer's content changes, the whole layer must be re-rasterized.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([Page DOM]) --> Stack[Analyze stacking contexts]
     Stack --> PaintLayer[Divide Paint Layers]
@@ -183,98 +168,92 @@ flowchart TB
     GPU --> Composite2[Compositor processes directly]
     Shared --> Composite2
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef normal fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef decision fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef gpu fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef software fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Stack,PaintLayer normal;
-    class Promote decision;
-    class Compositing,GPU,Composite2 gpu;
-    class Software,Shared software;
+    class Start core;
+    class Stack,PaintLayer wait;
+    class Promote block;
+    class Compositing,GPU,Composite2 metric;
+    class Software,Shared work;
 ```
 
-::: tip Core conclusion of this section
-
-Layers come from stacking contexts; compositing layers are the VIPs among layers. Compositing layers can be composited directly by the GPU, skipping the main thread, but each one consumes GPU memory. Abusing `will-change` can cause a "compositing-layer explosion" that actually slows performance.
-:::
+The diagram starts from the page DOM, divides Paint Layers, then decides whether to promote. The two branches differ in their output: compositing layers get independent textures, while normal layers keep sharing their parent's texture. Cost diverges at the same point.
 
 ::: warning Common misconception
 
-Adding `transform: translateZ(0)` to every element to "enable GPU acceleration." This makes the browser create compositing layers for elements that don't really need them, causing memory usage to surge and the compositing stage to slow down. The correct approach is to use it temporarily only for elements that truly need animation.
+Adding `transform: translateZ(0)` to every element to "enable GPU acceleration." This creates compositing layers for elements that do not need them, causing memory usage to surge and the compositing stage to slow down. Use it temporarily, only for elements that actually animate.
 :::
 
 ---
 
 ## 3. Rasterization: From Vector to Bitmap
 
-### 3.1 What Rasterization Does
+### 1. What rasterization does
 
-Rasterization is the process of turning **vector drawing commands** (drawRect, drawText, drawImage) into **real pixel bitmaps**.
+Rasterization turns **vector drawing commands** (drawRect, drawText, drawImage) into **real pixel bitmaps**.
 
-The Paint Record says "draw a 200×50 blue rectangle at (20, 20)"; the rasterizer must calculate which pixels the rectangle covers and what color each pixel should be (taking anti-aliasing, subpixel rendering, text hinting, etc. into account).
+A Paint Record says "draw a 200×50 blue rectangle at (20, 20)"; the rasterizer calculates which pixels the rectangle covers and what color each should be, accounting for anti-aliasing, subpixel rendering, and text hinting.
 
-### 3.2 Tile Splitting
+### 2. Tile splitting
 
-Compositing layers are usually not rasterized all at once; they are cut into small **tiles**, typically 256×256 or 512×512 pixels.
+Compositing layers are usually not rasterized in one pass. They are cut into small **tiles**, typically 256×256 or 512×512 pixels.
 
-Benefits of tile splitting:
+Tile splitting provides:
 
-- **Parallelism**: multiple tiles can be distributed to multiple rasterization threads for concurrent processing
-- **On-demand rasterization**: only the currently visible area is rasterized, plus nearby pre-rasterization, saving resources
-- **Priority**: tiles inside the viewport are rasterized first, then tiles outside the viewport
-- **Incremental updates**: when only part of a layer changes, only the affected tiles are re-rasterized
+- **Parallelism**: multiple tiles go to multiple rasterization threads at once.
+- **On-demand rasterization**: only the visible area plus a margin is rasterized, saving resources.
+- **Priority**: tiles inside the viewport are rasterized before tiles outside it.
+- **Incremental updates**: when part of a layer changes, only the affected tiles are re-rasterized.
 
-### 3.3 Rasterization Thread Pool
+### 3. Rasterization thread pool
 
-Chromium's rasterization does not happen on the main thread, but in the **compositor thread + rasterization worker thread pool**:
+Chromium does not rasterize on the main thread. It uses the **compositor thread plus a rasterization worker pool**:
 
-- **Compositor thread**: responsible for layer management, tile scheduling, and compositor frame generation
-- **Rasterization worker threads**: multiple workers execute tile rasterization concurrently
+- **Compositor thread**: manages layers, schedules tiles, and generates compositor frames.
+- **Rasterization workers**: multiple workers rasterize tiles concurrently.
 
-This is why transform animations can stay smooth even when the main thread is occupied by JavaScript — the compositor thread and worker threads are independent of the main thread.
+This is why transform animations stay smooth even when JavaScript occupies the main thread: the compositor thread and workers are independent of it.
 
-### 3.4 GPU Rasterization vs Software Rasterization
+### 4. GPU rasterization vs. software rasterization
 
-Modern browsers generally use **GPU rasterization**: drawing commands are handed to the GPU, which executes them through GPU shaders and outputs pixels.
+Modern browsers generally use **GPU rasterization**: drawing commands go to the GPU, shaders execute them, and pixels come out.
 
-Advantages of GPU rasterization:
+Its advantages:
 
-- Massive parallelism at the pixel level
-- Text, paths, and images can all be processed by GPU shaders
-- Output is directly a GPU texture, with no CPU↔GPU copy
+- Massive pixel-level parallelism.
+- Text, paths, and images can all be processed by GPU shaders.
+- The output is already a GPU texture, with no CPU-to-GPU copy.
 
-Certain scenarios still fall back to software rasterization (CPU), such as:
+Some scenarios still fall back to software rasterization on the CPU:
 
-- Some complex SVG filters
-- Some CSS filters (such as complex `drop-shadow`)
-- When video memory is insufficient
-- Some non-standard CSS properties
+- certain complex SVG filters
+- certain CSS filters, such as a complex `drop-shadow`
+- insufficient video memory
+- some non-standard CSS properties
 
-### 3.5 Rasterization and LCP
+### 5. Rasterization and LCP
 
-The completion time of LCP (Largest Contentful Paint) essentially depends on **when the LCP element finishes rasterization**. Even if the image has downloaded, decoded, and been laid out, if the compositor thread is queued with other work and the LCP element's tiles have not been rasterized, LCP will not fire.
+The completion time of LCP (Largest Contentful Paint) essentially depends on **when the LCP element finishes rasterization**. Even after the image has downloaded, decoded, and been laid out, LCP will not fire if the compositor thread is busy with other work and the element's tiles are not rasterized.
 
-This is why long main-thread tasks delay LCP — when the main thread is occupied, the Paint stage cannot start, and rasterization cannot begin either.
+This is also why long main-thread tasks delay LCP: while the main thread is occupied, the Paint stage cannot start, so rasterization cannot begin.
 
-::: tip Core conclusion of this section
-
-Rasterization turns drawing commands into pixel bitmaps, split into tiles and executed concurrently. GPU rasterization is the mainstream, but some complex filters fall back to software. The final LCP time depends on rasterization completion; main-thread stalling slows the whole pipeline.
-:::
+When optimizing LCP, therefore, treat download, decode, layout, and rasterization as separate steps. "The image has arrived" does not mean "the image can be shown."
 
 ---
 
 ## 4. Compositing: GPU Compositing Principles
 
-### 4.1 What Compositing Does
+### 1. What compositing does
 
-Compositing is the last step of the rendering pipeline: multiple already-rasterized layers (GPU textures) are assembled in the correct order and with the correct transforms into the final frame, which is output to the screen.
+Compositing is the last step of the pipeline: it assembles multiple already-rasterized layers (GPU textures) in the correct order and with the correct transforms into the final frame, then outputs that frame to the screen.
 
-The essence of compositing is a combination of **textures + transform matrices**:
+Compositing is a combination of **textures and transform matrices**:
 
-```
+```text
 Compositor frame = [
   { texture: layer1, transform: identity, opacity: 1.0 },
   { texture: layer2, transform: translate(100, 50) rotate(15deg), opacity: 0.8 },
@@ -282,35 +261,34 @@ Compositor frame = [
 ]
 ```
 
-The GPU draws each texture to the screen buffer according to its transform matrix, stacked in order, and finally outputs pixels.
+The GPU draws each texture into the screen buffer according to its transform matrix, stacks them in order, and outputs pixels.
 
-### 4.2 Compositing Happens in the GPU Process
+### 2. Where compositing runs
 
-Chromium's compositing is split into two steps:
+Chromium splits compositing into two steps:
 
-- **Compositor thread** (part of the renderer process): decides each layer's position, transform, and visibility, and generates a "compositor frame"
-- **GPU process**: actually executes texture compositing and outputs to the screen
+- **Compositor thread** (part of the renderer process): decides each layer's position, transform, and visibility, then generates a compositor frame.
+- **GPU process**: performs the actual texture compositing and outputs to the screen.
 
-Neither the compositor thread nor the GPU process is **on the main thread**. This is the root reason why "transform animations don't block the main thread."
+Neither runs on the main thread. This is the root reason transform animations do not block the main thread.
 
-### 4.3 Cost of Compositing
+### 3. The cost of compositing
 
-Compositing itself is relatively cheap (just a few texture samples), but it still has costs:
+Compositing is relatively cheap, just a few texture samples, but it is not free:
 
-- **Layer count**: each layer must be sampled once; more is slower
-- **Transform complexity**: 3D transforms are slightly more expensive than 2D transforms
-- **Blend modes**: opacity, blend modes require extra samples
-- **Clipping and masking**: complex masks increase sample count
-- **Oversized textures**: when exceeding the GPU's maximum texture size, splitting is required
+- **Layer count**: each layer must be sampled; more layers are slower.
+- **Transform complexity**: 3D transforms cost slightly more than 2D.
+- **Blend modes**: opacity and blend modes require extra samples.
+- **Clipping and masking**: complex masks increase sample count.
+- **Oversized textures**: textures beyond the GPU limit must be split.
 
-### 4.4 Compositing Frequency
+### 4. How often compositing happens
 
-Compositing happens per frame; 60fps means one compositing every 16.6ms. Even when the page is completely still, the browser is still compositing (compositing a static frame), only the cost is very low.
+Compositing happens on demand. A static page usually does not keep generating new frames; animations and scrolling advance at the display refresh rate, with 60fps corresponding to roughly 16.6ms per frame.
 
-When the user scrolls, the compositor thread can directly update the scroll position and re-composite, **without main-thread involvement** — this is the basis of "non-main-thread scrolling." The precondition is that the scrolling container has no `scroll` event listener, or the listener uses `passive: true`.
+When the user scrolls, the compositor thread can update the scroll position and re-composite **without the main thread**, which is the basis of non-main-thread scrolling. The precondition is that the scrolling container has no `scroll` listener, or that the listener uses `passive: true`.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Main[Main thread]
         direction TB
@@ -350,62 +328,58 @@ flowchart LR
     C1 --> C3 --> G1
     G1 --> G2
 
-    classDef main fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef comp fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef gpu fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
 
-    class M1,M2,M3,M4 main;
-    class C1,C2,C3 comp;
+    class M1,M2,M3,M4 block;
+    class C1,C2,C3 wait;
     class W1,W2,W3 work;
-    class G1,G2 gpu;
+    class G1,G2 metric;
 ```
 
-::: tip Core conclusion of this section
-
-Compositing is the last step of the rendering pipeline, completed in the compositor thread and GPU process without main-thread involvement. This is the fundamental reason why transform/opacity animations can stay smooth when the main thread is stalled. Scrolling can be "non-main-thread scrolling" provided passive listeners are used reasonably.
-:::
+From left to right, the bands are the main thread, compositor thread, rasterization workers, and GPU process. The turning point comes after `Paint Record`: layer and tile scheduling leave the main thread, so compositing that has already started can continue while JavaScript occupies the main thread.
 
 ---
 
-## 5. Why transform/opacity Don't Trigger Layout
+## 5. Why transform/opacity Do Not Trigger Layout
 
-This is the most magical phenomenon in the rendering pipeline and a common interview question. With the pipeline we have covered, the answer is obvious.
+With the pipeline above, this question can be answered directly by asking which stage is triggered.
 
-### 5.1 The Nature of transform
+### 1. The nature of transform
 
-`transform` changes the **visual transform** of an element, not its **layout position**.
+`transform` changes an element's **visual transform**, not its **layout position**.
 
 Specifically:
 
-- `transform: translate(100px, 50px)` changes where the element is **drawn on screen**
-- The element's **layout position** (which affects the positions of other elements) does not change
-- The browser still considers the element at its original position; it is just "moved" to the new position during compositing
+- `transform: translate(100px, 50px)` changes where the element is **drawn on screen**.
+- The element's **layout position**, which affects other elements, does not change.
+- The browser still considers the element to be at its original position and only "moves" it during compositing.
 
-So transform does not trigger Layout — the layout information hasn't changed, so there is no need to recalculate.
+So transform does not trigger Layout: the layout information did not change, so nothing needs to be recalculated.
 
-### 5.2 In Which Stage Does transform Take Effect
+### 2. Which stage transform acts in
 
-transform acts in the **compositing stage**:
+Transform acts in the **compositing stage**:
 
-```
+```text
 Layout (unchanged) → Paint (unchanged) → Raster (unchanged) → Composite (apply transform)
 ```
 
-That is, the element's rasterized texture (bitmap) remains unchanged; it is only drawn to the new position with a transform matrix during compositing. This is why transform animations are so cheap — only the compositing stage works, while the main thread, Layout, Paint, and Raster are all skipped.
+The element's rasterized texture stays the same; a transform matrix draws it at a new position during compositing. This is why transform animations are cheap: only compositing works, while the main thread, Layout, Paint, and Raster are skipped.
 
-### 5.3 Same for opacity
+### 3. opacity works the same way
 
-`opacity` changes the **transparency at draw time**, without changing layout or draw content. The compositor simply adjusts transparency when drawing the layer texture to the screen:
+`opacity` changes the **transparency used when drawing**, without changing layout or draw content. The compositor adjusts transparency while drawing the layer texture to the screen:
 
+```text
+output pixel = source pixel × opacity + pixel below × (1 - opacity)
 ```
-Composited output pixel = original pixel × opacity + pixel below × (1 - opacity)
-```
 
-### 5.4 Full Comparison
+### 4. Full comparison
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Width["Change width/height"]
         direction LR
@@ -422,56 +396,53 @@ flowchart TB
         T1[Composite]
     end
 
-    classDef expensive fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:1.5px;
-    classDef medium fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef cheap fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class W1,W2,W3,W4,W5 expensive;
-    class C1,C2,C3,C4 medium;
-    class T1 cheap;
+    class W1,W2,W3,W4,W5 metric;
+    class C1,C2,C3,C4 block;
+    class T1 work;
 ```
 
-### 5.5 Why transform Must Act on a Compositing Layer
+The three chains get shorter from top to bottom: a geometry change walks from Style to Composite, a color change starts at Paint, and a transform/opacity change leaves only Composite. The key is not the property name but which part of the work stays on the main thread.
 
-If an element is not on a compositing layer, every frame of a transform animation must:
+### 5. Why transform animations need a compositing layer
 
-1. Redo Style on the main thread
-2. Redo Layout on the main thread (even if layout hasn't changed, it must be confirmed)
-3. Redo Paint on the main thread
-4. Redo Raster on the worker thread
-5. Composite
+If the element is not on a compositing layer, every frame of a transform animation must:
 
-This is much more expensive than "only compositing." So the browser **automatically promotes elements with animated transform/opacity to compositing layers**, ensuring the animation takes only the compositing path.
+1. redo Style on the main thread
+2. redo Layout on the main thread, even if layout is unchanged
+3. redo Paint on the main thread
+4. redo Raster on a worker
+5. composite
 
-::: tip Core conclusion of this section
-
-The root reason transform/opacity don't trigger Layout: they change the transform matrix and opacity in the compositing stage, without changing layout information or draw content. The browser automatically promotes elements animated with these properties to compositing layers, so the animation runs entirely through the compositing path.
-:::
+That is far more expensive than compositing alone. The browser therefore **automatically promotes elements with animated transform/opacity to compositing layers**, keeping the animation on the compositing path.
 
 ::: info Key insight
 
-The statement "transform doesn't trigger Layout" should fully be: "when transform acts on a compositing layer and only changes transform/opacity, the entire pipeline only executes in the compositing stage." If the element is not a compositing layer (some edge cases), or if other properties are changed at the same time, Paint or even Layout may still be triggered.
+"transform does not trigger Layout" is shorthand. The full statement is: when transform acts on a compositing layer and only transform/opacity change, the pipeline runs only in the compositing stage. If the element is not on a compositing layer in some edge case, or other properties change at the same time, Paint or even Layout may still be triggered.
 :::
 
 ---
 
-## 6. The Correct Understanding of Hardware Acceleration
+## 6. Understanding Hardware Acceleration Correctly
 
-### 6.1 "GPU Acceleration" Is an Overused Term
+### 1. "GPU acceleration" means more than one thing
 
-What the industry commonly calls "GPU acceleration" usually means: **a layer is promoted to a compositing layer, and its transform/opacity is handled directly by the GPU**.
+What the industry calls "GPU acceleration" usually means that **a layer is promoted to a compositing layer, and its transform and opacity are handled directly by the GPU**.
 
-But the GPU's role in the rendering pipeline goes further:
+The GPU's role in the pipeline goes further:
 
-- **GPU rasterization**: turning drawing commands into pixels (on worker threads + GPU)
-- **GPU compositing**: combining multiple layer textures into the final frame (in the GPU process)
-- **GPU shaders**: executing CSS filters and complex blending
+- **GPU rasterization**: turning drawing commands into pixels on worker threads plus the GPU.
+- **GPU compositing**: combining layer textures into the final frame in the GPU process.
+- **GPU shaders**: executing CSS filters and complex blending.
 
-So strictly speaking, "GPU acceleration" is not a single switch, but different acceleration methods at different stages.
+Strictly speaking, then, GPU acceleration is not a single switch. It is different acceleration methods at different stages.
 
-### 6.2 Hacks That Forcibly Promote Compositing Layers
+### 2. Hacks that force compositing layers
 
-Historical frontend hacks:
+A historically common frontend hack:
 
 ```css
 .gpu-hack {
@@ -483,20 +454,20 @@ Historical frontend hacks:
 }
 ```
 
-These can all force an element to be promoted to a compositing layer and let animation take the compositing path. But the costs are:
+All of these force an element onto a compositing layer and route animation through the compositor. The costs:
 
-- Each compositing layer occupies GPU memory
-- A large number of compositing layers slows the compositing stage itself
-- When video memory is insufficient, worse fallback may be triggered
+- each compositing layer occupies GPU memory
+- many compositing layers slow the compositing stage itself
+- insufficient video memory can trigger a worse fallback
 
-### 6.3 Correct Usage of will-change
+### 3. Correct use of will-change
 
-`will-change` is a browser "heads-up" mechanism: it tells the browser that a property is about to change, so please prepare in advance.
+`will-change` is a heads-up mechanism: it tells the browser that a property is about to change so it can prepare in advance.
 
-Correct usage:
+Appropriate usage:
 
 ```css
-/* The element is about to animate when hovered */
+/* The element is about to animate on hover */
 .card:hover {
   will-change: transform;
 }
@@ -505,16 +476,16 @@ Correct usage:
 }
 ```
 
-Incorrect usage:
+Counterexample:
 
 ```css
-/* Permanently enable will-change for all cards */
+/* Permanently enable will-change for every card */
 .card {
   will-change: transform;
 }
 ```
 
-The correct approach is **event-driven**: add `will-change` just before the animation starts, and remove it after the animation ends. For example, in React:
+The correct approach is **event-driven**: add `will-change` just before the animation starts and remove it after the animation ends. The React snippet below is illustrative and omits imports and ref initialization:
 
 ```jsx
 function Card() {
@@ -536,33 +507,30 @@ function Card() {
 }
 ```
 
-### 6.4 Memory Cost
+### 4. Memory cost
 
-The GPU texture size of each compositing layer is roughly: `width × height × 4 bytes (RGBA)`.
+Using uncompressed RGBA as an estimate, each compositing layer's GPU texture is roughly `width × height × 4 bytes`.
 
-- A 1920×1080 layer is about 8MB
-- A page with 20 such layers uses 160MB of GPU memory
-- When video memory is insufficient, the browser falls back to software compositing and performance drops sharply
+- A 1920×1080 layer is about 8MB.
+- Twenty such layers use about 160MB of GPU memory.
+- When video memory runs out, the browser falls back to software compositing, and performance drops sharply.
 
-::: tip Core conclusion of this section
-
-The accurate term for "GPU acceleration" is "promoting a layer to a compositing layer." `will-change` should be event-driven and removed immediately after use; it must not be left on permanently. Each compositing layer consumes GPU memory; too many will degrade performance.
-:::
+Actual usage also depends on texture format, tile alignment, and driver overhead; the numbers above are only for order-of-magnitude reasoning.
 
 ::: warning Common misconception
 
-Treating `will-change` as a performance optimization "patch" and adding it to every element that might animate. This causes compositing-layer explosion, GPU memory usage to surge, and the page to slow down.
+Treating `will-change` as a performance patch and adding it to every element that might animate. This causes compositing-layer explosion and a surge in GPU memory, which slows the page down.
 :::
 
 ---
 
 ## 7. How the Compositor Thread Cooperates with the Main Thread
 
-### 7.1 Division of Labor
+### 1. Division of labor
 
-| Work | Where it runs | Blocks main thread? |
+| Work | Where it runs | Blocks the main thread? |
 | --- | --- | --- |
-| JS execution | Main thread | Yes |
+| JavaScript execution | Main thread | Yes |
 | Style calculation | Main thread | Yes |
 | Layout | Main thread | Yes |
 | Paint Record generation | Main thread | Yes |
@@ -570,162 +538,130 @@ Treating `will-change` as a performance optimization "patch" and adding it to ev
 | Tile rasterization scheduling | Compositor thread | No |
 | Tile rasterization execution | Worker threads + GPU | No |
 | Compositor frame generation | Compositor thread | No |
-| Final compositing + output | GPU process | No |
+| Final compositing and output | GPU process | No |
 
-### 7.2 What Happens When the Main Thread Is Stalled
+### 2. What happens when the main thread stalls
 
-If the main thread is occupied by a long JavaScript task:
+If a long JavaScript task occupies the main thread:
 
-- **New style changes cannot be processed**: Style, Layout, and Paint all queue and wait
-- **But already-composited layers can continue animating**: the compositor thread works independently, and transform animations keep advancing
-- **New animations cannot start**: because promoting a compositing layer requires the main thread to do Style
+- **New style changes cannot be processed**: Style, Layout, and Paint queue up.
+- **Layers that are already composited keep animating**: the compositor thread works independently, so transform animations continue.
+- **New animations cannot start**: promoting a compositing layer requires Style work on the main thread.
 
-This is the truth behind "the main thread is dead but transform animations are still moving."
+This is the reality behind "the main thread is stuck but the transform animation is still moving."
 
-### 7.3 Non-Main-Thread Scrolling
+### 3. Non-main-thread scrolling
 
 Browser scrolling can bypass the main thread:
 
-- The compositor thread directly updates the scroll position
-- Re-composites layers and outputs a new frame
-- Does not trigger Style, Layout, or Paint
+- the compositor thread updates the scroll position directly
+- layers are re-composited and a new frame is output
+- Style, Layout, and Paint are not triggered
 
-But there are exceptions:
+There are exceptions:
 
-- If there is a `scroll` event listener that is not `passive`, the main thread must execute the listener first, which may block scrolling
-- If scrolling triggers effects that need Layout, such as `position: sticky`, the main thread must be involved
-- If scrolling changes the DOM (such as `scrollTo` + state update), the main thread must be involved
+- a `scroll` listener that is not `passive` must run on the main thread and can block scrolling
+- scrolling that triggers effects needing Layout, such as `position: sticky`, requires the main thread
+- scrolling that changes the DOM, such as `scrollTo` plus a state update, requires the main thread
 
-Therefore the first rule of mobile scrolling performance optimization: **add `passive: true` to scroll listeners**.
+So the first rule of mobile scroll performance is to **add `passive: true` to scroll listeners**.
 
 ```javascript
-// Bad: blocks scrolling
+// Bad: can block scrolling
 element.addEventListener('scroll', handleScroll)
 
 // Good: does not block scrolling
 element.addEventListener('scroll', handleScroll, { passive: true })
 ```
 
-### 7.4 Compositing and Input Events
+### 4. Compositing and input events
 
-The compositor thread is also responsible for handling some input events (such as touch, wheel). The compositor thread can forward events to the main thread (e.g. `click`) or consume them directly (e.g. non-passive scrolling). If the main thread is occupied by a long task, events queue up and INP worsens.
+The compositor thread also handles some input events, such as touch and wheel. It can forward events to the main thread, such as `click`, or consume them directly, such as non-passive scrolling. When the main thread is occupied by a long task, events queue up and INP gets worse.
 
-::: tip Core conclusion of this section
-
-The compositor thread and worker threads are independent of the main thread, which is the foundation of "transform animations don't block the main thread" and "non-main-thread scrolling." But starting new animations and Style/Layout updates still require the main thread. Mobile scroll listeners must use `passive: true`.
-:::
+The compositor thread and workers are independent of the main thread, but starting new animations and updating Style or Layout still need it. Understanding that boundary is how you tell whether an optimization reduces main-thread work or merely moves work to another thread.
 
 ---
 
-## 8. Practice: Pinpointing Paint and Raster Bottlenecks
+## 8. Practice: Locating Paint and Raster Bottlenecks
 
-### 8.1 Performance Panel
+### 1. Performance panel
 
-Record an interaction and examine:
+Record an interaction and inspect:
 
-- **Green Paint blocks**: Paint stage duration
-- **Green Rasterize / Raster Task blocks**: rasterization duration
-- **Green Composite Layers blocks**: compositing duration
-- **Layer list**: the Layers tab shows all layers and the number of compositing layers
+- **Green Paint blocks**: time in the Paint stage.
+- **Green Rasterize / Raster Task blocks**: time spent rasterizing.
+- **Green Composite Layers blocks**: time spent compositing.
+- **Layer list**: the Layers tab shows all layers and how many are compositing layers.
 
-### 8.2 Layers Tab
+### 2. Layers tab
 
 DevTools → More tools → Layers:
 
-- View all layers
-- View each layer's dimensions and memory usage
-- View Paint Profile (paint cost analysis)
-- Detect compositing-layer explosion
+- view all layers
+- view each layer's dimensions and memory usage
+- view the Paint Profile, which breaks down paint cost
+- detect compositing-layer explosion
 
-### 8.3 Rendering Tab
+### 3. Rendering tab
 
-- **Paint flashing**: highlight repainted areas to see which regions are repainting
-- **Layer borders**: show compositing-layer boundaries to see the number of compositing layers
+- **Paint flashing**: highlights repainted regions, showing what is being repainted.
+- **Layer borders**: shows compositing-layer boundaries and count.
 
-### 8.4 Typical Problem Patterns
+### 4. Typical problem patterns
 
-- **Large green Paint blocks**: repaint area is too large, possibly due to large shadows or complex backgrounds
-- **Many Rasterize blocks**: too many layers, or a single layer is too large
-- **Composite Layers is expensive**: compositing-layer explosion
-- **Paint flashing highlights the whole screen**: a full-page repaint may have been accidentally triggered (e.g. changing the `body` background)
+- **Large green Paint blocks**: repaint area is too large, possibly from a big shadow or a complex background.
+- **Many Rasterize blocks**: too many layers, or one layer is too large.
+- **Expensive Composite Layers**: compositing-layer explosion.
+- **Paint flashing covers the whole screen**: a full-page repaint may have been triggered, for example by changing the `body` background.
 
-### 8.5 Optimization Directions
+### 5. Optimization directions
 
-| Problem | Optimization direction |
+| Problem | Direction |
 | --- | --- |
-| Large-area repaint | Reduce repaint area; isolate animated elements into compositing layers |
-| Large shadow/filter | Replace with static images, or simplify the effect |
+| Large-area repaint | Reduce the repaint area; isolate animated elements into compositing layers |
+| Large shadow or filter | Replace with a static image, or simplify the effect |
 | Too many compositing layers | Remove unnecessary `will-change` and `translateZ(0)` |
-| Layer too large | Split large layers, or use `contain` to isolate |
-| Slow rasterization | Control layer count and size; avoid rasterizing entire large lists as one layer |
+| Oversized layer | Split large layers, or isolate with `contain` |
+| Slow rasterization | Control layer count and size; avoid rasterizing a whole long list as one layer |
 
-::: tip Core conclusion of this section
-
-To locate Paint and Raster bottlenecks: use the Performance panel to inspect the distribution and duration of green blocks, the Layers panel to inspect layer count and memory, and Paint flashing to inspect repainted areas. The optimization directions are to reduce repaint area, control compositing-layer count, and avoid large-area blur effects.
-:::
+When diagnosing, first separate whether Paint area, Raster count, or Composite cost is growing. The three point to different fixes, and looking at them together easily assigns the problem to the wrong stage.
 
 ---
 
-## Conclusion: Compositing Is the Ultimate Battlefield of Performance Optimization
+## Conclusion
 
-With a full understanding of the Paint → Raster → Composite pipeline, you should be able to answer:
+Think of the second half of rendering as a division of labor rather than a single sequential pipe: the main thread produces commands, rasterization workers turn commands into pixels, and the GPU assembles layers into frames. Layers mark the boundaries of that division, and compositing layers decide which work can leave the main thread.
 
-- Why can `transform` animations stay silky smooth when the main thread is stalled?
-- Why can't `will-change` be abused?
-- Why does an LCP image still need to wait for rasterization after downloading?
-- Why isn't GPU acceleration free?
-- Why do large amounts of `box-shadow` blur crash FPS?
-
-The final mental model:
-
-> **The core of the second half of the rendering pipeline (Paint → Raster → Composite) is "layers." Each layer independently generates drawing commands, independently rasterizes, and independently composites. `transform/opacity` are cheap because they only act in the compositing stage, skipping all the preceding main-thread work.**
-
-Keep a few key insights in mind:
-
-1. **Paint produces commands, not pixels**: on the main thread; blocks interaction
-2. **Raster turns commands into pixels**: on worker threads + GPU; does not block the main thread
-3. **Composite assembles layers**: in the GPU process; cheapest
-4. **transform/opacity only go through Composite**: this is the root of smooth animations
-5. **Compositing layers have costs**: GPU memory + compositing cost; don't abuse them
-
-Map every performance optimization strategy to this pipeline, and you will have a complete "second-half" performance model.
+Next, take a page you suspect of dropping frames and compare Paint, Raster, and Composite shares in the Performance panel, then confirm layer count and texture memory in the Layers panel. If the main thread is busy while Composite is light, reduce main-thread work first; if Composite itself is heavy, check whether you promoted too many layers.
 
 ---
 
 ## FAQ
 
-### 1. Why can `transform` animations stay silky smooth when the main thread is dead?
+### 1. Why can a transform/opacity animation still drop frames?
 
-Because `transform` acts in the compositing stage, and the compositor thread and GPU process are independent of the main thread. Even if the main thread is occupied by a long JavaScript task, the compositor thread can still advance the transform animation — it only needs to update the transform matrix and re-composite.
+The animation only stays entirely on the compositing path when the element is already on a compositing layer and these properties do not trigger other effects. Frames can still drop if the layer is very large, if there are too many compositing layers, if texture upload or rasterization cannot keep up, or if another paint-triggering property changes at the same time. Judge by the stages that actually appear in the Performance panel, not by the property name.
 
-### 2. Should `will-change` be left on all the time?
+### 2. What do white patches or blur during fast scrolling have to do with tile rasterization?
 
-No. `will-change` pre-creates compositing layers and occupies GPU memory. Leaving it on makes the browser reserve resources for animations that may not happen, causing memory waste and compositing-layer explosion. The correct approach is event-driven: add it just before the animation starts, and remove it after the animation ends.
+Compositing layers are cut into tiles and rasterized on demand. When scrolling outpaces rasterization, tiles entering the viewport may not be ready, so blank or low-resolution placeholders appear. Browsers pre-rasterize a margin to mitigate this, but large layers, complex painting, or a busy main thread can make prefetch fall behind. The fix is to control layer size and paint complexity, not simply to add compositing layers.
 
-### 3. Why does `box-shadow: 0 0 100px` crash FPS?
+### 3. Do `filter` and `opacity` always create a compositing layer?
 
-Large-area blurred shadows are very expensive. The browser either blurs in software on the CPU or samples multiple times on the GPU. If the element is also repainted repeatedly during animation, the blur must be recalculated every repaint, so FPS naturally crashes. Optimization directions: reduce shadow area, replace with a static image, or make the shadow a compositing layer (using `filter: drop-shadow` + `will-change`).
+No. `opacity < 1` creates a stacking context and `filter` affects painting, but promotion to a compositing layer depends on the browser implementation, the property value, and whether an animation exists. Equating "this property is set" with "GPU acceleration is active" is a common misjudgment. Confirm the actual layers in the Layers panel.
 
-### 4. Why does an LCP image still need a few hundred milliseconds to display after downloading?
+### 4. Why doesn't texture memory in the Layers panel match the width × height × 4 estimate?
 
-LCP completion time depends on "rasterization completion time," not just "download completion time." Even if the image has downloaded, decoded, and been laid out, if the main thread is occupied (parsing HTML, long JavaScript tasks), the Paint stage cannot start and rasterization cannot begin. Optimization directions: reduce first-screen JavaScript long tasks, and put the LCP image directly in HTML (so it is discovered earlier).
-
-### 5. Is GPU acceleration free?
-
-No. Each compositing layer consumes GPU memory (about `width × height × 4 bytes`). Too many compositing layers slow the compositing stage itself, and when video memory is insufficient the browser falls back to software compositing. Abusing `will-change` and `transform: translateZ(0)` causes a "compositing-layer explosion" that actually slows performance. GPU acceleration is an optimization tool, but not a free lunch.
-
-### 6. Why should scroll listeners use `passive: true`?
-
-Non-passive scroll listeners block scrolling: the browser must wait for the main thread to finish executing the listener before it can start scrolling, causing jank. `passive: true` tells the browser "this listener will not call `preventDefault`," so the browser can advance scrolling directly on the compositor thread while the main-thread listener runs asynchronously. The first rule of mobile scrolling performance optimization is to add `passive: true` to scroll/touchmove listeners.
+That formula only gives the ideal size of uncompressed RGBA. Actual textures are affected by tile alignment, texture format, mipmaps, driver allocation granularity, and layer overlap, so they are usually larger. The estimate is useful only for orders of magnitude; for memory issues, rely on the Layers panel and the browser process's actual usage.
 
 ---
 
 ## Sources
 
-This article is based on Chromium rendering pipeline documentation, the web.dev performance series, Chrome DevTools documentation, and the author's engineering practice. Key technical details can be found in:
+The following sources directly support the mechanisms and tooling described above:
 
 1. web.dev - Stick to compositor-only properties and manage layer count: [https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count](https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count)
 2. Chromium Graphics documentation: [https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/](https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/)
 3. web.dev - Animate with will-change: [https://web.dev/articles/animations-guide#will-change](https://web.dev/articles/animations-guide#will-change)
-4. Chrome DevTools - Layers panel documentation: [https://developer.chrome.com/docs/devtools/performance/inspector/](https://developer.chrome.com/docs/devtools/performance/inspector/)
+4. Chrome DevTools - Layers panel documentation: [https://developer.chrome.com/docs/devtools/layers/](https://developer.chrome.com/docs/devtools/layers/)
 5. MDN - CSS will-change: [https://developer.mozilla.org/en-US/docs/Web/CSS/will-change](https://developer.mozilla.org/en-US/docs/Web/CSS/will-change)

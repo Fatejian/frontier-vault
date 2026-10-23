@@ -12,11 +12,9 @@ outline: deep
 
 # Frontend Engineer Capability Model: A Growth Framework from T-Shaped to π-Shaped Talent
 
-> Subtitle: Capability dimension division, five-level grading standards, T-shaped limitations and π-shaped construction, and radar-chart self-assessment methods.
->
-> Target readers: Junior and intermediate frontend engineers seeking advancement, senior frontend engineers planning growth paths, and engineering managers defining talent standards.
->
-> Reading time: ~25 minutes.
+Annual plans often list frameworks and tools, then leave the harder question untouched: at what level of complexity can you still deliver without supervision? A longer technology list does not move that ceiling.
+
+This article treats capability as a set of observable behaviors, uses five dimensions and five levels to locate where you currently stand, and compares single-pillar and two-pillar shapes under explicit conditions. The goal is not a better-looking label but a defensible next investment: fix a limiting dimension, or open a second pillar. You will finish with a self-assessment procedure and a decision list for whether π-shaped growth is warranted at all.
 
 ::: info In one sentence
 A frontend engineer's capability measures whether you can stably deliver engineering value across multiple dimensions. Moving from T-shaped to π-shaped means replacing single-point depth with two pillars that reinforce each other.
@@ -24,20 +22,22 @@ A frontend engineer's capability measures whether you can stably deliver enginee
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [1. Why Redefine the Frontend Capability Model](#1-why-redefine-the-frontend-capability-model)
-- [2. Five Dimensions of the Capability Model](#2-five-dimensions-of-the-capability-model)
-- [3. Five-Level Capability Grading Standards](#3-five-level-capability-grading-standards)
-- [4. Limitations of T-Shaped Talent](#4-limitations-of-t-shaped-talent)
-- [5. π-Shaped Talent: Building Two Deep Pillars](#5-π-shaped-talent-building-two-deep-pillars)
-- [6. Capability Radar Chart: Self-Assessment Method](#6-capability-radar-chart-self-assessment-method)
-- [7. Common Capability Shortcomings and Breakthrough Strategies](#7-common-capability-shortcomings-and-breakthrough-strategies)
-- [8. Engineering Applications of the Capability Model](#8-engineering-applications-of-the-capability-model)
+- [Before We Start](#before-we-start)
+- [1. Why Redefine the Frontend Capability Model](#_1-why-redefine-the-frontend-capability-model)
+- [2. Five Dimensions of the Capability Model](#_2-five-dimensions-of-the-capability-model)
+- [3. Five-Level Capability Grading Standards](#_3-five-level-capability-grading-standards)
+- [4. Limitations of T-Shaped Talent](#_4-limitations-of-t-shaped-talent)
+- [5. π-Shaped Talent: Building Two Deep Pillars](#_5-π-shaped-talent-building-two-deep-pillars)
+- [6. Capability Radar Chart: Self-Assessment Method](#_6-capability-radar-chart-self-assessment-method)
+- [7. Common Capability Shortcomings and Breakthrough Strategies](#_7-common-capability-shortcomings-and-breakthrough-strategies)
+- [8. Engineering Applications of the Capability Model](#_8-engineering-applications-of-the-capability-model)
 - [Conclusion: The Capability Model Is a Map, Not a Ruler](#conclusion-the-capability-model-is-a-map-not-a-ruler)
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Introduction
+## Before We Start
+
+### 1. Questions a Technology Checklist Cannot Answer
 
 Many frontend engineers, when doing annual planning, write goals like these:
 
@@ -48,14 +48,15 @@ Many frontend engineers, when doing annual planning, write goals like these:
 
 These goals themselves are fine. The problem is that they only answer "what I know," not "at what complexity I can stably deliver." So a common situation: someone learns a long list of technologies, but the complexity of the problems they solve stays the same, and their capability ceiling barely moves.
 
-::: info In one sentence
-A capability model is a framework. What it measures is "at what complexity you can stably deliver what value." As for "what technologies you know," that is outside its concern.
-:::
+Two engineers can both "know React" and still differ by an order of magnitude. Engineer A completes page development inside an existing scaffold, piles on Redux when state gets complex, and adds `memo` everywhere when performance suffers. Engineer B chooses a state solution from the business complexity, traces slow LCP to an overly deep module graph, and spots code in review that may cause hydration problems.
 
-This article wants to give frontend engineers a genuinely usable capability model. It breaks capability down into several measurable dimensions and uses a grading standard to help you locate where you stand now and what to fix next. The diagram below ties together dimensions, grading, and shape evolution:
+### 2. This Article's Judgment and Main Line
+
+This article defines a capability model (Capability Model) as a framework that uses observable dimensions to describe "at what complexity you can stably deliver what value." It does not grade which APIs you know. It locates your complexity boundary and the next place to invest.
+
+The main line follows a decision order: why a technology checklist fails, which five dimensions to evaluate, how the five levels and the T-shaped and π-shaped forms compare, which constraints distort self-assessment, and what actions follow under which conditions. The diagram below gives the overall shape:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart TB
     Core(("Frontend Capability Model"))
 
@@ -68,7 +69,7 @@ flowchart TB
         D5["Communication & Collaboration"]
     end
 
-    subgraph Levels["Five Capability Levels"]
+    subgraph Levels["Five Complexity Levels"]
         direction LR
         L1["L1 Junior"]
         L2["L2 Intermediate"]
@@ -91,549 +92,468 @@ flowchart TB
     Core --> Shape
 
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef dim fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef level fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef shape fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
     class Core core;
-    class D1,D2,D3,D4,D5 dim;
-    class L1,L2,L3,L4,L5 level;
-    class S1,S2,S3 shape;
+    class D1,D2,D3,D4,D5 wait;
+    class L1,L2,L3,L4,L5 block;
+    class S1,S2,S3 work;
 ```
+
+Read the diagram as three coordinates: dimensions say where to invest, levels say the current complexity boundary, and shapes say how many deep pillars to stand on.
 
 ---
 
 ## 1. Why Redefine the Frontend Capability Model
 
-Over the past decade, the boundaries of the frontend role have kept expanding outward:
+The frontend role's boundary keeps expanding. "jQuery + Ajax" was once enough to get hired; then came an MVVM framework and build tooling; then performance work and engineering experience; now independent system design, cross-platform scenarios, and cross-team collaboration.
 
-- Around 2014, "knowing jQuery + Ajax" was enough.
-- Around 2017, the expectation became "knowing an MVVM framework + build tools."
-- Around 2020, the expectation added "understanding performance optimization, having engineering experience."
-- After 2023, the expectation became "able to independently design systems, work cross-platform, and collaborate across teams."
+As the boundary expands, measuring capability by "how many technologies you know" becomes less accurate. A technology list shows what you have touched, not what you can judge in a complex situation. The common interview question "have you used X" verifies exposure, not complexity.
 
-The moment the boundary expands, it brings a direct problem: measuring capability by "how many technologies you know" is becoming less and less accurate.
+That is why this article splits capability into dimensions. Only when each dimension has observable behavioral standards can capability be located and compared.
 
-Here is a real example. Both engineers "know React":
-
-- Engineer A: Can complete page development within an existing scaffold; starts piling on Redux when state gets complex; throws `memo` at everything when performance issues arise.
-- Engineer B: Can choose state solutions based on business complexity (Context / Zustand / custom-built); can locate that slow LCP is caused by an overly deep module graph; can identify code patterns in Code Review that may cause Hydration issues.
-
-The two look the same on a "technology checklist," but differ by an order of magnitude in "the complexity they can solve."
-
-::: tip Core conclusion of this section
-
-What a capability model measures is "at what complexity you can stably deliver what value." A technology checklist is just a checklist; it cannot support the word "capability."
+::: tip Section takeaway
+A technology checklist records exposure; a capability model records the complexity boundary. The first can be accumulated with time; the second only comes from solving harder problems.
 :::
 
 ---
 
 ## 2. Five Dimensions of the Capability Model
 
-Frontend engineer capability can be broken down into five relatively independent dimensions, each with its own measurement standard.
+The five dimensions are relatively independent. Being strong in one and weak in another is normal. Growth is not about raising all five in sync; it is about identifying the short board and strengthening a pillar.
 
 ### 1. Technical Depth
 
-Technical depth refers to how deeply you can penetrate into a specific technology domain. For frontend engineers, the most common deep pillars are:
+Technical depth is how far you can penetrate a specific domain. For frontend engineers, common depth pillars fall into three groups:
 
-- **JavaScript / TypeScript as languages**: type systems, runtime, V8 execution model, GC, Event Loop.
-- **Browser internals**: rendering pipeline, event loop, network stack, security model.
-- **Framework source code and design philosophy**: React Fiber, Vue reactivity, Svelte compile-time optimization.
+- **Language and runtime**: the JavaScript / TypeScript type system, execution model, V8 JIT and GC
+- **Browser internals**: rendering pipeline, event loop, network stack, security model
+- **Framework source and design**: React Fiber, Vue reactivity, Svelte compile-time optimization
 
-The measure of depth is not "how much source code you have read," but "when you encounter a new problem, can you locate the root cause along the chain."
-
-::: warning Common misconception
-
-Treating "having read the React source code" as equivalent to "having technical depth." Reading source code is only a means. Depth shows up in whether you can use source-level understanding to solve real engineering problems.
-:::
+The measure of depth is not how much source code you have read, but whether you can trace a new problem to its root cause on the chain. Reading source is a means; using it to explain a real failure is the capability.
 
 ### 2. Technical Breadth
 
-Technical breadth refers to your breadth of awareness across different technology stacks and different solutions. It answers the question "what options exist."
+Technical breadth is your awareness of different stacks and solutions. It answers "what options exist." Typical manifestations:
 
-Typical manifestations of breadth:
+- Can explain when SSR, SSG, ISR, Streaming SSR, Islands, and Resumability each fit
+- Knows the differences and trade-offs among Webpack, Vite, Rollup, esbuild, and Turbopack
+- Understands the evolution of CSS approaches: CSS-in-JS, CSS Modules, Tailwind, CSS Variables
 
-- Knowing the applicable scenarios of SSR / SSG / ISR / Streaming SSR / Islands / Resumability.
-- Knowing the differences and trade-offs among Webpack / Vite / Rollup / esbuild / Turbopack.
-- Understanding the evolution of CSS solutions: CSS-in-JS / CSS Modules / Tailwind / CSS Modules + CSS Variables.
-
-The key to breadth is "knowing it exists and being able to judge the applicable scenario"; whether you can use it fluently is secondary. With it, when you do technology selection you have more than one hammer in your hand.
+The key to breadth is knowing that an option exists and being able to judge where it fits. Fluency is secondary. Its direct payoff is having more than one hammer during technology selection.
 
 ### 3. Engineering Ability
 
-Engineering ability refers to the ability to turn code into a maintainable, evolvable, multi-person collaborative system. This is the dimension most easily underestimated in interviews but most decisive for success at work.
+Engineering ability turns code into a maintainable, evolvable system that several people can work on. It is the dimension most often underestimated in interviews and most decisive in practice:
 
-Specific manifestations of engineering ability:
+- Can design reasonable directory structures and module boundaries
+- Can define Code Review standards and actually enforce them
+- Can set up CI/CD, canary release, monitoring, and alerting
+- Can control code quality across a team, including types, tests, lint, and commit conventions
+- Can identify and pay down technical debt instead of letting it accumulate
 
-- Able to design reasonable directory structures and module boundaries.
-- Able to define Code Review standards and actually enforce them.
-- Able to set up CI/CD, canary release, monitoring, and alerting.
-- Able to control code quality in multi-person collaboration (types, tests, Lint, commit conventions).
-- Able to identify and pay down technical debt rather than letting it accumulate indefinitely.
-
-The core of engineering ability in one sentence: make it easier for others to continue working on your code.
+The core can be stated in one sentence: make it easier for others to continue working on your code.
 
 ### 4. Business Understanding
 
-Business understanding refers to whether you can step outside the "implement requirements" perspective and see the business goals behind the requirements.
+Business understanding is the ability to step outside "implement the requirement" and see the business goal behind it. It has levels:
 
-Levels of business understanding:
+- L1: can implement according to the PRD
+- L2: can identify unreasonable parts in the PRD and raise technical counter-suggestions
+- L3: can derive technical investment priorities from business metrics
+- L4: can discover business opportunities and use technical means to drive business outcomes
 
-- L1: Can implement according to the PRD.
-- L2: Can identify unreasonable parts in the PRD and raise technical counter-suggestions.
-- L3: Can derive the priority of technical investment from business metrics.
-- L4: Can proactively discover business opportunities and drive business outcomes through technical means.
-
-Here is a concrete example. The product side says, "Build a campaign landing page that supports custom configuration."
-
-- Engineer at business understanding L1: directly builds a configuration backend + rendering page per the requirement.
-- Engineer at business understanding L3: first asks, "How often is it configured? By operations or by developers? How long is the campaign cycle?" — the answers to these questions directly determine whether to build a visual builder system or just a JSON Schema configuration.
+For example, the request is "build a campaign landing page that supports custom configuration." An engineer at L1 builds a configuration backend plus a rendering page. An engineer at L3 first asks how often it is configured, whether operations or developers configure it, and how long the campaign runs. Those answers determine whether to build a visual builder or a JSON Schema configuration.
 
 ### 5. Communication & Collaboration
 
-Communication and collaboration refer to the ability to drive things forward in cross-role and cross-team scenarios.
+Communication and collaboration is the ability to move work forward across roles and teams:
 
-Typical scenarios:
+- Aligning requirement boundaries with product managers before implementation starts
+- Agreeing on interface contracts with backend to avoid late integration rework
+- Discussing boundary cases with QA before launch exposes a missed critical path
+- Driving a technical proposal across teams with different interests
 
-- Aligning requirement boundaries with product managers, to avoid "starting implementation before the PRD is half written."
-- Agreeing on interface contracts with backend, to avoid late integration rework.
-- Communicating boundary cases with QA, to avoid discovering untested critical paths only after launch.
-- Driving technical solutions across teams, finding balance among stakeholders with different interests.
+Its core is identifying what each role cares about and pushing decisions in a form the other side can accept, not speaking more elegantly.
 
-The core of communication and collaboration is being able to identify the concerns of different roles and drive decisions in a way the other party can accept. Whether you "can talk" is secondary.
+The five dimensions are not parallel labels. Depth and breadth determine what you can see; engineering and business understanding determine what you can deliver; communication determines how many people can adopt it.
 
-::: tip Core conclusion of this section
-
-The five dimensions are relatively independent: a person can be strong in one dimension and weak in another. Growth is not "raising all five dimensions in sync," but "identifying shortcomings + strengthening pillars."
+::: tip Section takeaway
+The five dimensions can be scored separately, but they cannot grow separately. Output in one dimension usually needs support from another: a short board sets the ceiling, a pillar sets irreplaceability.
 :::
 
 ---
 
 ## 3. Five-Level Capability Grading Standards
 
-Combining the five dimensions, we can build a five-level capability grading. Each level's core characteristic is summarized in one sentence: at what complexity can a person at this level independently complete what.
+Combining the five dimensions produces five complexity levels. Each level's core question is "at what complexity can this person independently complete what." Years appear only as a reading coordinate:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#FFF7E6', 'primaryTextColor': '#172033', 'primaryBorderColor': '#F59E0B', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
-    subgraph L1["L1 Junior (0-2 years)"]
+    subgraph L1["L1 Junior: typical 0-2 years"]
         L1A["Can complete explicit<br/>tasks under guidance"]
         L1B["Technical depth: single framework usage"]
         L1C["Engineering ability: follows conventions"]
     end
 
-    subgraph L2["L2 Intermediate (2-4 years)"]
+    subgraph L2["L2 Intermediate: typical 2-4 years"]
         L2A["Can independently complete<br/>module-level features"]
         L2B["Technical depth: understands framework mechanisms"]
         L2C["Engineering ability: writes maintainable code"]
     end
 
-    subgraph L3["L3 Senior (4-6 years)"]
+    subgraph L3["L3 Senior: typical 4-6 years"]
         L3A["Can independently own<br/>a complete business line"]
-        L3B["Technical depth: browser / runtime"]
+        L3B["Technical depth: browser and runtime"]
         L3C["Engineering ability: defines conventions"]
     end
 
-    subgraph L4["L4 Expert (6-8 years)"]
+    subgraph L4["L4 Expert: typical 6-8 years"]
         L4A["Can design complex systems<br/>and solve cross-team problems"]
         L4B["Technical depth: penetrates multiple domains"]
         L4C["Engineering ability: platform construction"]
     end
 
-    subgraph L5["L5 Architect (8+ years)"]
-        L5A["Can define technical direction<br/>and be responsible for business outcomes"]
+    subgraph L5["L5 Architect: typically 8+ years"]
+        L5A["Can define technical direction<br/>and own business outcomes"]
         L5B["Technical depth: full-chain perspective"]
         L5C["Engineering ability: organization-level engineering system"]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5
 
-    classDef l1 fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef l2 fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef l3 fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef l4 fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef l5 fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
 
-    class L1,L1A,L1B,L1C l1;
-    class L2,L2A,L2B,L2C l2;
-    class L3,L3A,L3B,L3C l3;
-    class L4,L4A,L4B,L4C l4;
-    class L5,L5A,L5B,L5C l5;
+    class L1,L1A,L1B,L1C,L2,L2A,L2B,L2C wait;
+    class L3,L3A,L3B,L3C work;
+    class L4,L4A,L4B,L4C metric;
+    class L5,L5A,L5B,L5C core;
 ```
 
-### L1 Junior (0-2 years)
+The years are common experience ranges, not promotion thresholds. What the grading compares is the "independence at increasing complexity" shown to the right of each arrow. Nobody upgrades automatically; people usually get stuck on one dimension of their current level.
 
-**Core characteristic**: Can complete explicit tasks under guidance.
+### L1 Junior (typical 0-2 years)
 
-- **Technical depth**: Proficient in using one framework (React or Vue) to complete page development; understands the mechanism behind basic APIs (e.g., when `useState` triggers re-render).
-- **Technical breadth**: Knows the HTML/CSS/JS triad; has heard of build tools but cannot configure them independently.
-- **Engineering ability**: Can submit code following existing conventions; can accept feedback in Code Review and improve.
-- **Business understanding**: Can implement according to the PRD; not sensitive to the business goals behind requirements.
-- **Communication & collaboration**: Can sync progress within a small team; can proactively raise blockers.
+**Core characteristic**: can complete explicit tasks under guidance.
 
-**Measurement signal**: Given a clear design draft and interfaces, can independently complete a medium-complexity page within 3 days, with no more than 5 major bugs.
+- **Technical depth**: proficient with one framework (React or Vue) for page development; understands the mechanism behind basic APIs, such as when `useState` triggers a re-render
+- **Technical breadth**: knows HTML, CSS, and JavaScript; has heard of build tools but cannot configure them alone
+- **Engineering ability**: can submit code following existing conventions; can accept review feedback and improve
+- **Business understanding**: can implement per the PRD; not sensitive to the business goal behind it
+- **Communication & collaboration**: can sync progress in a small team and raise blockers early
 
-### L2 Intermediate (2-4 years)
+**Behavioral signal**: given a clear design and API contract, can independently deliver a medium-complexity page within the agreed schedule. Rework comes mainly from requirement changes, not misreading.
 
-**Core characteristic**: Can independently complete module-level features.
+### L2 Intermediate (typical 2-4 years)
 
-- **Technical depth**: Understands core framework mechanisms (e.g., Fiber, Reconciler, reactivity system); can locate common performance issues.
-- **Technical breadth**: Familiar with build tool configuration; understands basic SSR principles; knows the evolution of state management solutions.
-- **Engineering ability**: Can write maintainable code (reasonable abstraction, clear naming, single responsibility); can write effective unit tests.
-- **Business understanding**: Can identify boundary cases in the PRD; can raise technical counter-suggestions from a technical angle.
-- **Communication & collaboration**: Can independently interface with backend and QA; can lead small-scale technical solution discussions.
+**Core characteristic**: can independently complete module-level features.
 
-**Measurement signal**: Can independently own a complete business module (e.g., checkout flow, user center) from design to launch without needing guidance from others.
+- **Technical depth**: understands core framework mechanisms such as Fiber, the reconciler, or a reactivity system; can locate common performance problems
+- **Technical breadth**: familiar with build tool configuration; understands basic SSR principles; knows how state management approaches evolved
+- **Engineering ability**: writes maintainable code with reasonable abstraction, clear naming, and single responsibility; can write effective unit tests
+- **Business understanding**: can identify boundary cases in the PRD and raise technical counter-suggestions
+- **Communication & collaboration**: can interface with backend and QA independently; can lead a small technical discussion
 
-### L3 Senior (4-6 years)
+**Behavioral signal**: can own a complete business module, such as checkout or the user center, from design to launch without step-by-step guidance.
 
-**Core characteristic**: Can independently own a complete business line.
+### L3 Senior (typical 4-6 years)
 
-- **Technical depth**: Can locate performance issues from browser low-level chains; understands V8 execution model, rendering pipeline, network stack.
-- **Technical breadth**: Can compare multiple solutions and give selection rationale; has hands-on cross-platform experience (Web / RN / mini-programs).
-- **Engineering ability**: Can define team conventions (Code Review standards, commit conventions, testing strategy); can set up monitoring and alerting.
-- **Business understanding**: Can derive technical investment priorities from business metrics; can use technical means to improve business outcomes.
-- **Communication & collaboration**: Can drive solutions across teams; can find balance among stakeholders with different interests.
+**Core characteristic**: can independently own a complete business line.
 
-**Measurement signal**: Can independently own the technical solution of a business line and significantly improve its core metrics (performance, stability, R&D efficiency) within 3-6 months.
+- **Technical depth**: can trace performance problems down the browser chain; understands the V8 execution model, rendering pipeline, and network stack
+- **Technical breadth**: can compare several solutions and give selection rationale; has hands-on cross-platform experience (Web, React Native, mini-programs)
+- **Engineering ability**: can define team standards for Code Review, commits, and testing; can set up monitoring and alerting
+- **Business understanding**: can derive technical priorities from business metrics and improve business outcomes through technical work
+- **Communication & collaboration**: can drive a proposal across teams and balance different interests
 
-### L4 Expert (6-8 years)
+**Behavioral signal**: can own a business line's technical solution and produce comparable metric improvements within one planning cycle, not just deliver features.
 
-**Core characteristic**: Can design complex systems and solve cross-team problems.
+### L4 Expert (typical 6-8 years)
 
-- **Technical depth**: Has penetrating understanding across multiple domains; can contribute to or fix framework-level issues at the source-code level.
-- **Technical breadth**: Cross-stack vision (frontend + Node + infrastructure); can drive technology migration across different stacks.
-- **Engineering ability**: Can lead platform construction (component libraries, toolchains, low-code platforms).
-- **Business understanding**: Can identify business opportunities; can drive business model innovation through technical means.
-- **Communication & collaboration**: Can drive technical decisions at the organizational level; can influence the technical direction of other teams.
+**Core characteristic**: can design complex systems and solve cross-team problems.
 
-**Measurement signal**: Can lead a cross-team technical project (e.g., company-wide frontend performance optimization, unified engineering platform) and produce measurable organization-level results.
+- **Technical depth**: penetrating understanding across several domains; can contribute to or fix framework-level issues at the source level
+- **Technical breadth**: cross-stack vision across frontend, Node, and infrastructure; can migrate technology between stacks
+- **Engineering ability**: can lead platform construction such as a component library, toolchain, or low-code platform
+- **Business understanding**: can identify business opportunities and use technical means to change how the business operates
+- **Communication & collaboration**: can drive technical decisions at the organization level and influence other teams
 
-### L5 Architect (8+ years)
+**Behavioral signal**: can lead a cross-team technical project, such as company-wide frontend performance governance or a unified engineering platform, and produce measurable organization-level results.
 
-**Core characteristic**: Can define technical direction and be responsible for business outcomes.
+### L5 Architect (typically 8+ years)
 
-- **Technical depth**: Full-chain perspective; can locate root causes at any link.
-- **Technical breadth**: Clear technology landscape; can judge "which technologies are worth investing in."
-- **Engineering ability**: Organization-level engineering system design (R&D process, quality system, technology stack evolution roadmap).
-- **Business understanding**: Can drive business strategy with technology; can participate in business decisions.
-- **Communication & collaboration**: Can translate among C-level executives, product owners, and technical teams.
+**Core characteristic**: can define technical direction and own business outcomes.
 
-**Measurement signal**: Can define the 1-3 year evolution direction of a business line or technical domain and be responsible for the final outcome.
+- **Technical depth**: full-chain perspective; can locate a root cause at any link
+- **Technical breadth**: a clear technology landscape; can judge which technologies deserve investment
+- **Engineering ability**: can design an organization-level engineering system covering R&D process, quality, and stack evolution
+- **Business understanding**: can use technology to drive business strategy and participate in business decisions
+- **Communication & collaboration**: can translate among executives, product owners, and engineering teams
+
+**Behavioral signal**: can define a one-to-three-year evolution direction for a business line or technical domain and own the result.
 
 ::: warning Common misconception
 
-Treating "years of work" as equivalent to "capability level." Years are only a reference. The real grading standard is "the complexity of problems you can independently solve." People who reach L3 in 3 years exist; people who are still at L2 after 10 years are also common.
-:::
-
-::: tip Core conclusion of this section
-
-The use of the five-level grading is to locate "the boundary of complexity you can currently handle independently." The breakthrough point to the next level is often stuck at the bottleneck of the current level.
+Treating years of work as capability level. Years only say how long you have been in the industry; the grading looks at "the complexity you can independently solve." Some people reach L3 in three years; others stay at L2 after ten.
 :::
 
 ---
 
 ## 4. Limitations of T-Shaped Talent
 
-"T-shaped talent" has been the most praised capability model over the past decade: the vertical bar represents depth, the horizontal bar represents breadth.
+The T-shaped model has been the most recommended capability shape of the past decade: the vertical bar is depth, the horizontal bar is breadth. For frontend engineers, the typical profile is proficiency in React or Vue plus familiarity with HTML/CSS, build tools, state management, and basic backend work.
 
-For frontend engineers, the typical T-shaped profile:
+Compared with the I-shaped model, which has only single-point depth, T-shaped is a clear step forward. Under current complexity, however, its limits are equally clear.
 
-- Vertical: proficient in React / Vue frameworks.
-- Horizontal: HTML/CSS/build tools/state management/basic backend.
+### 1. A Single Deep Pillar Depreciates
 
-Compared with "I-shaped" (only single-point depth), the T-shaped model is a big step forward. But under today's complexity, its limitations are becoming more and more obvious:
+If the deep pillar is "React usage," then concurrent rendering, Server Components, and Suspense for Data Fetching all devalue that depth.
 
-### 1. A Single Deep Pillar Is Prone to Obsolescence
-
-If your deep pillar is "React usage," then changes like React 18's concurrent model, Server Components, Suspense for Data Fetching will devalue your depth.
-
-If your deep pillar is "rendering pipeline + React scheduling model," then no matter how React evolves, your depth still holds — because what you understand is a more fundamental, stable structure.
+If the deep pillar is "rendering pipeline + scheduling model," framework changes still leave you with a more stable underlying structure. The same depth attached to an API expires; attached to a mechanism, it lasts longer.
 
 ### 2. A Single Deep Pillar Struggles with Cross-Domain Problems
 
-Many real problems are not "frontend problems" or "backend problems," but "system problems."
+Many real problems are neither purely frontend nor purely backend; they are system problems. Hydration performance, for example, requires understanding the browser rendering pipeline, the server execution model, and the framework's SSR implementation at the same time.
 
-For example, Hydration performance issues require understanding simultaneously:
+An engineer with one deep pillar tends to lose judgment on such problems and push them away as "not my layer."
 
-- Browser rendering pipeline (frontend depth).
-- Server execution model (Node/Edge depth).
-- Framework SSR implementation (framework depth).
+### 3. A Single Deep Pillar Cannot Carry Architectural Responsibility
 
-An engineer with only one deep pillar will lose judgment on cross-domain problems.
+Architecture is trade-offs across several uncertain dimensions. With one deep pillar, judgment is dominated by that pillar, and every problem starts to look like a nail for the same hammer.
 
-### 3. A Single Deep Pillar Struggles to Bear Architectural Responsibility
+### 4. First Decide Whether You Need π-Shaped
 
-An architect's work is to make trade-offs across multiple uncertain dimensions. If you have only one deep pillar, your judgment will be dominated by that pillar, tending to "solve all problems with familiar solutions."
+π-shaped is not a mandatory path for every frontend engineer. If your goal is to remain a deep specialist in one area, one very deep pillar also creates irreplaceability. The typical conditions for needing π-shaped are:
 
-::: tip Core conclusion of this section
+- You are accountable for system outcomes that cross platforms, layers, or teams
+- Your frequent problems can no longer be explained within one domain
+- You need to trade off between two domains, not just optimize inside one
 
-The T-shaped model was sufficient in 2015. Today a single deep pillar can no longer support the requirements of senior roles. The next step is to move toward π-shaped.
-:::
+When none of these holds, forcing a second pillar may only split your attention.
 
 ---
 
 ## 5. π-Shaped Talent: Building Two Deep Pillars
 
-The core of π-shaped talent is two deep pillars plus a certain breadth.
+π-shaped talent combines two deep pillars with a certain breadth. For frontend engineers, common combinations are:
 
-For frontend engineers, common π-shaped combinations:
+- Pillar A: frontend frameworks + browser internals
+- Pillar B: Node.js / server-side / cloud-native
+- Breadth: cross-platform, engineering, performance, business understanding
 
-- Pillar A: Frontend frameworks + browser internals (frontend depth).
-- Pillar B: Node.js / server-side / cloud-native (backend depth).
-- Breadth: cross-platform, engineering, performance optimization, business understanding.
-
-The key to π-shaped is that the two pillars can produce synergy, not randomly picking two.
+The key is not the number of pillars but whether the two can reinforce each other.
 
 ### 1. Criteria for Judging Synergy
 
-To judge whether two pillars have synergy, you can ask three questions:
+To judge whether two pillars have synergy, ask three questions:
 
-1. **Can the depth of pillar A help pillar B solve more complex problems?**
-   - Example: frontend framework depth → helps design a better SSR solution.
-2. **Can the depth of pillar B help pillar A break through its ceiling?**
-   - Example: server-side depth → helps implement BFF, Edge Computing, Streaming SSR.
-3. **Can the combination of the two pillars solve problems that a single pillar cannot?**
-   - Example: full-stack depth → leading the implementation of Islands Architecture.
+1. **Can the depth of pillar A help pillar B solve harder problems?** Frontend framework depth, for example, helps design a better SSR solution.
+2. **Can the depth of pillar B break pillar A's ceiling?** Server-side depth, for example, supports BFF, edge computing, and Streaming SSR.
+3. **Can the combination solve problems neither pillar can handle alone?** Full-stack depth, for example, can lead an Islands Architecture rollout.
 
-If all three answers are "no," that is two independent I-shapes pieced together, not a true π-shape.
+If all three answers are no, you have two independent I-shapes placed side by side, not a π-shape.
 
 ### 2. Choosing the Second Pillar
 
-Do not follow trends when choosing the second pillar; base it on your business scenario.
+Do not choose the second pillar by trend. A more stable basis is the business scenario:
 
-| Business Scenario | Recommended Second Pillar |
+| Business scenario | Suggested second pillar |
 | --- | --- |
-| Mid- to back-office SaaS | Backend architecture + database design (BFF, permission model, data flow) |
+| Mid- and back-office SaaS | Backend architecture + database design (BFF, permission model, data flow) |
 | Consumer content / e-commerce | Performance engineering + CDN / edge computing |
-| Cross-platform business | RN / Flutter / mini-program runtime |
+| Cross-platform business | React Native / Flutter / mini-program runtime |
 | Tool / platform business | Compiler theory + IDE toolchain |
-| AI applications | LLM application engineering + prompt engineering |
+| AI applications | LLM application engineering + context engineering |
+
+The table gives candidate directions, not a standard answer. A more reliable test is whether the most expensive problem in your business over the next year falls inside one of these pillars.
 
 ### 3. The Building Path of π-Shaped
 
-Building π-shaped is not "make A top-level first, then start B." It is a more complex iterative process:
+Building π-shaped is not "make A top-tier first, then start B." It is an iterative process with feedback:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1["Phase 1<br/>I-shaped<br/>Build the first pillar"]
     P2["Phase 2<br/>T-shaped<br/>Expand breadth"]
     P3["Phase 3<br/>Exploration<br/>Identify opportunities in breadth"]
-    P4["Phase 4<br/>Second pillar<br/>Invest in depth construction"]
-    P5["Phase 5<br/>π-shaped<br/>Dual-pillar synergy"]
+    P4["Phase 4<br/>Second pillar<br/>Invest in depth"]
+    P5["Phase 5<br/>π-shaped<br/>Two pillars reinforcing each other"]
 
     P1 --> P2 --> P3 --> P4 --> P5
-
     P5 -. feedback .-> P2
 
-    classDef stage fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef pi fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
-    class P1,P2,P3,P4 stage;
-    class P5 pi;
+    class P1,P2,P3,P4 wait;
+    class P5 metric;
 ```
 
-::: tip Core conclusion of this section
-
-π-shaped is "two deep pillars with synergy," not two T-shapes pieced together. How to choose the second pillar depends on the business scenario, not on hot trends.
-:::
+The path is not a one-way pipeline. Even after reaching π-shaped, you return to T-shaped to widen breadth; the dashed edge represents that feedback. Whether the second pillar works is usually verified in a real project, not confirmed in a planning document.
 
 ---
 
 ## 6. Capability Radar Chart: Self-Assessment Method
 
-An abstract capability model has no practical value if it cannot be applied to self-assessment. Below is a usable radar-chart assessment method.
+An abstract model is useless if it cannot support self-assessment. The method below is not meant to produce a flattering score; it is meant to identify where the next investment should go.
 
 ### 1. Five-Dimension Scoring Table
 
-For each dimension, self-rate on a 1-5 scale:
+Rate each dimension from 1 to 5:
 
 | Dimension | 1 point | 3 points | 5 points |
 | --- | --- | --- | --- |
-| Technical depth | Can use frameworks | Understands framework mechanisms | Can locate problems from low-level chains |
-| Technical breadth | Only knows one stack | Knows multiple solutions and can select | Cross-stack vision, can drive technology migration |
-| Engineering ability | Follows conventions | Writes maintainable code | Defines conventions, leads platformization |
-| Business understanding | Implements per PRD | Identifies boundary cases | Derives technical investment priorities from business metrics |
-| Communication & collaboration | Syncs within team | Cross-functional alignment | Drives decisions across teams |
+| Technical depth | Can use a framework | Understands framework mechanisms | Can trace problems down the chain |
+| Technical breadth | Knows one stack | Knows several solutions and can select | Cross-stack vision and technology migration |
+| Engineering ability | Follows conventions | Writes maintainable code | Defines standards and leads platformization |
+| Business understanding | Implements per PRD | Identifies boundary cases | Derives technical priorities from metrics |
+| Communication & collaboration | Syncs within the team | Aligns across functions | Drives decisions across teams |
 
 ### 2. Scoring Discipline
 
-The biggest risk of self-assessment is "feeling good about yourself." Three alignment methods:
+The biggest risk in self-assessment is feeling good about yourself. Three calibration methods:
 
-1. **Substantiate with concrete events**: Every score must be backed by 1-2 concrete events as evidence. "I score 4 in communication and collaboration" — then name one cross-team decision you led in the last 3 months.
-2. **Calibrate with colleagues**: Find 1-2 long-term collaborators and ask them to rate you on the same dimensions, then compare the differences.
-3. **Compare externally**: Through technical communities, open-source contributions, tech sharing, compare yourself with engineers at the same level.
+1. **Support each score with events**: every score needs one or two concrete events. A four in communication requires a cross-team decision you led in the last six months.
+2. **Calibrate with colleagues**: ask one or two long-term collaborators to rate you on the same dimensions, then compare the gaps rather than the conclusions.
+3. **Compare externally**: use technical communities, open-source work, and talks to see what engineers at the same level are doing.
 
-### 3. Identifying "Shortcomings" vs. "Bottlenecks"
+If you cannot name an event for a score, treat it as one level lower. That is the minimum requirement for turning the chart from a feeling into evidence.
 
-The purpose of the radar chart is to identify improvement priorities. But pay attention to distinguishing two situations:
+### 3. Identifying a "Short Board" Versus a "Bottleneck"
 
-- **Shortcoming**: Significantly lower than other dimensions, limiting the overall level. For example, engineering ability at 2 points while others are all at 4.
-- **Bottleneck**: The capability most critical when breaking through from the current level to the next. For example, when moving from L3 to L4, business understanding and communication & collaboration are usually the bottlenecks.
+The radar chart sets priorities, but a short board and a bottleneck are different:
 
-Fixing shortcomings solves the "bucket effect"; breaking bottlenecks solves "growth stagnation." The two have different priorities at different stages:
+- **Short board**: clearly below the other dimensions and limiting the overall level. Engineering ability at 2 while everything else is 4 is a short board.
+- **Bottleneck**: the capability most critical for breaking into the next level. Moving from L3 to L4, business understanding and cross-team drive are usually the bottleneck.
 
-- L1→L2, L2→L3: prioritize fixing shortcomings.
-- L3→L4, L4→L5: prioritize breaking bottlenecks.
+Their priority changes with stage. From L1 to L3, fix short boards first, because every dimension must hold up as complexity rises. From L3 upward, break the bottleneck first, because further work on the short board has low marginal return.
 
-::: tip Core conclusion of this section
+### 4. A Complete Self-Assessment Procedure
 
-The capability radar chart is a self-assessment tool, but it has to be backed by concrete events, calibrated with colleagues, and compared externally. Otherwise it is easy to feel good about yourself.
-:::
+1. Pick two or three events from the last six months that best represent your current work, and write down what you actually did.
+2. Score the five dimensions from 1 to 5, with every score tied to those events.
+3. Ask one or two collaborators to re-score you, and discuss only the two largest gaps.
+4. Decide whether the gap comes from a short board or a bottleneck, and choose one as the main investment for the next stage.
+5. Define an observable verification signal for that direction, such as leading a cross-team review or completing a root-cause investigation independently.
 
 ---
 
 ## 7. Common Capability Shortcomings and Breakthrough Strategies
 
-### 1. "Pseudo Bottleneck in Technical Depth"
+### 1. The Pseudo-Bottleneck in Technical Depth
 
-Many L2 engineers feel their "depth is insufficient," so they read the React source code, the Vue source code, but after a few months find that their work ability has not improved.
+Many L2 engineers feel their depth is insufficient, so they read the React or Vue source for months and find no visible change in their work.
 
-**Reason**: Depth is not "reading source code," it is "using underlying understanding to solve problems." Reading source code without an application scenario, the knowledge does not precipitate into capability.
-
-**Breakthrough strategy**:
-
-- Pick one recent online issue (performance, memory, stability).
-- Locate the root cause from three angles: browser chain, framework mechanism, runtime.
-- Write the whole process into a technical article or a team sharing.
-
-After finishing this round, depth is no longer "what source code I have read," but "what problems I can solve."
-
-### 2. "Insufficient Engineering Ability"
-
-The biggest bottleneck from L2 to L3 is often engineering ability. Manifestations:
-
-- The code you write is hard for others to take over.
-- You don't know how to define Code Review standards.
-- Team code quality has been low for a long time but you don't know how to improve it.
+The reason is not that source code is useless, but that there is no application scenario. Depth is not what you have read; it is what you can explain and solve with low-level understanding.
 
 **Breakthrough strategy**:
 
-- Proactively take on Code Review work; review at least 5 PRs per week.
-- Lead one team convention definition (e.g., commit conventions, testing conventions).
-- Build monitoring and alerting from scratch once; convert the team's online issues into observable metrics.
+- Pick a recent production issue involving performance, memory, or stability
+- Trace the root cause from three angles: the browser chain, framework mechanisms, and the runtime
+- Write the investigation into an article or a team talk so others can reproduce your judgment
 
-Engineering ability can only be accumulated by "doing engineering"; reading more articles is never enough.
+After one such round, depth has a verifiable carrier.
 
-### 3. "Superficial Business Understanding"
+### 2. Insufficient Engineering Ability
 
-Many technical engineers' understanding of the business stays at "knowing what this feature does." True business understanding needs to go one level deeper:
-
-- What user problem does this feature solve?
-- Which business metrics does this feature affect?
-- How is the ROI of this feature measured?
+The largest bottleneck from L2 to L3 is often engineering ability. Typical signs: others struggle to take over your code, you cannot define Code Review standards, and team code quality stays low with no lever to improve it.
 
 **Breakthrough strategy**:
 
-- Proactively align with product managers on business goals; do not just stare at PRD details.
-- Read business weekly reports and core metric dashboards; understand the impact of your own work.
-- Pick one core metric of a business line and proactively optimize it with technical means.
+- Join Code Review regularly and focus on design and boundaries, not only syntax
+- Lead one round of team standards, such as commit conventions or a testing strategy
+- Build monitoring and alerting once, turning production issues into observable signals
 
-### 4. "Communication & Collaboration Only Within the Familiar Circle"
+Engineering ability is accumulated by doing engineering; reading articles is not enough.
 
-Many engineers communicate smoothly within the team but stumble as soon as they cross teams. This is a typical bottleneck from L3 to L4.
+### 3. Superficial Business Understanding
 
-**Reason**: The core of cross-team communication is not "explaining technology clearly," but "identifying the other party's interests + driving forward in a way the other party can accept."
+Many engineers stop at "knowing what this feature does." One level deeper means answering three questions: what user problem it solves, which business metrics it affects, and how the investment is measured.
 
 **Breakthrough strategy**:
 
-- Lead one cross-team technical project (e.g., unified login, performance optimization, component library co-construction).
-- Before each cross-team communication, first list "what the other party cares about, what the other party worries about, what I can offer."
-- Review the success/failure of each cross-team collaboration to find your own communication pattern.
+- Align with product managers on the business goal, not only PRD details
+- Read business weekly reports and core dashboards to understand the impact of your work
+- Pick one core business metric and run one comparable technical optimization against it
+
+### 4. Communication Only Inside the Familiar Circle
+
+Communicating smoothly inside the team and stumbling across teams is a typical L3-to-L4 bottleneck.
+
+The key to cross-team communication is not explaining technology more clearly; it is identifying the other side's interests and pushing in a form they can accept. Three starting actions:
+
+- Lead one cross-team technical project, such as unified login, performance governance, or a shared component library
+- Before each cross-team conversation, list what the other side cares about, what they worry about, and what you can offer
+- Review each collaboration to find the communication pattern you repeat
 
 ::: warning Common misconception
 
-Using "I'm not good at communication" as an excuse for not growing. Communication and collaboration are learnable skills; the key is "identifying the other party's perspective + practicing feedback," and it has little to do with innate personality.
-:::
-
-::: tip Core conclusion of this section
-
-Every capability shortcoming has a corresponding breakthrough strategy. The shared principle is "use concrete events to verify capability improvement"; reading books and learning technologies alone do not count.
+Using "I am not good at communication" as an explanation for not growing. Communication is a learnable skill; the key is seeing the other side's perspective and practicing, and it has little to do with personality.
 :::
 
 ---
 
 ## 8. Engineering Applications of the Capability Model
 
-The capability model is not only a personal planning tool; it can also be applied to team management.
+The capability model is not only for personal planning. It can enter team management, provided it is used as a calibration tool rather than a labeling device.
 
 ### 1. Hiring and Leveling
 
-Use a unified grading standard to evaluate candidates during hiring, to avoid "giving a senior title just because they feel good." Specific practices:
+A unified grading standard reduces the arbitrariness of "this candidate feels senior." Specific practices:
 
-- Define clear "complexity they can independently solve" for each level.
-- Map interview questions to specific capability dimensions, not "whether they know a certain API."
-- Have multiple interviewers rate independently and calibrate the differences.
+- Define the "complexity the person can independently solve" for each level instead of listing a tech stack
+- Map interview questions to capability dimensions rather than "do you know this API"
+- Have several interviewers rate independently, then calibrate the differences
 
 ### 2. Promotion Evaluation
 
-The key question in promotion evaluation is "whether they are stably outputting at the next level of complexity"; it has little to do with "how many years they have worked."
+The core question in promotion is whether the person already delivers stably at the next level of complexity, not how many years they have worked. Three signals:
 
-Signals to judge:
-
-- Has the candidate had 2-3 events in the last 6 months proving stable output at the next level of complexity?
-- Is the candidate already "too comfortable" at the current level, indicating capability overflow?
-- Will the candidate's shortcomings limit their effectiveness at the next level?
+- Two or three events in the last six months showing stable output at the next level
+- Visible slack at the current level, suggesting capability overflow
+- Whether a short board would limit them at the next level
 
 ### 3. Team Capability Map
 
-Aggregating the capability radar charts of team members gives a team capability map:
+Aggregating members' scores produces a team capability map that answers three questions: which dimensions are team short boards that need hiring or cultivation, which dimensions have redundancy for cross-backup, and which members complement each other.
 
-- Which dimensions are team shortcomings (need to hire or cultivate).
-- Which dimensions have redundancy (can do cross-backup).
-- Which members' capabilities can complement each other.
-
-::: info Engineering insight
-
-Applying the capability model to team management is turning "capability" from a subjective judgment into a measurable, comparable, plannable object.
-:::
+Individual scores should not be used directly for performance review. They fit development planning better, because the scores are subjective and distort once tied to compensation.
 
 ---
 
 ## Conclusion: The Capability Model Is a Map, Not a Ruler
 
-The greatest value of a capability model is that when you do career planning, you no longer have to only write "learn React, learn Node, learn Rust."
+The value of a capability model is that career planning no longer has to read "learn React, learn Node, learn Rust." It answers position and direction: which complexity level I am on, which dimension to strengthen next, and what my short board and bottleneck are.
 
-It can help you answer a few more practical questions:
+It is not a ruler. Do not use it to label yourself or others, and do not treat the five levels as steps you must climb in order. Capability is dynamic and the model is static; the model locates, while growth still happens in the process of solving concrete problems.
 
-- Where am I now?
-- What should I improve next?
-- Which dimension is my shortcoming?
-- What is my bottleneck?
-
-But it is not a ruler — do not use it to label yourself or others. Capability is dynamic; the model is static. The model helps you locate and plan, but real growth always happens in the process of solving concrete problems.
-
-::: info In one sentence
-The capability model is a map, not a destination. The value of a map is to help you decide which way to go next, not to make you stand still arguing whether you are L3 or L4.
-:::
+If you take away one action, make it this: use two or three real events from the last six months to complete one self-assessment, choose one direction, and define a verification signal someone else can observe. Looking back at that signal in six months is more useful than arguing whether you are L3 or L4.
 
 ---
 
 ## FAQ
 
-### 1. I have worked for 5 years but still feel like I am at L2. What went wrong?
+### 1. I have worked for five years but still feel like I am at L2. What went wrong?
 
-Years and capability level do not correspond directly. First do a radar-chart self-assessment to identify the real shortcoming. Common situations: technical depth stays at "can use frameworks" without precipitating into low-level chain understanding; or engineering ability stays at "writing code" without advancing to "defining conventions, leading platformization." After identifying the shortcoming, use concrete events to verify breakthroughs; do not keep piling up technology checklists.
+Do not infer the level from years. Run the radar self-assessment and see whether technical depth is stuck at "can use frameworks" or engineering ability is stuck at "writing code" without reaching "defining standards and leading platformization." If none of the dimensions is low but you never receive harder tasks, the problem may be the environment rather than your capability. In that case, state your growth request to your lead, or move to a context that offers more complexity.
 
-### 2. Are T-shaped and π-shaped really fundamentally different, or is it just conceptual hype?
+### 2. Does every frontend engineer eventually have to become π-shaped?
 
-T-shaped was effective around 2015, because frontend complexity was still within the range a single pillar could cover. But today frontend involves SSR, Edge, cross-platform, AI, and other domains; a single deep pillar can no longer hold up cross-domain problems. π-shaped is a response to "single-pillar failure after complexity rises," not conceptual hype. The judgment standard is simple: in the last six months, was the hardest problem you encountered one that a single deep pillar could no longer solve?
+No. π-shaped solves cross-domain problems and architectural responsibility. If your goal is to go very deep in one area, a single pillar remains valuable.
 
-### 3. What should the second pillar of π-shaped be? Is there a standard answer?
+Use three conditions: whether you must own cross-layer system outcomes, whether your frequent problems exceed one domain, and whether you must trade off between two domains. If none holds, deepen the first pillar first.
 
-There is no standard answer; it depends on the business scenario and personal interest. But there is one judgment principle: the second pillar should have synergy with the first pillar. For example, if the first pillar is frontend framework depth, choosing Node / server-side can synergize to solve SSR, BFF, and other problems; choosing AI engineering can synergize to solve LLM application frontend problems. If the second pillar cannot synergize with the first, that is just two independent I-shapes pieced together.
+### 3. Can this five-level standard be used directly for company leveling?
 
-### 4. My capability radar-chart self-assessment is always not objective. What should I do?
-
-Three alignment methods: (1) every score must be backed by 1-2 concrete events as evidence; (2) find long-term collaborators to rate you on the same dimensions and compare the differences; (3) through technical communities, open-source contributions, tech sharing, compare yourself with engineers at the same level. If you cannot name a concrete event for a score, that score is invalid.
-
-### 5. How should team managers use the capability model for promotion evaluation?
-
-The core question of promotion evaluation is "whether they are stably outputting at the next level of complexity." Specific practices: look at whether the candidate has had 2-3 events in the last 6 months proving stable output at the next level of complexity; whether the candidate is already "too comfortable" at the current level, indicating capability overflow; whether the candidate's shortcomings will limit their effectiveness at the next level. Do not do "promote just because the years of service are up."
+Not directly. The grading here is an experience model that describes complexity boundaries; it does not correspond to any company's job ladder. Company leveling also depends on business scale, scope of impact, and the role track. Teams usually translate the behavioral signals here into their own standard and calibrate with several assessors.
 
 ---
 
 ## Sources
 
-This article is based on industry practice and the author's experience. The five dimensions and five-level grading of the capability model reference engineer capability standards from multiple internet companies. The concept of π-shaped talent comes from observation of the expansion of frontend role boundaries.
+The capability dimensions and grading in this article come from the author's synthesis of engineer leveling systems at several internet companies. They are an experience model, not an official standard of any company. The π-shaped concept comes from observing the expansion of the frontend role and is likewise a judgment, not an industry specification. No publicly verifiable external data is cited; the year ranges are common experience ranges, not hard requirements for promotion or hiring.

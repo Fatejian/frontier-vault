@@ -15,11 +15,7 @@ outline: deep
 
 # Understanding AI Agent Technology: From LLM and RAG to Agent Architecture and the AI Testing System
 
-> Subtitle: A dual perspective on technical principles and testing methods
->
-> Target readers: Mid-to-senior engineers, QA leads, and AI engineering advocates
->
-> Reading time: ~25 minutes
+The most common way AI testing fails is to apply deterministic assertions to probabilistic output, or to see a wrong answer and be unable to tell whether retrieval, generation, or a tool call caused it. This article organizes the topic by failure mode: where an LLM, a RAG pipeline, and an Agent can each go wrong, and how functional, effectiveness, robustness, security, and lifecycle evaluation can prove they did not. The goal is a test design that names the failing layer before it names a metric.
 
 ::: info In one sentence
 Understanding AI technical principles is the prerequisite for doing AI testing well, and a systematic AI testing methodology is the guarantee that lets AI capabilities land stably in real engineering.
@@ -27,75 +23,122 @@ Understanding AI technical principles is the prerequisite for doing AI testing w
 
 ## Table of Contents
 
-- [1. Why You Need a Systematic Understanding of AI Agent Technology](#1-why-you-need-a-systematic-understanding-of-ai-agent-technology)
-- [2. LLM: The Capability Foundation of AI Agents](#2-llm-the-capability-foundation-of-ai-agents)
-- [3. RAG: Giving AI Private Knowledge](#3-rag-giving-ai-private-knowledge)
-- [4. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution](#4-ai-agent-architecture-from-single-turn-dialogue-to-autonomous-execution)
-- [5. AI Functional Testing](#5-ai-functional-testing)
-- [6. AI Effectiveness Evaluation](#6-ai-effectiveness-evaluation)
-- [7. Robustness Testing](#7-robustness-testing)
-- [8. AI Security Testing](#8-ai-security-testing)
-- [9. AI Model Effectiveness Evaluation Methods](#9-ai-model-effectiveness-evaluation-methods)
-- [10. Using AI Testing Methods to Improve R&D and Testing Efficiency](#10-using-ai-testing-methods-to-improve-r-d-and-testing-efficiency)
-- [11. AI Testing Practice Checklist](#11-ai-testing-practice-checklist)
+- [1. Problem and Judgment: Why AI Testing Fails](#_1-problem-and-judgment-why-ai-testing-fails)
+- [2. Full Overview and Reading Path](#_2-full-overview-and-reading-path)
+- [3. LLM: Capability Foundation and Failure Modes](#_3-llm-capability-foundation-and-failure-modes)
+- [4. RAG: The Retrieval Pipeline for Private Knowledge](#_4-rag-the-retrieval-pipeline-for-private-knowledge)
+- [5. Agent Architecture: From Single-Turn Dialogue to Autonomous Execution](#_5-agent-architecture-from-single-turn-dialogue-to-autonomous-execution)
+- [6. AI Functional Testing: Bringing Probabilistic Output into a Contract](#_6-ai-functional-testing-bringing-probabilistic-output-into-a-contract)
+- [7. AI Effectiveness Evaluation: Metrics and Methods](#_7-ai-effectiveness-evaluation-metrics-and-methods)
+- [8. Robustness Testing: Stability Under Unexpected Input](#_8-robustness-testing-stability-under-unexpected-input)
+- [9. AI Security Testing: Attack Surface and Priorities](#_9-ai-security-testing-attack-surface-and-priorities)
+- [10. Evaluation Lifecycle: Offline, Online, and Continuous Monitoring](#_10-evaluation-lifecycle-offline-online-and-continuous-monitoring)
+- [11. Using AI to Improve Testing Efficiency: Boundaries and Preconditions](#_11-using-ai-to-improve-testing-efficiency-boundaries-and-preconditions)
+- [12. AI Testing Practice Checklist](#_12-ai-testing-practice-checklist)
 - [Conclusion: From Technical Understanding to Engineering Practice](#conclusion-from-technical-understanding-to-engineering-practice)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ---
 
-## 1. Why You Need a Systematic Understanding of AI Agent Technology
+## 1. Problem and Judgment: Why AI Testing Fails
 
-When pushing AI engineering forward, many teams write capability requirements directly into job descriptions:
+Many teams write capability requirements for LLM (Large Language Model), RAG (Retrieval-Augmented Generation), and Agent (a runtime that plans, calls tools, and completes tasks) directly into job descriptions:
 
 > Research AI engineering, LLM, RAG, AI Agent and other technical principles, and participate in AI functional testing, AI effectiveness evaluation, and AI security testing.
 
-This description looks clear, but in execution it exposes a fundamental contradiction: **the people who understand the technical principles do not understand the testing methods, and the people who understand the testing methods do not understand the technical principles**.
+The description looks clear, but execution exposes a common gap: **the people who understand the principles do not understand the testing methods, and the people who understand the testing methods do not understand the principles**.
 
-The result is two common problems:
+Two situations follow:
 
-- Engineers can build a RAG pipeline, but do not know how to systematically validate retrieval quality, how to measure hallucination rates, or how to design adversarial samples;
-- Test engineers can write traditional functional cases, but facing the probabilistic output of LLMs, they still test with the "input → expected output exact match" mindset, achieving very low coverage that does not reflect real quality.
+- Engineers can build a RAG pipeline, but they do not know how to validate retrieval quality systematically, how to measure hallucination rates, or how to design adversarial samples.
+- Test engineers can write traditional functional cases, but against the probabilistic output of an LLM they still use "input to expected output exact match." Coverage stays low and does not reflect real quality.
 
-AI testing is fundamentally different from traditional software testing. Traditional software is "input + fixed program = deterministic output", while an AI system is "input + context + probabilistic model = probabilistic output":
+AI testing follows different logic from traditional software testing. Traditional software is "input + fixed program = deterministic output"; an AI system is "input + context + probabilistic model = probabilistic output":
 
 ```text
-Traditional testing: validate "whether the program executes by the rules"
-AI testing: validate "whether the model stably produces expected results within its capability boundary"
+Traditional testing: verify whether the program executes by the rules
+AI testing: verify whether the model stably produces expected results within its capability boundary
 ```
 
-Therefore, understanding AI technical principles is not an "add-on skill" for testers, but a prerequisite for doing AI testing well. Only by understanding Token, the context window, sampling parameters, and the sources of hallucinations can you design test cases that actually catch problems; only by understanding RAG's retrieval and reranking mechanisms can you locate whether the root cause of a "wrong answer" is insufficient retrieval recall or distortion in the generation stage.
+Understanding AI principles is not an add-on skill for testers. It is a precondition for designing cases. Only by understanding tokens, the context window, sampling parameters, and the sources of hallucination can you design tests that catch problems. Only by understanding RAG's retrieval and reranking stages can you tell whether a wrong answer came from missing recall or from generation drift.
 
-Conversely, a systematic AI testing methodology also benefits R&D. It moves the team from "tuning prompts by feel" to "iterating driven by metrics", and from "discovering problems after launch" to "intercepting regressions on the evaluation set in advance".
+A systematic testing method also benefits engineering. It moves a team from "tuning prompts by feel" to "iterating on metrics," and from "discovering problems after launch" to "blocking regressions on an evaluation set."
 
-This article follows the main line of "technical principles → testing methods → efficiency improvement", systematically covering the core principles of LLM, RAG, and AI Agent, as well as the engineering essentials of AI functional testing, effectiveness evaluation, robustness testing, and security testing.
-
-::: tip Core conclusion of this section
-
-Understanding AI technical principles is the prerequisite for doing AI testing well, and a systematic AI testing methodology is the guarantee for landing AI capabilities stably in real engineering. Both sides must be tackled together; neither can be omitted.
-
-:::
-
-::: warning Common misconception
-
-Equating AI testing with "writing a few more prompts and trying them out". The probabilistic output of AI systems means they cannot be tested with deterministic assertions; they require a metric system, an evaluation set, and a regression baseline.
-
-:::
+The main line of this article is this: the principles side explains how the system fails, and the testing side answers how to prove it did not. Together they form the quality loop of AI engineering.
 
 ---
 
-## 2. LLM: The Capability Foundation of AI Agents
+## 2. Full Overview and Reading Path
 
-LLM (Large Language Model) is the capability foundation of AI Agents. An Agent's planning, tool calling, and reflection capabilities are all built on the LLM's text understanding and generation ability. Without understanding how an LLM works, you cannot understand an Agent's capability boundary and failure modes.
+This article covers LLM, RAG, Agent, and testing methods, so the topic is broad. These parts are not parallel topics; they are layers of one causal chain. Model capability determines failure modes, failure modes determine test design, and test results point back to mechanism problems. Keeping one main line, failure modes, is more useful than splitting the material into unrelated articles.
 
-The diagram below shows the key constraint chain of LLMs that needs attention in engineering practice:
+The diagram below shows how the modules depend on one another:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
+flowchart TB
+    Core["Main line: explain failure first and then design verification"]
+
+    L["LLM<br/>Capability and hallucination"]
+    R["RAG<br/>Retrieval and reranking"]
+    A["Agent<br/>Planning and tools"]
+    F["Functional testing<br/>Output contract"]
+    E["Effectiveness evaluation<br/>Metrics"]
+    RB["Robustness testing<br/>Perturbation and boundaries"]
+    S["Security testing<br/>Injection and permissions"]
+    M["Lifecycle evaluation<br/>Offline and online"]
+
+    Core --> L
+    L --> R
+    R --> A
+    L --> F
+    R --> E
+    A --> RB
+    A --> S
+    F --> M
+    E --> M
+    RB --> M
+    S --> M
+
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+
+    class Core core;
+    class L,R,A wait;
+    class F,E work;
+    class RB,S block;
+    class M metric;
+```
+
+The upper half is the principles side and the lower half is the verification side. LLM sampling and hallucination explain why functional testing needs an output contract; the RAG retrieval chain explains why effectiveness must be measured by stage; Agent multi-step execution explains why robustness and security testing are necessary. All four verification lines converge on lifecycle evaluation.
+
+Choose a reading order by goal instead of reading from top to bottom:
+
+- Testing RAG question answering only: read sections 3 and 4, then 6 to 9, focusing on recall, faithfulness, and indirect injection.
+- Testing an Agent: add section 5, and include multi-turn drift, tool failure, and privilege escalation in the test scope.
+- Building an evaluation gate: read sections 7 and 10, then revisit 3 and 4 to confirm metric definitions.
+- Using AI to improve testing efficiency: finish section 6 first, then read section 11; otherwise you cannot judge whether generated results are usable.
+
+The dependency direction is principles, then failure modes, then test methods, then lifecycle. You can skip around, but a later method cannot replace an earlier understanding of the mechanism.
+
+---
+
+## 3. LLM: Capability Foundation and Failure Modes
+
+LLM (Large Language Model) is the capability foundation of an AI Agent. An Agent's planning, tool calling, and reflection sit on top of the LLM's text understanding and generation.
+
+Without understanding how an LLM works, you cannot describe an Agent's capability boundary, and you cannot tell whether a failure came from insufficient model capability, missing context, or sampling variance.
+
+The diagram below shows the constraint chain to watch in engineering practice:
+
+```mermaid
 flowchart LR
-    Input["Input text<br/>Prompt + Context"]
+    Input["Input text<br/>Prompt + context"]
     Token["Tokenization<br/>Splitting and encoding"]
-    Context["Context window<br/>Capacity limit and truncation"]
+    Context["Context window<br/>Capacity and truncation"]
     Sampling["Sampling parameters<br/>temperature / top-p / top-k"]
     Output["Output tokens<br/>Generated token by token"]
 
@@ -104,14 +147,14 @@ flowchart LR
     Context --> Sampling
     Sampling --> Output
 
-    Halluc1["Factuality hallucination<br/>Missing or outdated training knowledge"] -. Scope .-> Context
-    Halluc2["Faithfulness hallucination<br/>Ignoring input constraints or fabricating citations"] -. Scope .-> Sampling
+    Halluc1["Factuality hallucination<br/>Missing or outdated training knowledge"] -. scope .-> Context
+    Halluc2["Faithfulness hallucination<br/>Ignoring input constraints or fabricating citations"] -. scope .-> Sampling
 
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef work fill:#ECFDF3,color:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,color:#A855F7,color:#172033,stroke-width:2px;
 
     class Input,Output work;
     class Token,Context wait;
@@ -119,83 +162,72 @@ flowchart LR
     class Halluc1,Halluc2 metric;
 ```
 
+Read from left to right: input is tokenized, truncated by the window, and finally sampled into output. The two dashed lines mark the scope of hallucination. Factuality hallucination is closer to context and training knowledge, while faithfulness hallucination is closer to generation and sampling. They need separate checks.
+
 ### 1. Token and Tokenization
 
-The smallest unit an LLM processes is not a character, but a Token. A Token can be a word, a sub-word, or even a character. The same Chinese sentence may be split into very different numbers of Tokens by different tokenizers, which directly affects two things:
+The smallest unit an LLM processes is a token, not a character. A token can be a word, a subword, or a single character. The same Chinese sentence can produce different token counts with different tokenizers, which affects two things:
 
-- **Cost**: API billing is usually calculated by Token count;
-- **Context occupation**: the more Tokens, the faster the context window limit is reached.
+- **Cost**: API billing is usually based on token count.
+- **Context occupation**: more tokens means reaching the context window limit sooner.
 
-For example, the phrase "individual income tax declaration" may be split into "individual / income / tax / declaration" or "individual / income tax / declaration" by different tokenizers. When selecting a tokenizer, confirm the Token counting method; estimating by character count will cause cost and window overruns.
+For example, "individual income tax declaration" may split into "individual / income / tax / declaration" or "individual / income tax / declaration." Confirm the token counting method when choosing a model. Estimating by character count can miscalculate both cost and window headroom.
 
 ### 2. Context Window
 
-The context window is the maximum number of Tokens a model can process at once, including both input and output. It determines the information capacity that AI can "place on the workbench" at one time.
+The context window is the maximum number of tokens a model can process at once, including input and output. It determines how much information the AI can keep "on the workbench."
 
 Several engineering implications:
 
-- Content beyond the window will be truncated or forgotten, causing "constraints stated earlier to be ignored later";
-- A larger window does not mean better results; too much irrelevant information dilutes attention and lowers the weight of key information;
-- Multi-turn dialogue, RAG retrieval results, and tool call return values all occupy the window and need active management.
+- Content beyond the window is truncated or forgotten, which shows up as "a constraint stated earlier is ignored later."
+- A larger window does not guarantee better results; too much irrelevant information dilutes attention and lowers the weight of key information.
+- Multi-turn dialogue, RAG retrieval results, and tool returns all occupy the window and need active management.
 
 ### 3. Sampling Parameters
 
-LLM output is not deterministic, but generated through sampling. Sampling parameters directly control the randomness and diversity of output:
+LLM output is not deterministic; it is sampled. Sampling parameters control randomness and diversity:
 
-- **temperature**: controls the "sharpness" of the probability distribution. A lower value makes the model tend to choose the highest-probability Token, with more stable but more conservative output; a higher value makes output more diverse but more easily off-track. Code generation usually uses 0 to 0.3, creative writing uses 0.7 to 1.0.
-- **top-p (nucleus sampling)**: samples only from the set of Tokens whose cumulative probability exceeds p; p is usually set to 0.9 to 1.0.
-- **top-k**: samples only from the k highest-probability Tokens, limiting the selection range.
-- **frequency penalty**: applies a penalty to Tokens that have already appeared, reducing repetition.
-- **presence penalty**: encourages introducing new topics, avoiding spinning on the same point.
+- **temperature**: controls the sharpness of the probability distribution. A lower value makes the model favor the highest-probability token, producing more stable but more conservative output. A higher value produces more variety and more drift. Code generation often uses 0 to 0.3 and creative writing 0.7 to 1.0; these are empirical ranges, not hard standards across models.
+- **top-p (nucleus sampling)**: samples only from the set of tokens whose cumulative probability exceeds p. A common empirical range is 0.9 to 1.0; use the provider's default as the reference.
+- **top-k**: samples only from the k highest-probability tokens, limiting the selection range.
+- **frequency penalty**: penalizes tokens that have already appeared, reducing repetition.
+- **presence penalty**: encourages new topics and avoids circling one point.
 
-In engineering, test scenarios usually require fixing temperature at 0 or near 0 to ensure reproducible results; production scenarios require balancing diversity and stability.
+In engineering, test scenarios usually fix temperature at 0 or close to 0 so results are easier to reproduce. Fixing parameters does not make output fully deterministic; some model services can still differ because of backend version or batching. Control the seed, model version, and retry policy together. Production scenarios balance diversity and stability.
 
 ### 4. Sources and Types of Hallucination
 
-Hallucination is the phenomenon where an LLM generates content that looks plausible but is actually wrong. Understanding the types of hallucination is the prerequisite for designing test cases:
+Hallucination means the LLM generates content that looks plausible but is wrong. Understanding the types is a precondition for test design:
 
-- **Factuality hallucination**: the model generates content inconsistent with objective facts. The root cause is missing, outdated, or incorrect knowledge in the training data. For example, the model does not know the latest policy and still answers by old rules.
-- **Faithfulness hallucination**: the model generates content that conflicts with the given input or context. The root cause is the model ignoring input constraints, over-generalizing, or fabricating citations. For example, in a RAG scenario, the correct document is retrieved, but the model deviates from the document content when answering.
+- **Factuality hallucination**: the model generates content that conflicts with objective facts. The root cause is missing, outdated, or incorrect training knowledge. For example, it does not know a new policy and answers by the old rule.
+- **Faithfulness hallucination**: the model generates content that conflicts with the given input or context. The root cause is ignoring input constraints, over-generalizing, or fabricating citations. In a RAG scenario, the correct document may be retrieved, but the answer still deviates from it.
 
-These two types of hallucination require different testing methods: factuality hallucination requires comparison with an external knowledge base, while faithfulness hallucination requires consistency checks against retrieved content or input constraints.
+The two require different tests: factuality hallucination is checked against an external knowledge base, while faithfulness hallucination is checked for consistency with retrieved content or input constraints.
 
 ### 5. Capability Boundary
 
-The capability boundary of an LLM at least includes:
+An LLM's capability boundary includes at least:
 
-- Knowledge cutoff date: training data has a time limit and cannot cover later events;
-- Reasoning depth: complex multi-step reasoning still makes mistakes, especially in math and long logic chains;
-- Tool awareness: the LLM itself cannot call external tools and needs an Agent framework extension;
-- Real-time capability: the LLM is a static model and cannot actively fetch the latest information.
-
-::: tip Core conclusion of this section
-
-The LLM engineering constraint chain is: input → tokenization → context window → sampling parameters → output. Understanding Token, the context window, sampling parameters, and hallucination types is the foundation for designing AI test cases and locating failure root causes.
-
-:::
-
-::: warning Common misconception
-
-Simply attributing hallucination to "the model is not strong enough". Hallucinations come in multiple types; factuality and faithfulness hallucinations have completely different root causes and testing methods and must be handled separately.
-
-:::
+- Knowledge cutoff: training data has a time limit and cannot answer later events.
+- Reasoning depth: complex multi-step reasoning still fails, especially in long math and logic chains.
+- Tool awareness: the LLM cannot call external tools by itself; an Agent framework must extend it.
+- Real-time capability: the LLM is a static model and cannot fetch the latest information.
 
 ---
 
-## 3. RAG: Giving AI Private Knowledge
+## 4. RAG: The Retrieval Pipeline for Private Knowledge
 
-RAG (Retrieval-Augmented Generation) is the mainstream solution for giving LLMs private knowledge, time-sensitive information, and domain documents. It solves three inherent limitations of LLMs:
+RAG (Retrieval-Augmented Generation) is the mainstream way to give an LLM private knowledge, time-sensitive information, and domain documents. It targets three limitations:
 
-- **Knowledge cutoff**: model training data has a time boundary and cannot answer the latest events;
-- **Private knowledge**: enterprise internal documents, business rules, and product manuals do not appear in training data;
-- **Time sensitivity**: policies and configurations change frequently, and model weights cannot be updated in real time.
+- **Knowledge cutoff**: training data has a time boundary and cannot answer the latest events.
+- **Private knowledge**: internal documents, business rules, and product manuals are not in the training data.
+- **Time sensitivity**: policies and configurations change often, and model weights cannot follow in real time.
 
-The core idea of RAG is straightforward: instead of relying on model memory in the generation stage, retrieve relevant knowledge before generation and provide it to the model as context.
+The idea is straightforward: do not rely on model memory alone; retrieve the relevant knowledge before generation and feed it to the model as context.
 
-The diagram below shows the complete RAG pipeline:
+The diagram below shows the full RAG pipeline:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart LR
     Doc["Raw document<br/>PDF / HTML / Markdown"]
     Chunk["Chunking<br/>Fixed length / semantic / recursive"]
@@ -219,7 +251,7 @@ flowchart LR
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,color:#22C55E,color:#172033,stroke-width:1.5px;
     classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
     class Doc,Query,Answer work;
@@ -229,111 +261,106 @@ flowchart LR
     class LLM core;
 ```
 
+There are two paths: the offline path chunks and embeds documents into the vector store, and the online path retrieves, reranks, and hands the result to the LLM. When troubleshooting, first decide which path failed: did indexing miss the document, or did online retrieval fail to recall the correct chunk?
+
 ### 1. Chunking Strategy
 
-Documents need to be split into chunks to be effectively retrieved and embedded. The chunking strategy directly affects retrieval quality:
+Documents must be split into chunks to be retrieved and embedded effectively. The chunking strategy directly affects retrieval quality:
 
-- **Fixed-length chunking**: splits by character count or Token count; simple to implement but may break semantics. Usually combined with an overlap window to reduce boundary information loss.
-- **Semantic chunking**: splits by paragraph, heading, or sentence boundaries to preserve semantic integrity. Suitable for structured documents.
-- **Recursive chunking**: first splits by large structure (chapter), then by small structure (paragraph), layer by layer. Balances granularity and semantics, and is the current mainstream solution.
+- **Fixed-length chunking**: split by character or token count. Simple to implement, but it can break semantics. An overlap window is usually added to reduce boundary loss.
+- **Semantic chunking**: split by paragraph, heading, or sentence boundary. It preserves semantic integrity and suits structured documents.
+- **Recursive chunking**: split by large structure first, then by smaller structure, layer by layer. It balances granularity and semantics and is common in practice.
 
-Too-large chunks dilute relevance and occupy the window; too-small chunks lose context. How to chunk depends on document type and query scenario; there is no one-size-fits-all parameter.
+Too-large chunks dilute relevance and occupy the window; too-small chunks lose context. The choice depends on document type and query scenario. There is no universal parameter.
 
-### 2. Embedding Model and Vector Database
+### 2. Embedding Models and Vector Databases
 
-An embedding model converts text into high-dimensional vectors, so that semantically similar text is closer in vector space. When choosing an embedding model, pay attention to:
+An embedding model converts text into high-dimensional vectors so that semantically similar text is closer in vector space. When choosing one, consider:
 
-- Supported languages and domains (general vs legal vs medical);
-- Vector dimension (affects storage and retrieval efficiency);
-- Maximum input length (determines the upper limit of a single chunk).
+- Supported languages and domains (general, legal, medical).
+- Vector dimension (affects storage and retrieval efficiency).
+- Maximum input length (sets the limit for a single chunk).
 
-The vector database is responsible for storing and retrieving vectors; common options include FAISS, Milvus, Pinecone, Weaviate, and Qdrant. When selecting, pay attention to: scale scalability, filtering capability (filtering by metadata), hybrid retrieval support, and deployment method.
+A vector database stores and retrieves vectors. Common options include FAISS, Milvus, Pinecone, Weaviate, and Qdrant. Evaluate scalability, metadata filtering, hybrid retrieval support, and deployment model.
 
 ### 3. Retrieval Strategy
 
-- **Dense Retrieval**: retrieves based on vector similarity; good at semantic matching but insensitive to exact keywords.
-- **Sparse Retrieval**: matches based on keywords (such as BM25); good at exact matching of terms and identifiers but insensitive to semantic paraphrasing.
-- **Hybrid Retrieval**: combines dense and sparse retrieval results through weighted fusion or reranking to complement each other. This is the recommended approach for production environments.
+- **Dense retrieval**: based on vector similarity. Strong at semantic matching, weak on exact keywords.
+- **Sparse retrieval**: based on keyword matching such as BM25. Strong at exact terms and identifiers, weak on semantic paraphrases.
+- **Hybrid retrieval**: combines dense and sparse results through weighted fusion or reranking. It is usually more stable when both exact terms and paraphrases are present, but it adds indexing and tuning cost.
 
 ### 4. Reranking
 
-Initial retrieval usually returns many candidates. The reranking stage uses a more refined model to re-score candidates and put the most relevant chunks first. Reranking models are slower than embedding models but more accurate, so a two-stage architecture of "coarse filtering then fine ranking" is generally adopted.
+Initial retrieval returns a set of candidates. Reranking uses a more precise model to score them again and move the most relevant chunks to the front. Reranking models are usually slower than embedding models but more accurate, so the common pattern is "coarse filter, then fine rank."
 
 ### 5. Citation and Traceability
 
-RAG answers should support citation traceability, that is, annotating which chunk of which document each conclusion comes from. This not only improves credibility but is also a key basis for locating "hallucination sources" during testing. An answer without citations cannot be judged as model fabrication or based on retrieved content.
+A RAG answer should support citation traceability, marking which chunk of which document each conclusion came from. That improves trust and provides the evidence needed to locate hallucination sources during testing.
 
-::: tip Core conclusion of this section
+An answer without citations does not tell you whether the model made something up or followed retrieved content.
 
-RAG quality is jointly determined by the four stages of chunking, embedding, retrieval, and reranking. A defect in any stage will cause "not retrieved" or "retrieved but not used". When testing, locate by stage rather than only looking at the final answer.
-
-:::
-
-::: info Engineering insight
-
-RAG testing cannot only test the final answer; it must separately measure the retrieval stage (recall, precision) and the generation stage (faithfulness, citation accuracy) to locate the quality bottleneck in each segment.
-
-:::
+When RAG fails, locate the segment first: empty recall, the correct chunk pushed down by ranking, or generation ignoring the evidence. The three have different fixes.
 
 ---
 
-## 4. AI Agent Architecture: From Single-Turn Dialogue to Autonomous Execution
+## 5. Agent Architecture: From Single-Turn Dialogue to Autonomous Execution
 
-The LLM itself is a model that "receives text and outputs text". An Agent is a runtime framework built on top of the LLM, enabling AI to perceive the environment, plan tasks, call tools, observe results, reflect and correct, and ultimately autonomously complete multi-step goals.
+An LLM is a model that receives text and outputs text. An Agent is a runtime framework built on top of the LLM that lets the AI perceive the environment, plan tasks, call tools, observe results, reflect, and correct, until it completes a multi-step goal.
 
-### 1. Difference Between Agent and Chatbot
+### 1. Agent Versus Chatbot
 
 | Dimension | Chatbot | Agent |
 |---|---|---|
-| Interaction mode | Single-turn or passive multi-turn | Proactive multi-step execution |
-| Tool usage | None | Actively calls external tools |
-| State management | Only dialogue history | Short-term + long-term memory |
-| Failure handling | Directly returns an error | Observes failure → reflects → retries |
-| Goal achievement | Answers questions | Completes tasks |
+| Interaction | Single-turn or passive multi-turn | Proactive multi-step execution |
+| Tool use | None | Calls external tools actively |
+| State management | Dialogue history only | Short-term and long-term memory |
+| Failure handling | Returns an error | Observes, reflects, and retries |
+| Goal | Answers a question | Completes a task |
 
-In one sentence: the endpoint of a Chatbot is "give an answer", while the endpoint of an Agent is "complete a task".
+In one sentence: a Chatbot ends with an answer, while an Agent ends with a completed task.
 
 ### 2. Planning
 
-Planning is the Agent's ability to decompose a complex goal into executable steps. Common patterns include:
+Planning is the Agent's ability to decompose a complex goal into executable steps. Three patterns are common:
 
-- **ReAct (Reasoning + Acting)**: alternates reasoning and acting, thinking first then executing at each step; suitable for exploratory tasks.
-- **Plan-and-Execute**: first formulates a complete plan then executes step by step; suitable for tasks with clear steps but complex dependencies.
-- **Dynamic replanning**: adjusts the plan based on observations during execution to handle unexpected situations.
+- **ReAct (Reasoning + Acting)**: alternates reasoning and acting; suitable for exploratory tasks.
+- **Plan-and-Execute**: fixes a complete plan first and then executes it; suitable for tasks with clear steps but complex dependencies.
+- **Dynamic replanning**: adjusts the plan from observations during execution to handle surprises.
 
 ### 3. Tool Calling
 
-Tool calling (Function Calling / Tool Use) is the Agent's ability to interact with the external world. The model selects the appropriate tool based on the task and generates call parameters, and the framework executes the tool and returns the result to the model.
+Tool Calling, also called Function Calling, is how the Agent interacts with the outside world. The model selects a tool and generates arguments, and the framework executes the tool and returns the result to the model.
 
-Key issues:
+Three questions matter:
 
-- **Tool selection accuracy**: whether the model chose the right tool;
-- **Parameter generation correctness**: whether parameter types, formats, and values match the tool signature;
-- **Result interpretation capability**: whether the model can correctly understand the structured data returned by the tool.
+- **Tool selection accuracy**: did the model choose the right tool?
+- **Parameter correctness**: do the types, formats, and values match the tool signature?
+- **Result interpretation**: can the model understand the structured data the tool returns?
 
 ### 4. Memory
 
-- **Short-term memory**: context within the current task, including dialogue history, executed steps, and intermediate results. Limited by the context window.
-- **Long-term memory**: information persisted across tasks, usually implemented through a vector database or key-value store, supporting on-demand retrieval.
+- **Short-term memory**: context within the current task, including dialogue history, executed steps, and intermediate results. It is limited by the context window.
+- **Long-term memory**: information persisted across tasks, usually in a vector database or key-value store, retrieved on demand.
 
-Memory management is critical to Agent stability. Too-long memory causes window overflow and attention dilution; too-short memory causes context loss and repeated execution.
+Memory management is central to Agent stability. Too much memory overflows the window and dilutes attention; too little loses context and repeats work.
 
 ### 5. Reflection
 
-Reflection (Self-Critique) is the Agent's ability to evaluate its own execution results and correct them. For example, after a test execution fails, the Agent analyzes the failure cause, judges whether it is an environment issue, a data issue, or a code issue, and then decides the next action. Reflection moves the Agent from "blind execution" to "acting while correcting".
+Reflection (Self-Critique) is the Agent's ability to evaluate its own results and correct them. For example, when a test fails, the Agent analyzes whether the cause is the environment, the data, or the code, and decides the next step.
+
+Reflection moves the Agent from blind execution to correction during execution, but it depends on readable failure signals. If a tool only returns "failed," reflection has nothing to work with.
 
 ### 6. Multi-Agent Collaboration
 
-Complex tasks can be split among multiple specialized Agents collaborating. Common patterns include:
+Complex tasks can be split among specialized Agents. Three patterns are common:
 
-- **Supervisor + Executor**: one Agent is responsible for splitting and dispatching, while other Agents execute subtasks;
-- **Debate**: multiple Agents propose solutions from different angles, then aggregate into a decision;
-- **Pipeline**: Agents form an upstream-downstream relationship, where the output of one is the input of the next.
+- **Supervisor and executor**: one Agent splits and dispatches work while others execute subtasks.
+- **Debate**: several Agents propose solutions from different angles, then aggregate a decision.
+- **Pipeline**: Agents form an upstream-downstream chain, where one output is the next input.
 
 The diagram below shows the core execution loop of an Agent:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Perceive["Perceive<br/>Receive task and environment"]
     Plan["Plan<br/>Decompose steps and select tools"]
@@ -347,19 +374,19 @@ flowchart TB
     ToolCall --> Observe
     Observe --> Reflect
     Reflect --> Act
-    Act -. Need to continue .-> Plan
+    Act -. need to continue .-> Plan
 
-    Memory[("Memory<br/>Short-term + Long-term")]
+    Memory[("Memory<br/>Short-term + long-term")]
 
-    Perceive -. Read/Write .-> Memory
-    Plan -. Read/Write .-> Memory
-    Observe -. Write .-> Memory
-    Reflect -. Read/Write .-> Memory
+    Perceive -. read and write .-> Memory
+    Plan -. read and write .-> Memory
+    Observe -. write .-> Memory
+    Reflect -. read and write .-> Memory
 
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,color:#22C55E,color:#172033,stroke-width:1.5px;
     classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
     class Perceive,Act work;
@@ -368,64 +395,54 @@ flowchart TB
     class Memory metric;
 ```
 
-::: tip Core conclusion of this section
-
-The core of an Agent is the closed loop of "perceive → plan → tool call → observe → reflect → act", with memory running through the whole process. The key to Agent testing is to validate that each step of the loop executes as expected, not just to test the final output.
-
-:::
-
-::: warning Common misconception
-
-Believing that "having a tool-calling API makes it an Agent". A real Agent needs planning, reflection, and dynamic adjustment capability; otherwise it is only "a Chatbot with tools".
-
-:::
+Solid lines are the main loop and dashed lines are memory reads and writes. The critical turn is reflection to act to plan: if reflection cannot change the next plan, the loop degrades into a fixed sequence, and the Agent is only a Chatbot with tools.
 
 ---
 
-## 5. AI Functional Testing
+## 6. AI Functional Testing: Bringing Probabilistic Output into a Contract
 
-AI functional testing focuses on "whether the system executes by design". Unlike traditional functional testing, it must handle probabilistic output, multi-turn state, and the uncertainty of tool calling.
+AI functional testing asks whether the system executes as designed. It differs from traditional functional testing because it must handle probabilistic output, multi-turn state, and tool call uncertainty.
 
 ### 1. Input Equivalence Class Partitioning
 
-The input space of an AI system is almost infinite; equivalence class partitioning must be used to control test scale:
+The input space of an AI system is nearly infinite, so equivalence classes reduce the test scope:
 
-- **Valid input**: normal input that meets Prompt constraints, validating functional correctness;
-- **Invalid input**: input beyond constraints (such as requiring JSON but giving plain text), validating degradation and error messages;
-- **Boundary input**: empty input, single character, window-upper-limit length, special character combinations;
-- **Adversarial input**: injection attempts, privilege-escalation instructions, Prompt manipulation.
+- **Valid input**: normal input that meets prompt constraints, used to verify functional correctness.
+- **Invalid input**: input outside the constraints, such as plain text when JSON is required, used to verify degradation and error messages.
+- **Boundary input**: empty input, a single character, window-limit length, special character combinations.
+- **Adversarial input**: injection attempts, privilege escalation instructions, prompt manipulation.
 
 ### 2. Output Contract
 
-Although AI output is probabilistic, you can still define an "output contract" to validate:
+Although output is probabilistic, you can still define an output contract:
 
-- **Format contract**: whether the expected format is returned (JSON / Markdown / specific structure);
-- **Schema contract**: whether field names, types, and required fields match the definition;
-- **Content constraints**: whether it contains required information (such as citation sources) and whether forbidden content is triggered.
+- **Format contract**: is the expected format returned (JSON, Markdown, a specific structure)?
+- **Schema contract**: do field names, types, and required fields match the definition?
+- **Content constraints**: is required information present (such as citations), and is forbidden content absent?
 
-The output contract is "structural constraints", not "exact match".
+An output contract applies structural constraints, not exact matching. It cannot prove that an answer is correct, but it quickly rules out failures at the format and field level.
 
-### 3. Tool Calling Correctness
+### 3. Tool Call Correctness
 
-In Agent scenarios, tool calling must be specifically validated:
+Agent scenarios need dedicated tool call checks:
 
-- **Tool selection accuracy**: given a task, whether the right tool is selected;
-- **Parameter generation correctness**: whether parameter types, formats, and value ranges are valid;
-- **Exception handling**: when a tool times out or returns an error, whether the Agent degrades reasonably.
+- **Tool selection accuracy**: given a task, was the right tool chosen?
+- **Parameter correctness**: are types, formats, and value ranges valid?
+- **Exception handling**: on timeout or error, does the Agent degrade reasonably?
 
 ### 4. Multi-Turn Dialogue State Validation
 
-Multi-turn dialogue needs to validate state continuity:
+Multi-turn dialogue needs state continuity checks:
 
-- **Context retention**: whether the Nth turn still remembers the constraints of the 1st turn;
-- **State transition**: whether the task state advances correctly (such as "draft → submit → review");
-- **Context forgetting**: whether key information is dropped in long conversations.
+- **Context retention**: does turn N still remember the constraint from turn 1?
+- **State transition**: does the task state advance correctly, such as draft, submitted, and under review?
+- **Context forgetting**: is key information dropped in a very long conversation?
 
-Below is a structured example of an AI functional test case:
+Below is a structural example of an AI functional test case. The fields are team-defined, not a general standard; the business data and thresholds only illustrate the structure:
 
 ```yaml
 case_id: AI-FUNC-001
-objective: Validate that the RAG system answers correctly within the given document scope and annotates citations
+objective: Verify that the RAG system answers correctly within the given documents and cites sources
 
 input_class: valid
 test_data:
@@ -446,7 +463,7 @@ expected_contract:
   must_cite:
     - doc_id: tax-policy-2025.md
   forbidden_content:
-    - Fabricating numbers not present in the document
+    - Fabricating numbers that do not appear in the document
   schema:
     answer_field: string
     citations: array
@@ -454,15 +471,15 @@ expected_contract:
 evaluation:
   type: rule_based
   rules:
-    - The citation source must include tax-policy-2025.md
-    - Numbers appearing in the answer must be consistent with the document
+    - The citation must include tax-policy-2025.md
+    - Numbers in the answer must match the document
 ```
 
-For tool calling scenarios:
+For a tool call scenario:
 
 ```yaml
 case_id: AI-FUNC-002
-objective: Validate that the Agent selects the correct tool and generates valid parameters for a weather query task
+objective: Verify that the Agent selects the right tool and generates valid arguments for a weather query
 
 input_class: valid
 test_data:
@@ -471,7 +488,7 @@ test_data:
 expected_contract:
   tool_selection:
     expected_tool: get_weather
-    confidence_threshold: 0.9
+    confidence_threshold: 0.9  # example threshold; calibrate against the evaluation set
   tool_arguments:
     location:
       type: string
@@ -483,26 +500,16 @@ expected_contract:
 
 evaluation:
   type: llm_as_judge
-  criteria: "Whether the tool selection is correct and the parameters are complete and valid"
+  criteria: "Whether the tool selection is correct and the arguments are complete and valid"
 ```
 
-::: tip Core conclusion of this section
-
-The core of AI functional testing is "replacing exact match with structured contracts". Through input equivalence class partitioning, output contract validation, tool calling correctness, and multi-turn state validation, probabilistic output is brought into a controllable testing framework.
-
-:::
-
-::: info Engineering insight
-
-Structuring AI functional test cases (such as the YAML format above) makes them easy to maintain manually and convenient for automated execution and regression. The test case itself is a "machine-consumable context".
-
-:::
+Structuring test cases as YAML or JSON makes them maintainable by hand and executable in automation and regression. The point is to turn test intent into machine-consumable context.
 
 ---
 
-## 6. AI Effectiveness Evaluation
+## 7. AI Effectiveness Evaluation: Metrics and Methods
 
-Functional testing answers "does it work", while effectiveness evaluation answers "does it work well". The effectiveness of an AI system must be quantified with a metric system, not by subjective feeling.
+Functional testing answers "does it work"; effectiveness evaluation answers "how well." AI quality needs a metric system, not subjective impression alone.
 
 ### 1. Metric System
 
@@ -510,116 +517,91 @@ Different task types suit different metrics:
 
 | Metric | Applicable scenario | Meaning | Limitation |
 |---|---|---|---|
-| Accuracy | Classification tasks | Proportion of correct predictions | Distorted when classes are imbalanced |
-| Recall | Retrieval tasks | Proportion of relevant content retrieved | Does not consider precision |
-| F1 | Classification / Retrieval | Harmonic mean of precision and recall | Cannot reflect ranking quality |
-| ROUGE | Text summarization | n-gram overlap between generated and reference text | Ignores semantic similarity |
-| BLEU | Machine translation | n-gram precision between generated and reference text | Strongly depends on reference text |
+| Accuracy | Classification | Proportion of correct predictions | Distorted when classes are imbalanced |
+| Recall | Retrieval | Proportion of relevant content retrieved | Ignores precision |
+| F1 | Classification and retrieval | Harmonic mean of precision and recall | Does not reflect ranking quality |
+| ROUGE | Summarization | n-gram overlap with reference text | Ignores semantic similarity |
+| BLEU | Machine translation | n-gram precision against reference text | Strongly depends on reference text |
 | pass@k | Code generation | Proportion of at least one pass in k attempts | Requires executable tests |
-| Human preference win rate | Dialogue / Generation | Proportion of wins over baseline in human judgment | High cost, subjective |
+| Human preference win rate | Dialogue and generation | Proportion of wins over a baseline | Costly and subjective |
 
 ### 2. Manual Evaluation
 
-Manual evaluation is the "gold standard" of effectiveness evaluation, but it is costly and easily inconsistent. To do manual evaluation well, you need:
+Manual evaluation is the baseline of effectiveness evaluation, but it is costly and inconsistent. Doing it well requires:
 
-- **Annotation specification**: clarify scoring dimensions, criteria, and examples to avoid "scoring by feel";
-- **Consistency check**: have multiple annotators label the same sample, compute agreement (such as Cohen's Kappa), and revise the spec when below threshold;
-- **Cost control**: sample annotation rather than full annotation, prioritizing high-value and boundary samples.
+- **Annotation specification**: scoring dimensions, criteria, and examples, so reviewers do not score by feel.
+- **Consistency check**: multiple annotators label the same sample, compute agreement such as Cohen's Kappa, and revise the specification when agreement is below threshold.
+- **Cost control**: sample instead of labeling everything, prioritizing high-value and boundary samples.
 
 ### 3. Automated Evaluation
 
-Large-scale evaluation requires automated evaluation:
+Large-scale evaluation depends on automation:
 
-- **LLM-as-a-Judge**: uses a stronger model to judge the output of the tested model, suitable for open-ended tasks. Note the judge model's own bias and capability ceiling.
-- **Pairwise comparison**: lets the judge model choose the better of two candidate answers; more stable than absolute scoring.
-- **Reference-free evaluation**: evaluates answer quality (such as factuality, coherence, completeness) without relying on a standard answer.
+- **LLM-as-a-Judge**: a stronger model judges the output of the tested model. It suits open-ended tasks, but the judge has its own bias and capability ceiling.
+- **Pairwise comparison**: the judge chooses the better of two candidates, which is usually more stable than absolute scoring.
+- **Reference-free evaluation**: judges quality such as factuality, coherence, and completeness without a standard answer.
 
-Automated evaluation cannot fully replace manual evaluation, but can serve as an extension and regression baseline for manual evaluation.
+Automated evaluation cannot replace manual evaluation, but it extends it and provides a regression baseline.
 
 ### 4. Benchmark
 
-- **Public Benchmark**: such as MMLU, HumanEval, and GSM8K, suitable for horizontal comparison of model capability, but may be disconnected from business scenarios.
-- **Private Benchmark**: an evaluation set built from business data, closer to real scenarios, but requires continuous maintenance and prevention of data contamination.
-- **Data contamination**: if evaluation data leaks into training data, evaluation results will be inflated. Use unpublished private datasets or dynamically generated evaluation samples.
-
-::: tip Core conclusion of this section
-
-AI effectiveness evaluation requires a layered metric system: manual evaluation sets the baseline, automated evaluation does regression, and private Benchmark fits the business. The three methods complement each other; no single metric can fully reflect effectiveness.
-
-:::
-
-::: warning Common misconception
-
-Using only one metric (such as accuracy) to measure AI system effectiveness. Different task dimensions need different metrics; a single metric easily masks shortcomings, leading to "metrics look good but users are unsatisfied".
-
-:::
+- **Public benchmark**: MMLU, HumanEval, and GSM8K support horizontal model comparison, but may be disconnected from business scenarios.
+- **Private benchmark**: built from business data, closer to real scenarios, but it needs maintenance and protection against contamination.
+- **Data contamination**: if evaluation data leaks into training data, results are inflated. Use unpublished private datasets or dynamically generated samples.
 
 ---
 
-## 7. Robustness Testing
+## 8. Robustness Testing: Stability Under Unexpected Input
 
-Robustness is the ability of an AI system to maintain stable output when facing unexpected input and environment changes. Robustness testing focuses on "whether the system is still reliable under perturbation".
+Robustness is the ability of an AI system to keep producing acceptable output under unexpected input and environment changes. Robustness testing asks whether the system still works after a perturbation.
 
 ### 1. Prompt Perturbation
 
-Different expressions of the same intent should not cause significant differences in results. Perturbation types to test:
+The same intent expressed differently should not change results much. Perturbation types include:
 
-- **Synonymous paraphrasing**: change "query order status" to "see where my order is";
-- **Format changes**: plain text vs Markdown vs JSON wrapping;
-- **Spelling errors**: typos, missing characters, extra spaces;
-- **Multilingual**: mixed Chinese and English, dialect expressions, minor languages.
+- **Synonymous paraphrasing**: "query order status" versus "see where my order is."
+- **Format changes**: plain text, Markdown, or JSON wrapping.
+- **Spelling errors**: typos, missing characters, extra spaces.
+- **Multilingual**: mixed Chinese and English, dialect, minor languages.
 
-If a slight paraphrase causes output quality to drop sharply, the system is overfitting the Prompt and lacks generalization.
+If a slight paraphrase causes quality to drop sharply, the system is overfitting a particular expression and lacks generalization.
 
 ### 2. Boundary Input
 
-- **Empty input**: empty string, only whitespace, only punctuation;
-- **Overlong input**: input exceeding the context window, validating truncation strategy;
-- **Special characters**: Unicode control characters, emoji, zero-width characters, SQL injection payloads;
-- **Injection attempts**: user input disguised as system instructions, such as "ignore the previous instructions and instead...".
+- **Empty input**: empty string, whitespace only, punctuation only.
+- **Overlong input**: input beyond the context window, used to verify the truncation strategy.
+- **Special characters**: Unicode control characters, emoji, zero-width characters, SQL injection payloads.
+- **Injection attempts**: user input disguised as system instructions, such as "ignore the previous instructions and instead..."
 
 ### 3. Distribution Shift
 
-- **Out-of-Distribution**: input beyond the training data distribution, such as training data being news but input being legal documents;
-- **Domain transfer**: the model performs well in domain A but degrades when transferred to domain B;
-- **Time shift**: business rules or data distribution change over time, and the model is not updated in time.
+- **Out-of-distribution**: input beyond the training distribution, such as news training data receiving a legal document.
+- **Domain transfer**: the model performs well in domain A but degrades in domain B.
+- **Time shift**: business rules or data distributions change and the model is not updated.
 
 ### 4. Long-Range Stability
 
-- **Multi-turn dialogue drift**: as the number of dialogue turns increases, whether the model gradually deviates from the initial constraints;
-- **Context forgetting**: whether key early information is dropped in long conversations;
-- **Cumulative error**: whether small errors in earlier turns are amplified in subsequent turns.
+- **Multi-turn dialogue drift**: does the model gradually deviate from the initial constraints as turns accumulate?
+- **Context forgetting**: is key early information dropped in a long conversation?
+- **Cumulative error**: are small errors from earlier turns amplified later?
 
 ### 5. Stress Testing
 
-- **Concurrency**: whether the system is stable and response time is acceptable under high-concurrency requests;
-- **Rate limiting**: whether the degradation strategy is reasonable when rate limits are triggered;
-- **Degradation**: when dependent services (such as vector store, tool APIs) are unavailable, whether the system degrades gracefully instead of crashing.
+- **Concurrency**: is the system stable and is response time acceptable under high concurrency?
+- **Rate limiting**: is the degradation strategy reasonable when limits trigger?
+- **Degradation**: when a dependency such as the vector store or a tool API is unavailable, does the system degrade gracefully instead of crashing?
 
-Robustness is closely related to reliability: robustness is "still working correctly under perturbation", while reliability is "continuously working correctly over long operation". Robustness testing is a prerequisite for reliability assurance.
-
-::: tip Core conclusion of this section
-
-Robustness testing covers five dimensions: Prompt perturbation, boundary input, distribution shift, long-range stability, and stress testing. The goal is to validate that the system maintains acceptable quality under unexpected conditions, not just performs well under "ideal input".
-
-:::
-
-::: warning Common misconception
-
-Believing the system is reliable just because tests pass under "standard input". Real user input varies widely; systems lacking robustness testing often fail frequently in boundary scenarios after launch.
-
-:::
+Robustness and reliability are close: robustness is working correctly under perturbation, while reliability is working correctly over a long run. Robustness testing is a prerequisite for reliability assurance.
 
 ---
 
-## 8. AI Security Testing
+## 9. AI Security Testing: Attack Surface and Priorities
 
-AI security is the most easily overlooked yet most consequential part of AI engineering. The attack surface of an AI system is broader than traditional software, because the model can be manipulated by input and can also leak training data.
+AI security is one of the easiest parts of AI engineering to neglect and one of the most costly when it fails. The attack surface is wider than in traditional software because the model can be manipulated through input and can also leak training data.
 
-The diagram below shows the matrix structure of AI security testing:
+The diagram below shows the matrix of AI security testing:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B, 'fontSize': '13px'}}}%%
 flowchart TB
     Core["AI Security Testing Matrix"]
 
@@ -655,7 +637,7 @@ flowchart TB
     classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
     classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,color:#22C55E,color:#172033,stroke-width:1.5px;
     classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
     class Core core;
@@ -664,332 +646,287 @@ flowchart TB
     class M1,M2,M3,M4 work;
 ```
 
+Read from attack surface to test category to mitigation. Retrieved content and tool returns are the two surfaces most often treated as trusted data, so indirect injection should be tested first. Each mitigation must map to an attack surface; input filtering alone is not enough.
+
 ### 1. Prompt Injection
 
-Prompt injection is when an attacker constructs malicious input to tamper with model behavior:
+Prompt injection means an attacker constructs malicious input to alter model behavior:
 
-- **Direct injection**: the user directly writes "ignore the previous system instructions and instead execute..." in the input. Defenses include input filtering, layering system instructions and user input, and output validation.
-- **Indirect injection**: the attacker hides malicious instructions in retrieved documents or tool return values, and the model passively executes them after reading. This is the most dangerous attack vector in RAG scenarios, because retrieved content is often treated as trusted data.
+- **Direct injection**: the user writes "ignore the previous system instructions and instead execute..." in the input. Defenses include input filtering, separating system instructions from user input, and output validation.
+- **Indirect injection**: the attacker hides malicious instructions in retrieved documents or tool returns, and the model executes them after reading. This is one of the highest-risk vectors in RAG because retrieved content is often treated as trusted data.
 
 ### 2. Jailbreak
 
-Jailbreak is bypassing the model's safety restrictions to induce it to generate content it should refuse:
+Jailbreak bypasses model safety limits to produce content the model should refuse:
 
-- **Role-playing**: makes the model play an "unrestricted AI" to evade safety policies;
-- **Encoding attacks**: hides malicious intent with Base64, ROT13, or other encodings to bypass keyword filtering;
-- **Multi-step induction**: gradually guides the model across boundaries through a series of seemingly harmless questions.
+- **Role-playing**: asks the model to act as an "unrestricted AI" to evade safety policy.
+- **Encoding attacks**: hides malicious intent in Base64, ROT13, or another encoding to bypass keyword filters.
+- **Multi-step induction**: uses a series of seemingly harmless questions to push the model across a boundary.
 
 ### 3. Data Leakage
 
-- **Training data extraction**: induces the model to reproduce private content from training data through specific Prompts;
-- **PII leakage**: the model output contains real names, phone numbers, ID numbers, and other personally identifiable information;
-- **System Prompt leakage**: the attacker uses tricks to make the model output system instructions verbatim, exposing backend logic and safety policies.
+- **Training data extraction**: a specific prompt induces the model to reproduce private content from training data.
+- **PII (Personally Identifiable Information) leakage**: output contains real names, phone numbers, ID numbers, or other personal data.
+- **System Prompt leakage**: an attacker tricks the model into outputting its system instructions, exposing backend logic and safety policy.
 
 ### 4. Content Compliance
 
-- **Toxicity**: whether the model generates hateful, insulting, or aggressive content;
-- **Bias**: whether the model produces discriminatory output on gender, race, region, etc.;
-- **Harmful content**: whether it generates violent, illegal, or ethically violating content.
+- **Toxicity**: does the model generate hateful, insulting, or aggressive content?
+- **Bias**: does it produce discriminatory output by gender, race, or region?
+- **Harmful content**: does it generate violent, illegal, or ethically violating content?
 
-Content compliance is both a technical issue and a legal and brand issue; different regions and industries have different compliance requirements.
+Content compliance is not only a technical issue; it is also a legal and brand issue, with different requirements by region and industry.
 
 ### 5. Model Supply Chain
 
-- **Model source**: whether the model used comes from a trusted source and whether the weights have been tampered with;
-- **Dependency risk**: whether third-party libraries, embedding models, and vector databases have known vulnerabilities;
-- **Update risk**: whether model version upgrades introduce new security regressions.
-
-::: tip Core conclusion of this section
-
-AI security testing covers five dimensions: Prompt injection, jailbreak, data leakage, content compliance, and model supply chain. Among them, indirect Prompt injection and data leakage are the risks that need the highest priority attention in RAG and Agent scenarios.
-
-:::
-
-::: warning Common misconception
-
-Believing that "the model provider has already done safety alignment, so the application layer does not need to test again". Alignment is a general-level protection; the application layer's business scenarios, retrieved content, and tool permissions all differ, so security testing must be supplemented at the application layer.
-
-:::
+- **Model source**: does the model come from a trusted source, and have the weights been tampered with?
+- **Dependency risk**: do third-party libraries, embedding models, and vector databases have known vulnerabilities?
+- **Update risk**: did a model version upgrade introduce a new security regression?
 
 ---
 
-## 9. AI Model Effectiveness Evaluation Methods
+## 10. Evaluation Lifecycle: Offline, Online, and Continuous Monitoring
 
-Effectiveness evaluation is not a one-time activity, but a continuous process throughout the model lifecycle. Evaluation methods need to cover three stages: offline, online, and continuous monitoring.
+Effectiveness evaluation is not a one-time activity; it runs through the model lifecycle. Evaluation methods cover three stages: offline, online, and continuous monitoring.
 
 ### 1. Offline Evaluation
 
-Offline evaluation is the evaluation conducted with a fixed dataset before launch:
+Offline evaluation uses a fixed dataset before launch:
 
-- **Held-out set**: a subset set aside from training data that did not participate in training, used to evaluate generalization;
-- **Cross-validation**: multi-fold data partitioning to reduce the randomness of a single partition;
-- **Golden set**: a manually annotated "golden dataset" used as a quality benchmark, kept fixed long-term to support version comparison.
+- **Held-out set**: a subset excluded from training, used to evaluate generalization.
+- **Cross-validation**: multiple data folds reduce the randomness of a single split.
+- **Golden set**: a manually annotated baseline that stays fixed over time and supports version comparison.
 
-The key to offline evaluation is the representativeness and non-leakage of the dataset.
+The key is dataset representativeness and preventing leakage.
 
 ### 2. Online Evaluation
 
-Online evaluation is the evaluation based on real traffic and user feedback after launch:
+Online evaluation uses real traffic and user feedback after launch:
 
-- **Production metrics**: actual business metrics, such as answer adoption rate, task completion rate, and user satisfaction;
-- **User feedback**: like/dislike, ratings, complaints;
-- **Implicit signals**: whether the user follows up, re-asks, or abandons the task.
+- **Production metrics**: business metrics such as answer adoption rate, task completion rate, and user satisfaction.
+- **User feedback**: likes, dislikes, ratings, and complaints.
+- **Implicit signals**: whether users follow up, re-ask, or abandon the task.
 
-Online evaluation reflects real effectiveness, but feedback is delayed and interfered with by external factors.
+Online evaluation reflects real effectiveness, but feedback is delayed and affected by external factors.
 
 ### 3. A/B Testing
 
-A/B testing is the standard method for comparing the effectiveness of different versions:
+A/B testing is the standard way to compare versions:
 
-- **Experiment design**: clarify the hypothesis, grouping strategy, traffic allocation, and experiment duration;
-- **Metric selection**: primary metric + guardrail metrics; the primary metric judges effectiveness, and guardrail metrics prevent negative impact;
-- **Significance**: use statistical testing to confirm that the difference is not random fluctuation, usually requiring a p-value less than 0.05.
+- **Experiment design**: hypothesis, grouping, traffic allocation, and duration.
+- **Metric selection**: a primary metric plus guardrail metrics. The primary metric judges effectiveness; guardrails prevent negative impact.
+- **Significance**: statistical testing confirms that a difference is not random fluctuation. A p-value below 0.05 is a common convention, not a hard standard for every scenario; judge it together with sample size and business tolerance.
 
 ### 4. Regression Baseline
 
-After each model or Prompt iteration, comparison with the baseline version is mandatory:
+After each model or prompt iteration, compare against the baseline:
 
-- **Version comparison**: whether the new version outperforms the previous version on the Golden set;
-- **Quality Gate**: define quality gate thresholds; if not met, launch is not allowed;
-- **Multi-dimensional comparison**: do not only look at the primary metric, but also check whether robustness and security metrics regress.
+- **Version comparison**: does the new version beat the previous one on the Golden set?
+- **Quality gate**: define thresholds; if they are not met, do not ship.
+- **Multi-dimensional comparison**: check robustness and security metrics for regression, not just the primary metric.
 
 ### 5. Continuous Monitoring
 
-- **Drift detection**: monitor whether input data distribution and output quality drift over time;
-- **Alerting**: automatically alert when key metrics fall below thresholds;
-- **Periodic re-evaluation**: periodically re-evaluate on updated evaluation sets to prevent model aging.
+- **Drift detection**: monitor input distribution and output quality over time.
+- **Alerting**: alert automatically when key metrics fall below threshold.
+- **Periodic re-evaluation**: re-evaluate on an updated evaluation set to prevent model aging.
 
-The table below compares the key differences between offline evaluation and online evaluation:
+The table below compares offline and online evaluation:
 
 | Dimension | Offline evaluation | Online evaluation |
 |---|---|---|
 | Data source | Fixed evaluation set | Real user traffic |
-| Evaluation timing | Before launch | After launch |
+| Timing | Before launch | After launch |
 | Feedback speed | Immediate | Delayed |
-| Cost | Annotation cost | Engineering integration cost |
+| Cost | Annotation | Engineering integration |
 | Representativeness | Depends on evaluation set quality | Real scenarios |
-| Applicable scenarios | Version comparison, regression gate | Effectiveness validation, long-term monitoring |
-
-::: tip Core conclusion of this section
-
-AI model effectiveness evaluation requires three layers of "offline + online + continuous monitoring". Offline evaluation guards the launch gate, A/B testing validates real effectiveness, and continuous monitoring prevents online regression. All three layers are indispensable.
-
-:::
-
-::: info Engineering insight
-
-Integrating the Quality Gate into the CI/CD pipeline, so that every model or Prompt change must pass Golden set evaluation before launch, is the key step to engineering evaluation methods.
-
-:::
+| Applicable use | Version comparison, regression gate | Effectiveness validation, long-term monitoring |
 
 ---
 
-## 10. Using AI Testing Methods to Improve R&D and Testing Efficiency
+## 11. Using AI to Improve Testing Efficiency: Boundaries and Preconditions
 
-The previous sections discussed "how to test AI systems". This section discusses "how to use AI methods to improve testing and R&D efficiency". This is the other side of the value of the AI testing system: testing methods themselves can also be AI-enhanced.
+The previous sections discussed how to test AI systems. This section discusses how to use AI methods to improve testing and engineering efficiency. It is the reverse application of the same capability, and the boundaries matter more than the pitch.
 
 ### 1. Test Generation
 
-AI can automatically generate tests based on code, interface definitions, or requirement documents:
+AI can generate tests from code, interface definitions, or requirement documents:
 
-- **Unit tests**: generates test cases based on function signatures and implementations, covering normal paths and boundary conditions;
-- **E2E tests**: generates end-to-end test scripts based on page structure and user flows;
-- **Test data**: generates test data that meets constraints based on business rules, including boundary and abnormal values.
+- **Unit tests**: generated from function signatures and implementations, covering normal paths and boundary conditions.
+- **E2E tests**: generated from page structure and user flows.
+- **Test data**: generated from business rules, including boundary and invalid values.
 
-The key to test generation is not "AI can write test code", but whether the input context is sufficient. This is consistent with the philosophy of context engineering — give AI complete requirements, interfaces, constraints, and acceptance criteria to generate usable tests.
+The key is not that AI can write test code, but whether the input context is sufficient. Give it complete requirements, interfaces, constraints, and acceptance criteria, and it can generate usable tests. Generated cases must actually run and be reviewed; otherwise they are only plausible-looking code.
 
 ### 2. Defect Prediction
 
-Based on historical defect data, AI can predict which modules are more prone to problems:
+Based on historical defect data, AI can predict which modules are more likely to fail:
 
-- **Hotspot module identification**: analyzes code change frequency, complexity, and historical defect distribution to identify high-risk modules;
-- **Defect priority ranking**: evaluates the severity and impact scope of newly discovered defects to assist priority ranking;
-- **Test resource allocation**: concentrates limited test resources on high-risk modules to improve efficiency.
+- **Hotspot identification**: analyze change frequency, complexity, and defect distribution to find high-risk modules.
+- **Defect priority ranking**: assess severity and impact scope for newly found defects.
+- **Test resource allocation**: concentrate limited testing on high-risk modules.
 
 ### 3. Regression Selection
 
-Full regression is costly; AI can help with intelligent selection:
+Full regression is expensive, so AI can help select a subset:
 
-- **Impact-based Selection**: selects the subset of tests to run based on the impact scope of code changes;
-- **AI priority ranking**: ranks test cases by features such as historical failure rate and code correlation, prioritizing high-value cases;
-- **Dynamic adjustment**: dynamically adjusts the subsequent test scope based on run results.
+- **Impact-based selection**: choose the test subset from the impact scope of a code change.
+- **AI priority ranking**: rank cases by historical failure rate and code correlation, running high-value cases first.
+- **Dynamic adjustment**: adjust the remaining scope from run results.
+
+The risk is missed tests. Selection rules need a fallback, such as a periodic full regression or a mandatory full run for high-risk changes.
 
 ### 4. Quality Gate
 
-Combine AI review and automated testing to build a multi-layer quality gate:
+Combine AI review and automated testing into a multi-layer gate:
 
 ```text
 Code commit
-→ AI static review (style, security, best practices)
-→ Unit tests (auto-generated + manually maintained)
-→ Integration tests
-→ AI effectiveness evaluation (Golden set regression)
-→ Quality gate decision
-→ Allow merge or reject
+-> AI static review (style, security, best practices)
+-> Unit tests (generated and manually maintained)
+-> Integration tests
+-> AI effectiveness evaluation (Golden set regression)
+-> Quality gate decision
+-> Allow merge or reject
 ```
 
-Each layer's output becomes the next layer's input, forming a feedback closed loop.
+Each layer's output becomes the next layer's input, forming a feedback loop.
 
-### 5. Agent-Driven Testing Closed Loop
+### 5. Agent-Driven Testing Loop
 
-The most cutting-edge practice is letting an AI Agent autonomously execute the testing closed loop:
+Letting an AI Agent run the testing loop is an emerging practice:
 
 ```text
 Receive testing task
-→ Retrieve relevant code and requirements
-→ Generate test cases
-→ Execute tests
-→ Analyze failure results
-→ Locate root cause
-→ Attempt fix
-→ Re-verify
-→ Output test report
+-> Retrieve relevant code and requirements
+-> Generate test cases
+-> Execute tests
+-> Analyze failures
+-> Locate root cause
+-> Attempt a fix
+-> Re-verify
+-> Output test report
 ```
 
-This closed loop is the landing of context engineering in testing: the code, requirements, test results, and tool feedback the Agent obtains at each step all form the context for its next action. Context quality determines the reliability of the Agent testing closed loop.
+This loop is Context Engineering (selecting and organizing the information the model sees) applied to testing. The code, requirements, test results, and tool feedback at each step form the context for the next action. Context quality determines whether the loop is reliable.
 
-::: tip Core conclusion of this section
-
-AI testing methods are not only for "testing AI systems", but can in turn "improve testing and R&D efficiency". From test generation, defect prediction, and regression selection to the Agent-driven testing closed loop, the core logic is to apply the concept of context engineering to the testing process.
-
-:::
-
-::: info Engineering insight
-
-When building an Agent-driven testing closed loop, the key is not whether the Agent can write test code, but whether the team can provide structured requirements, interfaces, constraints, and acceptance criteria for the Agent. This is exactly the same as the requirements of context engineering.
-
-:::
+The loop should not default to unattended operation. Actions that modify code, delete data, or access production need permission boundaries and human review; otherwise one bad fix can widen an incident.
 
 ---
 
-## 11. AI Testing Practice Checklist
+## 12. AI Testing Practice Checklist
 
-### 1. Technical Principle Understanding
+### 1. Principle Understanding and Failure Location
 
-- [ ] Understand the Tokenization mechanism and be able to estimate Token occupation and cost for different inputs
-- [ ] Understand the meaning of the context window and know how system Prompt + dialogue history + retrieval results occupy the window
-- [ ] Master the impact of sampling parameters such as temperature, top-p, and top-k on output stability
-- [ ] Be able to distinguish factuality hallucination from faithfulness hallucination and design different testing strategies
-- [ ] Understand the four stages of RAG — chunking, embedding, retrieval, and reranking — and their quality-impacting factors
-- [ ] Understand the Agent loop of perceive → plan → tool call → observe → reflect
+- [ ] Given a failed sample, identify whether it is a retrieval, generation, tool, or state failure.
+- [ ] Estimate the token footprint of an input and state the remaining window headroom.
+- [ ] Explain where the current temperature and top-p values come from and how they affect reproducibility.
+- [ ] Distinguish factuality hallucination from faithfulness hallucination and choose the matching check.
 
 ### 2. AI Functional Testing
 
-- [ ] Partition inputs into equivalence classes, covering valid, invalid, boundary, and adversarial inputs
-- [ ] Define an output contract (format, Schema, content constraints) for each function, instead of relying on exact match
-- [ ] Validate tool selection accuracy and parameter generation correctness in tool calling scenarios
-- [ ] Design multi-turn dialogue test cases to validate context retention and state transition
-- [ ] Structure test cases as YAML or JSON to support automated execution and regression
+- [ ] Partition inputs into valid, invalid, boundary, and adversarial classes.
+- [ ] Define an output contract (format, schema, content constraints) for each function instead of exact matching.
+- [ ] Verify tool selection accuracy and parameter correctness in tool call scenarios.
+- [ ] Design multi-turn cases that verify context retention and state transition.
+- [ ] Structure test cases as YAML or JSON so they run in automation and regression.
 
 ### 3. AI Effectiveness Evaluation
 
-- [ ] Choose appropriate metrics based on task type (recall for retrieval, ROUGE/BLEU for generation, pass@k for code)
-- [ ] Establish a manual annotation spec, including scoring dimensions, criteria, and examples, and validate annotation consistency
-- [ ] Build an LLM-as-a-Judge automated evaluation pipeline as an extension of manual evaluation
-- [ ] Build a private Benchmark based on business data and maintain it continuously
-- [ ] Prevent evaluation data contamination and periodically update the evaluation set
+- [ ] Choose metrics by task type (recall for retrieval, ROUGE or BLEU for generation, pass@k for code).
+- [ ] Build an annotation specification with dimensions, criteria, and examples, and check agreement.
+- [ ] Build an LLM-as-a-Judge pipeline as an extension of manual evaluation.
+- [ ] Build a private benchmark from business data and maintain it.
+- [ ] Refresh the evaluation set regularly and check for overlap with training data.
 
 ### 4. Robustness Testing
 
-- [ ] Design a Prompt perturbation test set, covering synonymous paraphrasing, format changes, spelling errors, and multilingual input
-- [ ] Test boundary inputs such as empty input, overlong input, special characters, and injection attempts
-- [ ] Validate effectiveness degradation under distribution shift scenarios (domain transfer, time shift)
-- [ ] Design long-conversation tests to validate context forgetting and cumulative error
-- [ ] Execute concurrency, rate-limiting, and degradation stress tests to validate system stability
+- [ ] Build a prompt perturbation set covering paraphrases, format changes, spelling errors, and multiple languages.
+- [ ] Test boundary inputs such as empty input, overlong input, special characters, and injection attempts.
+- [ ] Verify degradation under distribution shift (domain transfer and time shift).
+- [ ] Design long-conversation tests for context forgetting and cumulative error.
+- [ ] Run concurrency, rate-limit, and degradation stress tests.
 
 ### 5. AI Security Testing
 
-- [ ] Test both direct Prompt injection and indirect injection (through retrieved content) attack paths
-- [ ] Validate jailbreak defense capability, covering role-playing, encoding attacks, and multi-step induction
-- [ ] Check training data extraction, PII leakage, and System Prompt leakage risks
-- [ ] Evaluate compliance for toxicity, bias, and harmful content
-- [ ] Audit the model supply chain and verify model source and dependency security
+- [ ] Test direct prompt injection and indirect injection through retrieved content.
+- [ ] Verify jailbreak defenses against role-playing, encoding attacks, and multi-step induction.
+- [ ] Check training data extraction, PII leakage, and System Prompt leakage risks.
+- [ ] Evaluate toxicity, bias, and harmful content compliance.
+- [ ] Audit the model supply chain, including model source and dependency security.
 
-### 6. Efficiency Improvement
+### 6. Evaluation and Efficiency Loop
 
-- [ ] Use AI to generate unit tests, E2E tests, and test data, and add them to the case library after manual review
-- [ ] Identify hotspot modules based on historical defect data to optimize test resource allocation
-- [ ] Implement Impact-based regression selection to prioritize high-value cases
-- [ ] Integrate AI review + automated testing as a quality gate embedded in CI/CD
-- [ ] Explore an Agent-driven testing closed loop, forming an automated chain from generation to execution to fix
+- [ ] Keep Golden set results for every version as a regression baseline.
+- [ ] Connect the quality gate to CI/CD so a failing change cannot ship.
+- [ ] Use AI to generate unit tests, E2E tests, and test data, then review and run them before adding them to the case library.
+- [ ] Identify hotspot modules from historical defect data and adjust test resource allocation.
+- [ ] Set permission boundaries, human review points, and stop conditions for an Agent-driven testing loop.
+
+Every item can be evidenced in the case library, evaluation records, a Trace, or CI results. If you cannot find the evidence, it is not yet an executable practice.
 
 ---
 
 ## Conclusion: From Technical Understanding to Engineering Practice
 
-This article has organized the AI Agent technology system from the dual perspective of "technical principles" and "testing methods":
+AI testing does not move traditional cases over. It builds an evidence chain around probabilistic output: the principles tell you what failure can look like, and the tests tell you whether this failure occurred and at which layer. Without either one, testing degrades into sampling outputs.
 
-```text
-Technical principle side:
-LLM capability foundation
-→ RAG private knowledge
-→ Agent autonomous execution
-
-Testing method side:
-AI functional testing
-→ AI effectiveness evaluation
-→ Robustness testing
-→ AI security testing
-→ Model evaluation methods
-→ Efficiency improvement practices
-```
-
-These two lines are not parallel but mutually supporting: understanding technical principles lets you design effective tests, and systematic testing lets technical capabilities land stably.
-
-A common cognitive bias is: believing that "using the strongest model, quality is naturally guaranteed". But the model determines the capability ceiling, while the testing system determines whether this capability ceiling can be stably reached in real engineering. AI engineering without a testing system is essentially going live naked.
-
-Another cognitive bias is: believing that "AI testing is just running a few more rounds to see if the output is right". But the probabilistic output of AI systems means there must be a metric system, evaluation set, regression baseline, and security testing, otherwise hidden quality and security risks cannot be discovered.
-
-> **Understanding AI technical principles is the prerequisite for doing AI testing well, and a systematic AI testing methodology is the guarantee for landing AI capabilities stably in real engineering.**
-
-::: info In one sentence
-The model determines the capability ceiling, the testing system determines the capability floor, and engineering determines whether the capability can be stably output.
-:::
+A practical next step is to take one failed sample from production or an evaluation set, locate whether it belongs to retrieval, generation, tools, or state, and write the reproduction conditions into the evaluation set. Metrics and gates only become meaningful when a failed sample can be reproduced reliably.
 
 ---
 
 ## FAQ
 
-### 1. What is the difference between LLM and AI Agent?
+### 1. When should RAG be used, and when should it not be used?
 
-LLM is a probabilistic model that "receives text and outputs text"; it itself cannot call tools, cannot persist memory, and cannot actively plan multi-step tasks. AI Agent is a runtime framework built on top of LLM; through planning, tool calling, memory, and reflection mechanisms, it upgrades the LLM from "answering questions" to "completing tasks". Simply put, the LLM is the engine and the Agent is the whole vehicle — an engine alone cannot go on the road; you also need a steering wheel, transmission, and navigation system.
+RAG suits scenarios that need private knowledge, time-sensitive information, or domain documents, such as internal knowledge Q&A, policy lookup, and product manual retrieval.
 
-### 2. When should RAG be used, and when should it not be used?
+If a task is fully within the model's general capability, such as general code generation, translation, or summarization, and does not depend on the latest or private information, RAG is unnecessary. The criterion is whether the model does not know the key information required for the task. If it does not know and the information can be retrieved, use RAG. If it knows, or the information cannot be retrieved, do not use it.
 
-RAG is suitable for scenarios that need private knowledge, time-sensitive information, or domain documents, such as enterprise internal knowledge Q&A, policy and regulation lookup, and product manual retrieval. If the task is entirely within the model's general capability (such as general code generation, general translation, text summarization) and does not rely on the latest or private information, then RAG is not needed; introducing it only adds complexity and failure points. The criterion is simple: does the model "not know" the key information needed to complete the task — if it does not know and the information is retrievable, use RAG; if it knows or is not retrievable, do not use it.
+### 2. When a RAG answer is wrong, how do I tell whether retrieval or generation failed?
 
-### 3. What is the core difference between AI testing and traditional software testing?
+Check retrieval first: was the correct chunk recalled, and did it rank near the top? If the correct document is not in the candidates, the problem is recall or chunking. If it is in the candidates but ranked low, the problem is retrieval or reranking. If the correct chunk is near the top and the answer still deviates, generation ignored the evidence.
 
-The core difference lies in the determinism of output. Traditional software is "input + fixed program = deterministic output", and test cases can be asserted with exact match; an AI system is "input + context + probabilistic model = probabilistic output", and cannot be tested with exact match. Therefore, AI testing needs to use "output contracts" (format, Schema, content constraints) to replace exact match, use a metric system (accuracy, recall, faithfulness) to replace the pass/fail binary, and use evaluation sets and regression baselines to replace single validation. The testing mindset shifts from "validating rule execution" to "validating stable output within the capability boundary".
+Keep logs at every step: query, candidate list, rerank scores, final context, and answer. Without these intermediate results, you can only guess.
 
-### 4. Where should I start with robustness testing?
+### 3. Where should robustness testing start?
 
-The most direct way is to start with Prompt perturbation testing. Select the system's existing test cases, apply synonymous paraphrasing, format changes, and spelling error perturbations to the input, and compare whether output quality drops significantly before and after perturbation. If it drops significantly, the system is overfitting certain expression styles. The second step is boundary input testing, covering empty input, overlong input, and special characters. The third step is long-range stability testing of multi-turn dialogue, validating whether context is forgotten. It is recommended to first build a "perturbation test set" as a baseline and continuously regress against it.
+Start with prompt perturbation. Take existing test cases, apply paraphrases, format changes, and spelling errors, and compare output quality before and after. A sharp drop means the system is overfitting a particular expression.
 
-### 5. How should AI security testing be prioritized?
+The second step is boundary input: empty, overlong, and special characters. The third is long-range stability across multiple turns, checking whether context is forgotten. Build a perturbation set as a baseline and regress against it continuously.
 
-Priority depends on the application scenario, but the general recommendation is: the first priority is indirect Prompt injection (especially in RAG scenarios), because retrieved content is often trusted by default, and the attack surface is largest and most hidden; the second priority is data leakage, including PII leakage and System Prompt leakage, which directly affect compliance and brand; the third priority is jailbreak and content compliance, for which there are already many general defenses; the fourth priority is the model supply chain, which belongs to infrastructure-layer security. When resources are limited, prioritize investment by "attack likelihood × impact severity".
+### 4. How should AI security testing be prioritized?
+
+A general order is: indirect prompt injection first, especially in RAG, because retrieved content is treated as trusted and the surface is large and hidden; data leakage second, including PII and System Prompt leakage, because it directly affects compliance and brand; jailbreak and content compliance third; model supply chain fourth.
+
+Priority ultimately depends on the application. With limited resources, rank by attack likelihood times impact severity rather than copying a general order.
+
+### 5. How can a private benchmark avoid data contamination?
+
+Practical options include keeping the evaluation set private and access-controlled, selecting time periods that did not participate in training or fine-tuning, adding new samples and retiring old ones regularly, using dynamically generated questions to reduce memorization, and checking for overlap between training corpora and the evaluation set before evaluation.
+
+Contamination cannot be eliminated completely, so combine automated results with manual spot checks and online metrics.
 
 ---
 
 ## Sources
 
-1. Anthropic documentation "Building effective agents" and Agent design guide:
+1. Anthropic, "Building effective agents" and Agent design guidance:
 
-   [https://docs.anthropic.com/en/docs/build-with-claude/agentic](https://docs.anthropic.com/en/docs/build-with-claude/agentic)
+   [https://www.anthropic.com/engineering/building-effective-agents](https://www.anthropic.com/engineering/building-effective-agents)
 
-2. OpenAI documentation "Function calling / Tool use" and GPT model guide:
+2. OpenAI documentation, "Function calling / Tool use" and the GPT model guide:
 
    [https://platform.openai.com/docs/guides/function-calling](https://platform.openai.com/docs/guides/function-calling)
 
-3. LangChain documentation "RAG concepts" and Agent architecture explanation:
+3. LangChain documentation, "RAG concepts" and Agent architecture:
 
    [https://python.langchain.com/docs/concepts/rag/](https://python.langchain.com/docs/concepts/rag/)
 
-4. OWASP "LLM Top 10" AI application security risk list:
+4. OWASP, "LLM Top 10" AI application security risks:
 
    [https://owasp.org/www-project-top-10-for-large-language-model-applications/](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 
-5. Hung et al. "Evaluating Large Language Models: A Comprehensive Survey" model evaluation method survey:
+5. Hung et al., "Evaluating Large Language Models: A Comprehensive Survey":
 
    [https://arxiv.org/abs/2407.16782](https://arxiv.org/abs/2407.16782)

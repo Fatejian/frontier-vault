@@ -30,10 +30,10 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual 中文 / English · 
 
 ## 项目特色
 
-- **深度优先**：每篇文章 20+ 分钟长文，覆盖原理、机制、工程实践与可执行清单，而非碎片化技巧罗列
-- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇结构、章节写法、Mermaid 五色主题、反例/正例对照、统一模型图、分组实践清单
-- **核心论点贯穿**：每篇文章有明确核心论点，在开篇 `::: info`、每章 `::: tip`、结语 `blockquote` 中三次呼应
-- **可执行结论**：以分组实践清单（task list）收尾，检查项具体可验证，避免"看起来优化了"的伪结论
+- **深度优先**：每篇文章 20+ 分钟长文，覆盖原理、机制、工程实践与可执行结论，而非碎片化技巧罗列
+- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇结构、渐进式解释、Mermaid 五色主题、反例/正例对照，以及按需使用的统一模型与实践/决策清单
+- **核心论点贯穿**：每篇文章有明确核心论点，开篇提出判断，章节补充证据或限制条件，结语给出工程判断，避免原句重复
+- **可执行结论**：实践型文章以分组实践清单（task list）收尾，其他类型按需使用决策清单或行动建议
 - **数据驱动 i18n**：所有语言元数据集中管理在单一数据源，通过代码生成 `config.js`，新增语言无需修改任何硬编码
 
 ## 快速开始

@@ -14,11 +14,7 @@ outline: deep
 
 # Modern State Management Evolution: The Design Philosophy from Flux to Zustand
 
-> Subtitle: From MVC to Flux, Redux, MobX, Zustand, and Jotai — design philosophy and decision framework for frontend state management.
->
-> Target readers: Intermediate and senior frontend engineers, frontend architects, and engineers making technology choices.
->
-> Reading time: ~27 minutes.
+Most teams do not choose a state-management library once. They start with local state, lift it, add a global store, then replace that store when the boilerplate or the update behavior becomes painful. Each replacement feels like a library decision, yet the recurring failures usually come from constraints that were never written down: how large the state is, how often it changes, who must audit it, and how much convention the team can maintain. This article compares Flux, Redux, MobX, Zustand, and Jotai along those constraints, then gives a conditional path for choosing a solution and for deciding whether a migration is justified.
 
 ::: info In one sentence
 Every step in frontend state-management evolution resolves the tension between "traceability of state changes" and "developer experience" — from Flux's strongly constrained unidirectional flow to Zustand's minimal API, each is a rebalancing of these two dimensions.
@@ -27,60 +23,59 @@ Every step in frontend state-management evolution resolves the tension between "
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [1. State Management Problems in the MVC Era](#1-state-management-problems-in-the-mvc-era)
-- [2. Flux: The Unidirectional Data Flow Revolution](#2-flux-the-unidirectional-data-flow-revolution)
-- [3. Redux: The Extreme of Functional and Immutable Style](#3-redux-the-extreme-of-functional-and-immutable-style)
-- [4. MobX: Reactive State Management](#4-mobx-reactive-state-management)
-- [5. Zustand and Jotai: A Return to Simplicity](#5-zustand-and-jotai-a-return-to-simplicity)
-- [6. Decision Framework for State Management](#6-decision-framework-for-state-management)
-- [7. Trend Observation: State Management Is "Disappearing"](#7-trend-observation-state-management-is-disappearing)
+- [1. Decision Context: Why MVC's Mesh State Got Out of Control](#_1-decision-context-why-mvc-s-mesh-state-got-out-of-control)
+- [2. Evaluation Dimensions: What You Are Actually Trading Off](#_2-evaluation-dimensions-what-you-are-actually-trading-off)
+- [3. Solution Comparison: Flux Trades Constraint for Unidirectional Data Flow](#_3-solution-comparison-flux-trades-constraint-for-unidirectional-data-flow)
+- [4. Solution Comparison: Redux Pushes Constraints to the Extreme](#_4-solution-comparison-redux-pushes-constraints-to-the-extreme)
+- [5. Solution Comparison: MobX Trades Reactivity for Developer Speed](#_5-solution-comparison-mobx-trades-reactivity-for-developer-speed)
+- [6. Solution Comparison: Zustand and Jotai Reduce Constraints](#_6-solution-comparison-zustand-and-jotai-reduce-constraints)
+- [7. Constraints and Risks: Anti-patterns and Boundary Conditions](#_7-constraints-and-risks-anti-patterns-and-boundary-conditions)
+- [8. Conditional Recommendations: Choosing by Project Conditions](#_8-conditional-recommendations-choosing-by-project-conditions)
+- [Decision Checklist](#decision-checklist)
+- [Conclusion: See the Constraints First, Then Choose the Tool](#conclusion-see-the-constraints-first-then-choose-the-tool)
 - [FAQ](#faq)
 - [Sources](#sources)
 
 ## Introduction
 
-Many frontend engineers understand state management like this:
+Many engineers follow the same path with state management:
 
-- At project start: use `useState`, simple enough.
-- As state grows: lift to parent components, prop drilling.
-- Annoyed: install Redux.
-- Annoyed by Redux: switch to MobX / Zustand / Jotai.
-- After a while: each solution feels slightly off.
+- Start with `useState`, which is simple enough;
+- Lift state into parent components as it grows, and begin prop drilling;
+- Install Redux when that becomes annoying;
+- Switch to MobX, Zustand, or Jotai when Redux feels heavy;
+- After a while, find that every option has something that does not fit.
 
-This process of "switching tools" reflects a failure to understand the problems different solutions are trying to solve. This article tries to build a complete "state-management evolution map" to answer these questions:
+Repeated tool switching usually means the constraints were never confirmed first: how large the state is, how often it updates, whether it needs auditing, and how many conventions the team can maintain.
 
-- Why did Flux appear? What problem of MVC did it solve?
-- Why are Redux's "three principles" these three? What is forced immutability for?
-- Are MobX and Redux opposites, or do they solve different problems?
-- Zustand is so simple; why can it replace Redux? What is it "missing"?
-- What is the essential difference between Jotai's "atomic" approach and Zustand's "centralized" approach?
-- For a specific project, how should you choose?
+This article answers those questions in decision order:
 
-::: tip Core argument of this article
+- Why did MVC's state flow get out of control before Flux?
+- What does each of Redux's three principles constrain?
+- Are MobX and Redux opposites, or solutions to different problems?
+- What exactly do Zustand and Jotai remove?
+- Under what conditions is migrating away from a working solution justified?
+- Should server data live in a global store?
 
-There is no "absolutely optimal" state-management solution. Each is a different trade-off among "constraint vs freedom," "centralized vs distributed," and "explicit vs implicit." Understanding these trade-off dimensions is the only way to make suitable choices instead of being led by tools.
+Code in this article shows structure and omits error handling and complete types. Snippets marked as runnable include their version and dependencies.
 
-:::
+## 1. Decision Context: Why MVC's Mesh State Got Out of Control
 
----
-
-## 1. State Management Problems in the MVC Era
-
-Before frontend frameworks became mainstream (around 2010–2014), frameworks such as Backbone.js, Ember.js, and Knockout commonly adopted MVC or MVP patterns. The Model held data, the View listened to Model changes and rendered, and the Controller handled user interactions.
+Before frontend frameworks matured (roughly 2010 to 2014), Backbone.js, Ember.js, Knockout, and similar frameworks commonly used MVC or MVP. The Model held data, the View listened to Model changes and rendered, and the Controller handled user interaction.
 
 ### 1. The Temptation and Trap of Two-Way Binding
 
-Early MVC frameworks widely supported two-way binding: changes in View inputs wrote back to the Model, and Model changes refreshed the View. This was very convenient in simple scenarios, but quickly got out of control in large applications:
+Early MVC frameworks commonly supported two-way binding: input changes in the View wrote back to the Model, and Model changes refreshed the View. It felt convenient in small scenarios and got out of control quickly as the application grew.
 
 ```javascript
-// Backbone-style pseudocode
+// Backbone-style pseudocode showing only the two-way binding structure; not directly runnable
 const Model = Backbone.Model.extend({
-  defaults: { count: 0, total: 100 }
+  defaults: { count: 0, total: 100 },
 })
 
 const View = Backbone.View.extend({
   events: {
-    'input #count': 'onInput'  // View -> Model
+    'input #count': 'onInput', // View -> Model
   },
   initialize() {
     this.model.on('change', this.render, this) // Model -> View
@@ -88,23 +83,22 @@ const View = Backbone.View.extend({
   onInput(e) {
     this.model.set('count', e.target.value)
   },
-  render() { /* ... */ }
+  render() {},
 })
 ```
 
 ### 2. State Flow Becomes Untraceable
 
-As the number of Models grows, Views depend on one another, and Models listen to one another, a single user action may trigger a chain of changes that is hard to trace:
+When Models multiply, Views depend on one another, and Models listen to one another, a single user action can trigger a chain of changes.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    V1[View A]
-    V2[View B]
-    V3[View C]
-    M1[Model 1]
-    M2[Model 2]
-    M3[Model 3]
+    V1["View A"]
+    V2["View B"]
+    V3["View C"]
+    M1["Model 1"]
+    M2["Model 2"]
+    M3["Model 3"]
 
     V1 -->|set| M1
     M1 -->|change| M2
@@ -115,45 +109,85 @@ flowchart LR
     M3 -->|change| V3
     V3 -->|set| M2
 
-    classDef view fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef model fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
 
-    class V1,V2,V3 view;
-    class M1,M2,M3 model;
+    class V1,V2,V3 wait;
+    class M1,M2,M3 block;
 ```
 
-This kind of "mesh dependency" leads to:
+The diagram has neither a start nor an end: Views write to Models, and Models influence other Models and Views through change events. As soon as one edge forms a cycle, a single input can trigger circular or cascading updates, and debugging rarely reveals the original action.
 
-- **Unpredictable data flow**: a single input may trigger circular or cascading updates.
-- **Difficult debugging**: the source of state changes is hard to trace.
-- **Difficult testing**: relies on a lot of implicit state.
+This mesh dependency creates three problems:
+
+- **Unpredictable data flow**: one input can trigger circular or cascading updates;
+- **Difficult debugging**: the source of a state change is hard to trace;
+- **Difficult testing**: tests depend on large amounts of implicit state.
 
 ### 3. Facebook's "MVC Does Not Scale" Claim
 
-In 2014, Facebook engineer Chew Chua showed a diagram in a Flux talk: in large applications, MVC quickly became a tangle of "V-C-M-V-M-C." This diagram directly drove the birth of Flux.
+In 2014, a Facebook engineer showed a diagram in a Flux talk: at large scale, MVC turned into an entangled "V-C-M-V-M-C" loop. That diagram helped drive the creation of Flux.
 
 ::: warning Common misconception
-
-Many people misinterpret this as "the MVC pattern itself is flawed." In fact, MVC works very well in small applications. The problem is that "as frontend applications grow in scale, there is a lack of unified constraints on state changes." Flux's core is not "replacing MVC," but "using unidirectional data flow to forcibly constrain the path of state changes."
-
+MVC itself is not broken. It works well in small applications. The problem is that once a frontend application grows, it lacks a unified constraint on the path of state changes. Flux does not replace MVC; it forces the change path through a unidirectional data flow.
 :::
 
-::: tip Core conclusion of this section
+The core problem of the MVC era was two-way binding plus Models listening to each other, which turned data flow into a mesh. Flux set out to compress that mesh back into a unidirectional chain.
 
-The core problem of state management in the MVC era was: two-way binding + Models listening to each other caused data flow to become a mesh that could not be traced. Flux appeared precisely to break this mesh dependency with unidirectional data flow.
+## 2. Evaluation Dimensions: What You Are Actually Trading Off
 
-:::
+Before comparing libraries, fix the axes. Without them, it is easy to treat "less code" as the only criterion and ignore collaboration and traceability.
 
----
+| Dimension | Question it answers | Why it changes the choice |
+| --- | --- | --- |
+| State scale and lifetime | Does the state live inside one component, a subtree, or globally for a long time? | Globalizing widens the subscription surface and blurs cleanup ownership |
+| State shape | Is it a centralized enumerable object, or many dynamically generated units that depend on each other? | Decides whether selectors stay usable and whether the dependency graph stays controllable |
+| Update granularity | Under frequent updates, can only the affected components re-render? | Component-level subscriptions amplify cost in high-frequency updates |
+| Traceability | Does every change need auditing, replay, or strict constraints? | Strong-constraint solutions need more code but give clearer debugging and collaboration boundaries |
+| Team collaboration cost | How long does a newcomer need to become productive? Do teams need shared conventions? | High-freedom solutions with weak conventions get harder to maintain as they grow |
+| Server-state boundary | Who owns the data, and who owns its freshness? | Server caches have dedicated tools; mixing them into a general store adds burden |
 
-## 2. Flux: The Unidirectional Data Flow Revolution
+### 1. State Scale and Lifetime
 
-Flux is a state-management architecture proposed by Facebook in 2014. It is not a library, but a design pattern. The core idea: **all state changes must pass through the Dispatcher and flow in one direction**.
+Form input, toggles, and temporary animation state inside a component follow the component lifecycle and are cheapest to keep local. Only state shared across pages and expected to live for a long time belongs in a global layer.
+
+The criterion is not "how many variables exist" but "who reads them, for how long, and who is responsible for cleanup."
+
+### 2. State Shape
+
+Centralized state is like one object with a few slices, suitable for enumerable structures such as user information, theme, and configuration. Atomic state suits large numbers of dynamically generated units that depend on one another, such as complex form fields or cards that can be added and removed.
+
+Choose the wrong shape and you will spend the rest of the project compensating with more selectors or dependency declarations.
+
+### 3. Update Granularity
+
+Frequent updates such as dragging, search suggestions, and real-time collaboration amplify the subscription surface. Component-level subscriptions mean one change can rerun the whole component; field-level subscriptions trigger only the related effects or selectors.
+
+This dimension decides whether you need a finer-grained reactive system, not how short the API is.
+
+### 4. Traceability
+
+When every state change must be audited, replayed, or investigated across teams, explicit Actions and immutable updates pay for themselves. When changes only serve one team's fast iteration, strong constraints may be pure overhead.
+
+### 5. Team Collaboration Cost
+
+Redux Toolkit removes much of early Redux's boilerplate but still requires the team to understand actions, reducers, and middleware. Zustand's API is shorter, but the team must decide when to split stores and how to write selectors.
+
+Choosing a library is also choosing a set of conventions the team will maintain.
+
+### 6. Server-State Boundary
+
+Data fetched from an API has an owner, a freshness requirement, and a consistency requirement; it behaves more like a cache than like client state. Putting it in a general store usually means rebuilding loading, error, cache invalidation, and concurrent request handling yourself.
+
+Identify server state first, and the remaining client state is often much smaller.
+
+## 3. Solution Comparison: Flux Trades Constraint for Unidirectional Data Flow
+
+Flux is an architecture Facebook introduced in 2014. It is not a library but a design pattern: all state changes must pass through the Dispatcher and flow in one direction.
 
 ### 1. The Four Roles of Flux
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     Action(["Action<br/>type + payload"])
     Dispatcher(["Dispatcher<br/>unified dispatch"])
@@ -165,26 +199,28 @@ flowchart LR
     Store -->|change event| View
     View -->|user event| Action
 
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef dispatcher fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef view fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class Action action;
-    class Dispatcher dispatcher;
-    class Store store;
-    class View view;
+    class Action metric;
+    class Dispatcher core;
+    class Store block;
+    class View wait;
 ```
 
-- **Action**: a plain object describing "what happened" — `{ type, payload }`.
-- **Dispatcher**: dispatches Actions uniformly to all Stores.
-- **Store**: holds state, registers with the Dispatcher, and updates itself based on Action type.
-- **View**: subscribes to Store changes, renders, and responds to user actions by triggering Actions.
+The four roles form a closed loop: the View produces Actions, the Dispatcher distributes them, the Store updates state and emits a change event, and the View renders from that event. Unidirectional means state changes may only travel this way; Stores cannot call one another directly.
+
+- **Action**: a plain object `{ type, payload }` describing what happened;
+- **Dispatcher**: distributes Actions to all Stores;
+- **Store**: holds state, registers with the Dispatcher, and updates itself by Action type;
+- **View**: subscribes to Store changes, renders, and responds to user interaction by triggering Actions.
 
 ### 2. Simplified Implementation
 
 ```javascript
-// Dispatcher: simplified implementation
+// Only the dispatch and subscription spine is kept; external references such as render are omitted
 class Dispatcher {
   constructor() {
     this.callbacks = []
@@ -202,7 +238,6 @@ class Dispatcher {
 
 const dispatcher = new Dispatcher()
 
-// Store
 class TodoStore {
   constructor() {
     this.todos = []
@@ -230,7 +265,6 @@ class TodoStore {
   }
 }
 
-// View
 const store = new TodoStore()
 store.subscribe(() => render(store.todos))
 addButton.onclick = () => {
@@ -241,60 +275,55 @@ addButton.onclick = () => {
 ### 3. What Flux Solved
 
 | MVC Problem | Flux Solution |
-|-------------|---------------|
-| Mesh data flow | All data flows through the Dispatcher, unidirectionally. |
-| Models listening to each other | Stores are not allowed to call each other directly; they communicate only indirectly through the Dispatcher. |
-| Untraceable state changes | All changes must be triggered by Actions; Actions are immutable events. |
-| Difficult debugging | Actions are discrete events that can be logged and replayed. |
+|---|---|
+| Mesh data flow | All data flows through the Dispatcher in one direction |
+| Models listening to each other | Stores cannot call each other directly; they communicate only through the Dispatcher |
+| Untraceable state changes | Every change must be triggered by an Action, and Actions are immutable events |
+| Difficult debugging | Actions are discrete events that can be recorded and replayed |
 
 ### 4. Limitations of Flux
 
-- **Multi-Store coordination is cumbersome**: one Action may need to update multiple Stores, and Stores must wait for one another (`waitFor`).
-- **No standard implementation**: Facebook provided the pattern, but concrete APIs differed across implementations.
-- **Boilerplate code**: every Store required a switch-case, generating a lot of template code.
+- **Multi-Store coordination is cumbersome**: one Action may update several Stores, and Stores may need to wait for one another (`waitFor`);
+- **No standard implementation**: Facebook provided the pattern, and each implementation exposed a different API;
+- **Boilerplate**: every Store needs a switch-case.
 
-These limitations directly gave birth to Redux — a "standardized, single-Store, functional" variant of Flux.
+These limitations led directly to Redux, a standardized, single-Store, functional variant of Flux.
 
-::: tip Core conclusion of this section
+Flux's contribution is turning state changes into enumerable events. The cost is that every event needs handwritten dispatch and branching.
 
-Flux broke MVC's mesh dependency with unidirectional data flow (Action → Dispatcher → Store → View). Its core contribution is "constraint": all state changes must be explicit Actions. The cost is verbose boilerplate and complex multi-Store coordination — precisely the problems Redux set out to solve.
+## 4. Solution Comparison: Redux Pushes Constraints to the Extreme
 
-:::
+Dan Abramov and Andrew Clark created Redux in 2015. It standardized Flux's ideas and fixed three principles:
 
----
-
-## 3. Redux: The Extreme of Functional and Immutable Style
-
-Redux is a library created by Dan Abramov in 2015. It pushed Flux's ideas to the extreme. Redux's "three principles" are:
-
-1. **Single source of truth**: the entire application state is stored in a single state tree.
-2. **State is read-only**: the only way to change state is to dispatch an action.
-3. **Changes are made with pure functions**: reducers must be pure functions with no side effects.
+1. **Single source of truth**: the whole application state lives in one state tree;
+2. **State is read-only**: the only way to change state is to dispatch an action;
+3. **Changes are made with pure functions**: reducers must be pure and free of side effects.
 
 ### 1. Redux's Core Model
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     UI["UI: dispatch action"]
     A["Action: {type, payload}"]
-    R["Reducer: pure function<br/>state, action -> newState"]
+    R["Reducer: pure function<br/>state + action -> newState"]
     S["Store: single state tree"]
     UI2["UI: subscribe state"]
 
     UI --> A --> R --> S --> UI2
     UI2 -.user event.-> UI
 
-    classDef ui fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef reducer fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
 
-    class UI,UI2 ui;
-    class A action;
-    class R reducer;
-    class S store;
+    class UI,UI2 wait;
+    class A metric;
+    class R work;
+    class S block;
 ```
+
+Actions are the only input, the Reducer is pure computation, and the Store is the only source of state. The dashed edge shows user interaction producing a new Action rather than mutating the Store directly; that boundary is where Redux's traceability comes from.
 
 ### 2. Complete Simplified Implementation
 
@@ -306,7 +335,7 @@ function createStore(reducer, initialState) {
   return {
     getState: () => state,
     dispatch: (action) => {
-      state = reducer(state, action) // pure function computes new state
+      state = reducer(state, action) // pure function computes the new state
       listeners.forEach((l) => l())
       return action
     },
@@ -320,11 +349,11 @@ function createStore(reducer, initialState) {
   }
 }
 
-// Reducer: pure function, immutable updates
+// Reducer: pure function with immutable updates
 function todosReducer(state = [], action) {
   switch (action.type) {
     case 'ADD_TODO':
-      return [...state, action.payload] // new array; do not mutate original state
+      return [...state, action.payload]
     case 'TOGGLE_TODO':
       return state.map((t) =>
         t.id === action.payload.id ? { ...t, done: !t.done } : t
@@ -341,27 +370,29 @@ store.subscribe(() => console.log(store.getState()))
 store.dispatch({ type: 'ADD_TODO', payload: { id: 1, text: 'learn redux', done: false } })
 ```
 
+This code runs in Node.js 18+ or in a browser console; the output is an array containing one todo.
+
 ### 3. Why Immutability Is Enforced
 
-Redux's most distinctive feature is that reducers must return new objects rather than directly mutating the original state. There are three reasons:
+**Immutable** means creating a new object on update instead of modifying the original in place. Redux requires reducers to return new objects for three reasons.
 
-**First, traceability**: every state change is a new reference, so `===` can quickly determine whether something changed without deep comparison.
+**First, traceability**: every state change produces a new reference, so `===` quickly detects whether something changed without a deep comparison.
 
 ```javascript
 // Foundation of React-Redux optimization
 function shallowEqual(a, b) {
   if (a === b) return true // reference equality returns immediately, O(1)
-  // ...
+  // continue comparing the first level of fields
 }
 ```
 
-**Second, time travel**: because state is immutable, all historical states are kept in memory and can be replayed. This is the foundation of Redux DevTools.
+**Second, time travel**: historical states remain in memory and can be replayed. This is the foundation of Redux DevTools.
 
-**Third, pure functions are testable**: reducers are pure functions; given the same input, they always produce the same output, so tests need no mocks.
+**Third, pure functions are testable**: a reducer always produces the same output for the same input, so tests need no mocks.
 
 ### 4. Middleware Mechanism
 
-Redux handles side effects (asynchrony, logging, error handling) through middleware. Middleware is a wrapper around `store.dispatch`:
+Redux handles side effects such as async requests, logging, and error handling through middleware. Middleware wraps `store.dispatch`.
 
 ```javascript
 function applyMiddleware(store, middlewares) {
@@ -380,7 +411,7 @@ const logger = (store) => (next) => (action) => {
   return result
 }
 
-// Thunk middleware: handles async actions
+// Thunk middleware: handles function-shaped actions
 const thunk = (store) => (next) => (action) => {
   if (typeof action === 'function') {
     return action(store.dispatch, store.getState)
@@ -388,11 +419,9 @@ const thunk = (store) => (next) => (action) => {
   return next(action)
 }
 
-// Usage
 const store = createStore(reducer, initialState)
 const enhancedStore = applyMiddleware(store, [logger, thunk])
 
-// Async action
 const fetchTodos = () => async (dispatch) => {
   dispatch({ type: 'FETCH_TODOS_REQUEST' })
   try {
@@ -407,15 +436,15 @@ enhancedStore.dispatch(fetchTodos())
 
 ### 5. The Cost of Redux
 
-Redux's "constraint power" is both its strength and its cost:
+Redux's constraint power is both its strength and its cost:
 
-- **Lots of boilerplate**: even a simple feature requires action types, action creators, reducers, and connected components.
-- **Immutable updates are tedious**: nested object spread operations are hard to read and error-prone.
-- **Steep learning curve**: pure functions, immutability, middleware, and connect/Hooks all have to be learned.
-- **Over-engineering**: using Redux in a small project is overkill.
+- **Boilerplate**: a simple feature needs action types, action creators, a reducer, and a connected component;
+- **Tedious immutable updates**: spreading nested objects is hard to read and easy to get wrong;
+- **Steep learning curve**: pure functions, immutability, middleware, and connect or Hooks all have to be learned;
+- **Over-engineering**: Redux adds unnecessary constraints to small projects.
 
 ```javascript
-// Pain of nested updates
+// The pain of nested updates
 function reducer(state, action) {
   switch (action.type) {
     case 'UPDATE_TODO_TEXT':
@@ -431,37 +460,31 @@ function reducer(state, action) {
 }
 ```
 
-This tedium gave rise to tools like Immer, which let reducers "write immutable updates with mutable syntax":
+Immer lets reducers write immutable updates with mutable syntax.
 
 ```javascript
 import { produce } from 'immer'
 
 const reducer = produce((draft, action) => {
   switch (action.type) {
-    case 'UPDATE_TODO_TEXT':
+    case 'UPDATE_TODO_TEXT': {
       const todo = draft.todos.find((t) => t.id === action.payload.id)
-      if (todo) todo.text = action.payload.text // looks mutable, but actually produces new state
+      if (todo) todo.text = action.payload.text // looks mutable, but produces new state
       break
+    }
   }
 })
 ```
 
-::: tip Core conclusion of this section
+Redux fits scenarios where state changes are auditable events. The cost is maintaining an action and reducer convention for every extension. Whether that pays off depends on whether traceability actually matters to the team.
 
-Redux pushes Flux to the extreme: single Store, pure-function reducers, and enforced immutability. In exchange, it gains traceability, time travel, and pure-function testability, at the cost of a lot of boilerplate and tedious immutable updates. Redux suits "large applications + teams that need strong constraints."
+## 5. Solution Comparison: MobX Trades Reactivity for Developer Speed
 
-:::
-
----
-
-## 4. MobX: Reactive State Management
-
-MobX takes the exact opposite path. Its core idea is: "automatically track dependencies through a reactive system, so that state management becomes 'modifying data' itself."
+MobX takes the opposite path. Its reactive system tracks dependencies automatically and brings state management back to "modify the data."
 
 ### 1. MobX's Core Model
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     S["Observable State<br/>mutable state"]
     A["Action<br/>directly mutates state"]
@@ -473,26 +496,30 @@ flowchart LR
     S -->|track| R
     D -->|track| R
 
-    classDef state fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef derived fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef reaction fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class S state;
-    class A action;
-    class D derived;
-    class R reaction;
+    class S block;
+    class A metric;
+    class D work;
+    class R wait;
 ```
+
+The entry is an Action and the exit is a Reaction. Observable state records dependencies when it is read and notifies when it is modified; both Derived values and Reactions attach to state through `track`. There is no handwritten subscription list; reading behavior determines the dependency.
 
 ### 2. Simplified Implementation
 
+The code below shows the minimum structure of "Proxy plus automatic dependency collection." It is not MobX's source code.
+
 ```javascript
-// Simplified observable: essentially Vue 3's reactive
+// Simplified observable: close in spirit to Vue 3's reactive
 function observable(target) {
   const deps = new Map() // key -> Set<reaction>
   let currentReaction = null
 
-  return new Proxy(target, {
+  const proxy = new Proxy(target, {
     get(t, key) {
       if (currentReaction) {
         if (!deps.has(key)) deps.set(key, new Set())
@@ -506,105 +533,107 @@ function observable(target) {
       return true
     },
   })
-}
 
-function autorun(fn) {
-  const reaction = () => {
-    currentReaction = reaction
-    try {
-      fn()
-    } finally {
-      currentReaction = null
+  function autorun(fn) {
+    const reaction = () => {
+      currentReaction = reaction
+      try {
+        fn()
+      } finally {
+        currentReaction = null
+      }
     }
+    reaction()
   }
-  reaction()
+
+  return { proxy, autorun }
 }
 
-// Usage
 const state = observable({ count: 0, todos: [] })
 
-autorun(() => {
-  console.log('count is', state.count) // automatically tracks count
+state.autorun(() => {
+  console.log('count is', state.proxy.count)
 })
 
-state.count = 1 // console output: count is 1
-state.todos.push({}) // won't trigger the autorun above (because todos wasn't read)
+state.proxy.count = 1 // console output: count is 1
+state.proxy.todos.push({}) // does not trigger the autorun above because todos was not read
 ```
 
-### 3. Key Designs of MobX
+### 3. The MobX 6 Style
 
-**First, state is mutable**: directly write `state.count++` — no reducer, no dispatch, no immutable update.
-
-**Second, automatic dependency tracking**: a reaction automatically subscribes to whichever observables it reads while running. No manual dependency list is needed.
-
-**Third, fine-grained updates**: each observable property has its own subscription set; updating a property triggers only the relevant reactions, not others.
-
-**Fourth, computed caching**: derived states are automatically cached and return the old value when dependencies do not change.
+Real projects usually use `makeAutoObservable` so class fields, getters, and actions automatically become observable, computed, and actions.
 
 ```javascript
-import { observable, computed, autorun } from 'mobx'
+import { makeAutoObservable, autorun } from 'mobx'
 
-const store = observable({
-  todos: [],
+class TodoStore {
+  todos = []
+
+  constructor() {
+    makeAutoObservable(this)
+  }
+
   get unfinishedCount() {
-    return computed(() => this.todos.filter((t) => !t.done).length).get()
-  },
-})
+    return this.todos.filter((t) => !t.done).length
+  }
 
-autorun(() => {
-  console.log('unfinished:', store.unfinishedCount)
-})
+  addTodo(text) {
+    this.todos.push({ text, done: false })
+  }
+}
 
-store.todos.push({ done: false }) // automatically outputs: unfinished: 1
+const store = new TodoStore()
+autorun(() => console.log('unfinished:', store.unfinishedCount))
+store.addTodo('learn mobx') // console output: unfinished: 1
 ```
 
-### 4. Redux vs MobX
+These examples target MobX 6. Earlier versions used decorators or explicit `observable` wrapping and look different.
+
+### 4. Key Designs of MobX
+
+**First, state is mutable**: write `state.count++` directly, with no reducer, dispatch, or immutable update.
+
+**Second, dependency tracking is automatic**: a reaction subscribes to whichever observables it reads at runtime, with no manual dependency list.
+
+**Third, updates are fine-grained**: each observable property has its own subscription set, so updating one property triggers only the related reactions.
+
+**Fourth, computed values are cached**: derived state is cached and returns the old value while dependencies are unchanged.
+
+### 5. Redux vs MobX
 
 | Dimension | Redux | MobX |
-|-----------|-------|------|
-| Data flow | Unidirectional, explicit Action | Bidirectional, direct mutation |
+|------|-------|------|
+| Data flow | Unidirectional, explicit Actions | Bidirectional, direct mutation |
 | State mutability | Immutable | Mutable |
-| Dependency tracking | Manual connect/selector | Automatic |
-| Update granularity | Component-level (subscribes to state slice) | Field-level |
-| Boilerplate | Lots | Little |
+| Dependency tracking | Manual connect or selector | Automatic |
+| Update granularity | Component-level (subscribes to a state slice) | Field-level |
+| Boilerplate | Much | Little |
 | Traceability | Strong (every change is an Action) | Weak (state can be changed anywhere) |
-| Debugging | Time travel, Action replay | Hard to replay (state is directly mutated) |
-| Suitable scale | Large teams needing constraints | Small-to-medium teams pursuing dev efficiency |
+| Debugging | Time travel and Action replay | Hard to replay (state is mutated directly) |
+| Suitable scale | Large teams needing constraints | Small to medium teams pursuing development speed |
 
-::: warning Key insight
+Redux and MobX are not good versus bad; they trade constraints for freedom. Redux's strong constraints make large-team collaboration safer, and MobX's freedom makes small projects faster to develop. When there is no need to audit every state change, MobX usually offers the better development experience.
 
-Redux and MobX are not a "good vs bad" relationship, but a trade-off between "constraint vs freedom." Redux's strong constraints make collaboration safer for large teams; MobX's freedom makes development faster for small-to-medium projects. In scenarios that do not require "strictly auditing every state change," MobX's developer experience is far better than Redux's.
+## 6. Solution Comparison: Zustand and Jotai Reduce Constraints
 
-:::
+Between 2017 and 2019, dissatisfaction with Redux's verbosity produced a wave of minimal state libraries. Zustand and Jotai are the most representative, alongside Recoil, Valtio, and others.
 
-::: tip Core conclusion of this section
+### 1. Zustand: Keep the Store, Remove the Boilerplate
 
-MobX uses a reactive system to automatically bind "state changes" and "UI updates," letting developers directly mutate state without Actions/Reducers. The cost is the loss of "explicitly traceable" auditability. It is the representative of the "freedom camp," standing in contrast to Redux's "constraint camp."
+Zustand keeps Redux's idea of an explicit store but removes the boilerplate. The example targets Zustand 4 or 5 with React 18+.
 
-:::
-
----
-
-## 5. Zustand and Jotai: A Return to Simplicity
-
-By 2017–2019, the community had grown increasingly dissatisfied with Redux's verbosity. A wave of "minimalist state management" libraries emerged, the most representative being Zustand and Jotai (along with Recoil, Valtio, and others).
-
-### 1. Zustand: A Minimalist "Tiny Redux"
-
-Zustand's design goal: keep Redux's idea of an "explicit store," but remove all boilerplate.
-
-```javascript
+```jsx
 import { create } from 'zustand'
 
 const useStore = create((set, get) => ({
   count: 0,
   todos: [],
   increment: () => set((state) => ({ count: state.count + 1 })),
-  addTodo: (text) => set((state) => ({ todos: [...state.todos, { text, done: false }] })),
+  addTodo: (text) =>
+    set((state) => ({ todos: [...state.todos, { text, done: false }] })),
   getUnfinished: () => get().todos.filter((t) => !t.done).length,
 }))
 
-// Usage
 function Counter() {
   const count = useStore((state) => state.count)
   const increment = useStore((state) => state.increment)
@@ -612,24 +641,28 @@ function Counter() {
 }
 ```
 
-**Key designs**:
+Key designs:
 
-- **The store is a Hook**: called directly inside components, no Provider needed.
-- **State and actions live together**: no more separate reducers/action creators.
-- **Mutable or immutable updates are both fine**: `set` accepts a new object, and mutable syntax is also possible via the Immer middleware.
-- **Selector optimization**: components subscribe only to the slices they care about.
+- **The store is a hook**: call it directly in a component, with no Provider;
+- **State and actions live together**: no separate reducer or action creator;
+- **Mutable or immutable both work**: `set` accepts a new object and can also use Immer syntax;
+- **Selector optimization**: components subscribe only to the slice they need.
+
+A simplified implementation looks like this:
 
 ```javascript
-// Simplified implementation
+import { useSyncExternalStore } from 'react'
+
 function createStore(createState) {
   let state
   const listeners = new Set()
 
   const setState = (partial) => {
     const nextState = typeof partial === 'function' ? partial(state) : partial
-    if (nextState !== state) {
+    if (!Object.is(nextState, state)) {
+      const previousState = state
       state = Object.assign({}, state, nextState)
-      listeners.forEach((l) => l())
+      listeners.forEach((l) => l(previousState, state))
     }
   }
   const getState = () => state
@@ -642,21 +675,20 @@ function createStore(createState) {
   state = createState(setState, getState, api)
 
   const useStore = (selector = (s) => s) => {
-    return useSyncExternalStore(
-      subscribe,
-      () => selector(getState())
-    )
+    return useSyncExternalStore(subscribe, () => selector(getState()))
   }
   Object.assign(useStore, api)
   return useStore
 }
 ```
 
+This simplified version does not handle caching when a selector returns a new object. Zustand uses `useSyncExternalStoreWithSelector` and compares snapshots with `Object.is`, avoiding repeated renders when nothing changed.
+
 ### 2. Jotai: Atomic State
 
-Jotai (inspired by Recoil) takes a completely different route: **state is not concentrated in one tree, but scattered into independent "atoms."**
+Inspired by Recoil, Jotai takes a different route: state is not concentrated in one tree but scattered into independent atoms. The example targets Jotai 2.x.
 
-```javascript
+```jsx
 import { atom, useAtom } from 'jotai'
 
 // Atom: the smallest unit of state
@@ -677,31 +709,24 @@ function Counter() {
   const [count, setCount] = useAtom(countAtom)
   return <button onClick={() => setCount(count + 1)}>{count}</button>
 }
-
-function TodoList() {
-  const [unfinished] = useAtom(unfinishedCountAtom)
-  const [, addTodo] = useAtom(addTodoAtom)
-  // ...
-}
 ```
 
-**Key designs**:
+Key designs:
 
-- **Scattered state**: each atom is independent; no centralized store is needed.
-- **Graph-like dependencies**: atoms can depend on other atoms, automatically forming a dependency graph.
-- **Fine-grained subscriptions**: components subscribe only to the atoms they use; atom changes trigger only the relevant components.
-- **Derivable**: atoms can be read-only derived states or writable transformation atoms.
+- **Scattered state**: each atom is independent and needs no centralized store;
+- **Graph-like dependencies**: atoms can depend on other atoms and form a dependency graph automatically;
+- **Fine-grained subscriptions**: components subscribe only to the atoms they use;
+- **Derivable**: an atom can be read-only derived state or a writable transformation.
 
 ### 3. Zustand vs Jotai
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Zustand["Zustand: centralized"]
         Z1["Store<br/>centralized state tree"]
         Z2["Selector<br/>subscribes to slice"]
-        Z3[Component A]
-        Z4[Component B]
+        Z3["Component A"]
+        Z4["Component B"]
 
         Z1 --> Z2
         Z2 --> Z3
@@ -709,11 +734,11 @@ flowchart TB
     end
 
     subgraph Jotai["Jotai: distributed"]
-        J1[countAtom]
-        J2[todosAtom]
+        J1["countAtom"]
+        J2["todosAtom"]
         J3["filterAtom<br/>derived"]
-        J4[Component A]
-        J5[Component B]
+        J4["Component A"]
+        J5["Component B"]
 
         J1 --> J4
         J2 --> J3
@@ -721,225 +746,197 @@ flowchart TB
         J2 --> J5
     end
 
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef atom fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef selector fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef component fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class Z1 store;
-    class J1,J2,J3 atom;
-    class Z2 selector;
-    class Z3,Z4,J4,J5 component;
+    class Z1 block;
+    class J1,J2,J3 work;
+    class Z2 metric;
+    class Z3,Z4,J4,J5 wait;
 ```
+
+On the left, Zustand has one state source and components read slices through a selector. On the right, Jotai has multiple atoms, and derived atoms connect their dependencies into a graph. The more edges the graph has, the more you should consider splitting dependencies instead of piling them into one store.
 
 | Dimension | Zustand | Jotai |
-|-----------|---------|-------|
+|------|---------|-------|
 | State shape | Centralized store | Scattered atoms |
-| Mental model | "Global object + selector" | "Atoms + dependency graph" |
-| Suitable scenarios | Business state, enumerable state collections | Complex state dependencies, dynamically generated state |
-| State sharing | Global by default | Global by default, can be scoped |
-| API style | Imperative set/get | Declarative atom |
+| Mental model | Global object plus selector | Atoms plus dependency graph |
+| Suitable scenarios | Business state and enumerable state collections | Complex dependencies and dynamically generated state |
+| State sharing | Global by default | Global by default, with optional scoping |
+| API style | Imperative set and get | Declarative atom |
 
-### 4. Why Zustand/Jotai Can Replace Redux
+### 4. What They Removed
 
-::: tip Shared design philosophy
+The shared design direction of Zustand and Jotai:
 
-1. **Zero boilerplate**: no reducer, no action creator, no switch-case.
-2. **Zero Provider**: import and use directly in components, no polluting the component tree.
-3. **Immutability is not enforced**: but it is encouraged, and working with Immer is easy.
-4. **Hook-based**: naturally fits the React functional-component paradigm.
-5. **Small enough**: Zustand ~1 KB, Jotai ~3 KB — together smaller than Redux Toolkit.
+1. **No boilerplate**: no reducer, action creator, or switch-case;
+2. **No Provider**: import and use directly without polluting the component tree;
+3. **No enforced immutability**: but it is encouraged, and Immer works easily;
+4. **Hook-based**: naturally fits React function components;
+5. **Small surface**: exact bundle size varies by version and packaging, but all are in the low-kilobyte range.
 
-:::
+They also give up some Redux capabilities: no enforced Action types, no native time travel (Zustand needs middleware), and no standardized side-effect solution (choose saga, observable, or async yourself).
 
-But they also "lack" some things Redux provides: no enforced Action types, no time travel (although Zustand can implement it via middleware), and no standardized side-effect solution (you need to use saga/observable/async yourself).
+Zustand and Jotai represent a return to simplicity. Zustand keeps a centralized store and removes boilerplate; Jotai scatters state into minimal units and manages them through a dependency graph. Both trade reduced constraints for developer experience, and both hand the convention burden back to the team.
 
-::: tip Core conclusion of this section
+## 7. Constraints and Risks: Anti-patterns and Boundary Conditions
 
-Zustand and Jotai represent the "return to simplicity" trend. Zustand is a "tiny Redux" — keeping the centralized store while removing boilerplate. Jotai is "atomic state" — scattering state into minimal units and letting the dependency graph manage itself. Both improve developer experience by "reducing constraints."
+Choosing is not a one-time event. Three anti-patterns and several trends can change the earlier judgment.
 
-:::
+### 1. Anti-pattern: Putting All State in the Global Store
 
----
+```jsx
+// Counter-example: input used by only one form is placed in a global store
+const useFormStore = create((set) => ({
+  value: '',
+  setValue: (value) => set({ value }),
+}))
 
-## 6. Decision Framework for State Management
+// Correct: component-local state is enough
+const [value, setValue] = useState('')
+```
 
-After understanding the design philosophy of different solutions, the next question is: how to choose in a concrete project? Below is a decision framework based on practical experience.
+Rule: only state that is shared across multiple components and lives for a long time belongs in a global store. Temporary form input, animation state, and local UI toggles belong in component state.
 
-### 1. Decision Tree
+### 2. Anti-pattern: Managing Server State with a General Store
+
+```jsx
+// Counter-example: maintaining the server list cache, loading, and error state yourself
+const [todos, setTodos] = useState([])
+useEffect(() => {
+  fetchTodos().then(setTodos)
+}, [])
+```
+
+Server state has dedicated libraries: TanStack Query, SWR, and RTK Query. They handle caching, revalidation, loading state, and concurrent requests.
+
+```jsx
+// Correct: let a query library manage cache and request state
+const { data: todos, isLoading, error } = useQuery({
+  queryKey: ['todos'],
+  queryFn: fetchTodos,
+})
+```
+
+### 3. Anti-pattern: Choosing Without Considering the Team
+
+A team with many newcomers choosing Redux is paying for constraints, but the learning cost is high. A strongly collaborative team choosing MobX is paying for freedom, but state changes become hard to trace. The decision must account for team structure, not only technical metrics.
+
+### 4. Server State Is Being Split Out
+
+React Query, SWR, and RTK Query separate server-data caching from state management. Developers no longer need to store API data in Redux; query libraries manage it. In many business applications, most so-called state is a local cache of server data.
+
+### 5. Framework Built-ins Are Growing
+
+- React Server Components render server state directly into the component tree;
+- React's `use` Hook reads asynchronous data under Suspense semantics;
+- VueUse composables such as `useStorage` and `useAsyncState` cover common cases;
+- Meta-frameworks such as SvelteKit and SolidStart include data loading and state synchronization.
+
+The more the framework covers, the less a general state library needs to carry.
+
+### 6. The URL Carries Part of the Shared State
+
+Search criteria, filters, pagination, and selected tabs increasingly move into the URL. URL state is naturally shareable, supports back and forward navigation, and can be server-rendered, which further reduces the client state that needs management.
+
+### 7. Boundary: State Libraries Do Not Disappear
+
+The remaining client state is smaller: user preferences, UI state, local drafts, and collaborative state. Zustand or Jotai is usually enough, but Redux Toolkit and similar strong-constraint solutions still have a place when auditing, cross-team collaboration, or complex async orchestration is required.
+
+If server state, URL state, and framework built-ins keep absorbing common needs, state libraries will return to the role of local tools rather than the core of project architecture. That judgment assumes an application centered on server data; local-first and offline collaboration applications will follow a different path.
+
+## 8. Conditional Recommendations: Choosing by Project Conditions
+
+The dimensions above collapse into one decision path: check scale and lifetime first, then sharing scope, and finally audit needs and state shape.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
-    Start(["Start selecting"])
+    Start(["Start Selection"])
 
-    Q1{"State scale?"}
-    Q2{"Need<br/>cross-component sharing?"}
-    Q3{"Team size?"}
+    Q1{"State scale and lifetime?"}
+    Q2{"Sharing scope?"}
+    Q3{"Need audit or replay?"}
     Q4{"State shape?"}
-    Q5{"Need<br/>audit/replay?"}
-    Q6{"Lots of<br/>dynamic state?"}
 
     R1["useState / useReducer<br/>component state"]
-    R2["Context + useReducer<br/>local sharing"]
-    R3["Zustand<br/>lightweight global"]
-    R4["Jotai<br/>atomic"]
-    R5["Redux Toolkit<br/>strongly-constrained large app"]
-    R6["MobX<br/>reactive-style team"]
+    R2["Context + useReducer<br/>shared within one subtree"]
+    R3["Zustand<br/>centralized global state"]
+    R4["Jotai<br/>atomic / graph dependencies"]
+    R5["Redux Toolkit<br/>strong constraints / auditable"]
+    R6["MobX<br/>reactive mutable state"]
 
     Start --> Q1
-    Q1 -->|"small, local"| R1
-    Q1 -->|"medium, needs sharing"| Q2
-    Q1 -->|"large, complex"| Q3
+    Q1 -->|small and local| R1
+    Q1 -->|medium and shared| Q2
+    Q1 -->|large and long-lived| Q3
+    Q2 -->|single subtree| R2
+    Q2 -->|cross-page global| Q3
+    Q3 -->|yes| R5
+    Q3 -->|no| Q4
+    Q4 -->|centralized enumerable| R3
+    Q4 -->|dynamic graph| R4
+    Q4 -->|reactive mutable| R6
 
-    Q2 -->|"no"| R1
-    Q2 -->|"yes"| Q3
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    Q3 -->|"individual / small team"| Q4
-    Q3 -->|"large team / multi-team"| Q5
-
-    Q4 -->|"centralized, enumerable"| R3
-    Q4 -->|"dynamic / graph-like dependencies"| R6
-    Q5 -->|"yes"| R5
-    Q5 -->|"no"| Q6
-
-    Q6 -->|"yes"| R4
-    Q6 -->|"no"| R3
-
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef question fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef result fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-
-    class Start start;
-    class Q1,Q2,Q3,Q4,Q5,Q6 question;
-    class R1,R2,R3,R4,R5,R6 result;
+    class Start core;
+    class Q1,Q2,Q3,Q4 wait;
+    class R1,R2,R3,R4,R5,R6 work;
 ```
 
-### 2. Four Core Dimensions
+The tree narrows the question in order: remove state that does not need to be global, then check sharing scope, and only then compare library shapes. It is not a scoring table; if the team already has mature conventions, use it to check whether a key constraint was missed.
 
-**Dimension 1: State scale**
+The conditional recommendations are as follows.
 
-- Inside a single component: `useState` / `useReducer` is enough.
-- Across a few components but within a limited scope: Context + useReducer.
-- Large amounts of global state: Zustand / Redux Toolkit / MobX.
+| Condition | Preferred solution | Benefit | Cost and unsuitable cases |
+| --- | --- | --- | --- |
+| State is local to a component or subtree | `useState` / `useReducer` / Context | No dependencies and clear boundaries | Cross-page sharing turns into multiple layers of prop drilling |
+| Global state is centralized, the team is small, and iteration is fast | Zustand | Short API and controllable subscription granularity | Auditing and conventions are left to the team |
+| Many dynamic units with graph-like dependencies | Jotai | Atom-level subscriptions and natural derivation | Too many atoms make the dependency graph hard to reason about |
+| Cross-team collaboration with audit and replay needs | Redux Toolkit + RTK Query | Explicit changes and mature tooling | More boilerplate and higher learning cost |
+| The team knows reactive style and state changes frequently | MobX | Automatic tracking and field-level updates | Change sources are scattered and replay is difficult |
+| Most data comes from APIs | TanStack Query / SWR / RTK Query | Caching, revalidation, and concurrent requests are built in | A client-state library is still needed for UI state |
 
-**Dimension 2: State shape**
+Migration depends on benefit exceeding cost. If an existing Redux Toolkit setup is stable and the main pain is server data, introduce RTK Query before replacing the whole library. Only when the current constraints keep blocking delivery does a migration deserve scheduling.
 
-- Centralized and enumerable: Zustand, Redux Toolkit.
-- Scattered and dynamically generated: Jotai.
-- Reactive style, mutable: MobX.
+## Decision Checklist
 
-**Dimension 3: Team size and collaboration needs**
+- [ ] List all global state and mark who reads and writes each item; move items used by only one component back to local state.
+- [ ] Separate server data from client state; give server data to a query library and confirm the invalidation strategy.
+- [ ] Decide whether change auditing or replay is required; if so, prefer an explicit-Action solution instead of adding logs later.
+- [ ] Use one real page to measure the most frequently updated state and confirm that subscription granularity does not rerender the whole page.
+- [ ] Check the team's existing conventions, debugging tools, and migration cost; a shorter new API does not mean a lower total cost.
+- [ ] Write down the conditions that would trigger a re-evaluation, such as changes in state scale, team size, or the share of server data.
 
-- Individual or small team: choose the one with the best developer experience (Zustand, Jotai, MobX).
-- Large team needing auditability: Redux Toolkit (Actions are traceable).
-- Cross-team shared state: strong constraints are a must (Redux Toolkit).
+## Conclusion: See the Constraints First, Then Choose the Tool
 
-**Dimension 4: Performance requirements**
+Reading state-management history as a chain of tool replacements easily leads to "the newer library is better." Reading it as a redistribution of constraints leads somewhere else. Flux trades unidirectional flow for traceability, Redux institutionalizes constraints, MobX trades reactivity for development speed, and Zustand and Jotai hand constraints back to users and team conventions.
 
-- Frequent updates + many subscriptions: Jotai / MobX (fine-grained subscriptions).
-- General scenarios: Zustand / Redux Toolkit (selector optimization is enough).
+Before the next selection, write down three conditions: whether the state is mostly server-side or client-side, whether every change must be audited, and whether the team can maintain a convention over time. The answers usually eliminate half the options, and only then does comparing API size and bundle cost mean anything.
 
-### 3. Common Anti-patterns
-
-**Anti-pattern 1: Put all state into the global store**
-
-```javascript
-// ❌ form temporary state in Redux
-const [formValue, setFormValue] = useFormState() // just use useState
-```
-
-Judgment principle: **only state that is "shared across multiple components" and "long-lived" should go into the global store.** Temporary form input, animation state, and local UI toggles should all use component-local state.
-
-**Anti-pattern 2: Manage server state with Redux**
-
-```javascript
-// ❌ storing todo list data in Redux
-const [todos, setTodos] = useState([])
-useEffect(() => fetchTodos().then(setTodos), [])
-// still have to handle loading, error, caching, revalidation...
-```
-
-Server state has dedicated libraries: React Query, SWR, RTK Query. They solve caching, revalidation, loading state, and concurrent requests much more cleanly than hand-written Redux side effects.
-
-**Anti-pattern 3: Make choices without considering the team**
-
-Choosing Redux for a team with many newcomers is "paying for constraints," but the learning cost is high. Choosing MobX for a strongly collaborative scenario is "paying for freedom," but it is hard to trace state changes. **Technology choices must consider team structure, not just technical metrics.**
-
-::: tip Core conclusion of this section
-
-There is no "best" state-management choice, only a "suitable" one. The core dimensions are state scale, state shape, team size, and performance requirements. At the same time, avoid the two anti-patterns of "putting all state in the global store" and "using a state-management library to manage server state."
-
-:::
-
----
-
-## 7. Trend Observation: State Management Is "Disappearing"
-
-The trend in recent years is: **the "explicitness" of frontend state management is fading.**
-
-### 1. Server State Is Split Out
-
-React Query / SWR / RTK Query separate "server data caching" from state management. Developers no longer need to store API data in Redux; instead, they use dedicated query libraries. This greatly simplifies the burden of "state management" — most "state" is actually just a local cache of server data.
-
-### 2. Framework-Built-in State Capabilities Are Strengthening
-
-- React Server Components render "server state" directly into the component tree.
-- React's `use` Hook lets asynchronous data be consumed "synchronously."
-- Vue's composables such as `useStorage` and `useAsyncState` cover most scenarios.
-- Meta-frameworks such as SvelteKit and SolidStart have built-in data loading and state synchronization.
-
-### 3. URL as State
-
-More and more state is moved to the URL: search criteria, filters, pagination, tab selection. URL state is naturally shareable, back/forward navigable, and server-renderable. This further reduces the amount of state that "needs to be managed."
-
-### 4. The Future of "State Management Libraries"
-
-The remaining truly "client state" is shrinking: user preferences, UI state, local drafts, collaborative state. Zustand / Jotai are enough for this part; heavy solutions like Redux are rarely needed.
-
-::: warning Trend judgment
-
-In the next 3–5 years, "state management" as an independent technical topic will decline in weight. Developers will focus more on: server state (React Query-like), URL state, framework-built-in state, and Server Components. State-management libraries will return to the role of "local tools" rather than the core of project architecture.
-
-:::
-
-::: tip Core conclusion of this section
-
-Understanding the evolution of state management is not just about "choosing the right library," but about understanding the data flow of frontend applications. After server state, URL state, and client state are managed separately, the domain of traditional "global state management" is narrowing. This is the fundamental reason why lightweight solutions such as Zustand/Jotai have risen.
-
-:::
-
----
+If a working solution is already in place, the only reasonable reason to migrate is that its constraints have begun to block delivery, not that a new library looks shorter in an example.
 
 ## FAQ
 
-### 1. Why is Redux less popular now?
+### 1. Is it worth migrating an existing Redux Toolkit project to Zustand?
 
-It is not "unpopular," but "its use cases have narrowed." Redux's core value is "strong constraints for large teams." But as most application state is taken over by React Query (server state) and the URL (shared state), the state that needs to be managed by Redux has decreased. Small-to-medium projects are fine with Zustand. However, large enterprise applications (such as finance, ERP) still fit Redux Toolkit + RTK Query.
+Start with what the migration is meant to fix. If the pain is boilerplate, RTK's slice API already removed most of it; if the pain is server caching, introduce RTK Query first. A full migration may pay off only when the team has shrunk, state has simplified substantially, and existing constraints genuinely block delivery. Migration cost includes rewriting tests, the debugging toolchain, and retraining the team.
 
-### 2. Can Zustand completely replace Redux?
+### 2. Why do Zustand selectors cause extra renders?
 
-In most scenarios, yes. What Zustand lacks is: standard Action types (needs team convention), native time travel (needs middleware), and a strongly constrained code style (needs team discipline). If your project does not need these "constraint capabilities," Zustand is completely sufficient.
+`useStore(selector)` reruns the selector on every snapshot change. If the selector returns a new object or array, such as `(s) => ({ a: s.a, b: s.b })`, the reference differs every time and React treats the snapshot as changed. Split it into multiple selectors that return primitives, or use `useShallow` for a shallow comparison. Zustand's `useSyncExternalStoreWithSelector` does compare, but only when the selector result is stable.
 
-### 3. Which is better: Jotai's "atomic" approach or Redux's "centralized" approach?
+### 3. Do small teams need traceability?
 
-It depends on the shape of the state. If your state is "one object + a few slices" (such as user info, theme, config), centralized (Zustand/Redux) is more intuitive. If your state is "many dynamically generated small units" (such as form fields, dynamic cards), atomic (Jotai) is more suitable. The two can also be mixed.
+It depends on debugging cost. In a small team with a short cycle, direct mutation is often faster. Once "who changed this value" becomes hard to answer, or a production issue requires replaying an action sequence, explicit change records gain value. Traceability is not exclusive to large teams; problem complexity decides.
 
-### 4. Does MobX still have a future in React?
+### 4. Our team already uses MobX. Should we switch because of ecosystem trends?
 
-MobX still has a user base, especially developers coming from Vue to React who prefer it. But the community trend is dominated by Zustand/Jotai. MobX's disadvantages are: it is outside the React mainstream ecosystem (based on an external reactive system rather than React's reconciliation), and integrating with Suspense/Server Components is difficult. These are structural problems.
-
-### 5. What is the difference between state management and server data caching?
-
-State management (client state): user preferences, UI toggles, local drafts, temporary form input. These are "client-only, mutable, and do not need server validation" states.
-
-Server data caching (server state): data fetched from APIs. This state has an "owner" (the server), "freshness" (it may become stale), and "consistency" requirements (data seen by multiple views must be consistent). React Query-like libraries are specifically designed for these problems and are more suitable than general state-management libraries.
-
-### 6. Is it necessary to read Redux's source code?
-
-It is worth it. The `createStore` implementation is only a few dozen lines, but covers four core concepts: "publish-subscribe, pure-function reducer, immutable updates, and middleware composition." It is a classic case of functional programming in frontend, and helps in understanding many other libraries (RxJS, Express middleware, Webpack loader chains). But distinguish "reading source code" from "using Redux in a project" — the former is mental training, the latter is an engineering decision.
-
----
+Do not switch only because of a trend. MobX still has advantages in reactive style, field-level updates, and development speed. Evaluate concrete pain: is state replay difficult, is integration with Suspense or Server Components blocked, or is it hard to hire people who know the approach? Only when those costs stay above migration cost is a change justified.
 
 ## Sources
 
@@ -947,6 +944,6 @@ It is worth it. The `createStore` implementation is only a few dozen lines, but 
 2. MobX official documentation: <https://mobx.js.org/>
 3. Zustand GitHub: <https://github.com/pmndrs/zustand>
 4. Jotai GitHub: <https://github.com/pmndrs/jotai>
-5. Dan Abramov — You Might Not Need Redux: <https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
+5. Dan Abramov - You Might Not Need Redux: <https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
 
-This article is also based on the author's practical reading of multiple state-management library source codes and project experience.
+This article is also based on the author's reading of multiple state-management library source codes and project experience.

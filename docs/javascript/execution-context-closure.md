@@ -1,5 +1,5 @@
 ---
-title: "执行上下文与作用域链：从 V8 视角理解闭包本质"
+title: "执行上下文与作用域链：从 V8 视角理解闭包本质"
 description: 从执行上下文生命周期、变量环境与词法环境、作用域链构建到闭包内存模型与内存泄漏的深度解析
 category: JavaScript
 tags:
@@ -13,11 +13,7 @@ outline: deep
 
 # 执行上下文与作用域链：从 V8 视角理解闭包本质
 
-> 副标题：从执行上下文生命周期、变量环境与词法环境、作用域链构建到闭包内存模型
->
-> 目标读者：中高级前端工程师、前端架构师
->
-> 阅读时间：约 25 分钟
+多数人对闭包的记忆停留在"函数里返回函数"，却说不清变量为什么没有随栈帧销毁、`let` 为什么有暂时性死区、闭包究竟捕获了哪些变量。本文从执行上下文的创建过程开始，沿环境记录与 `outer` 指针还原作用域链，再落到 V8 的 Context 对象与作用域分析，最后区分"闭包"与"闭包导致的内存泄漏"。读完后，你能用内存模型判断闭包的开销，而不是背定义。
 
 ::: info 一句话
 闭包不是"函数套函数"的语法技巧，而是执行上下文与作用域链在 V8 堆内存中留下的一条真实引用链——理解它，才能理解内存泄漏的真正成因。
@@ -25,33 +21,27 @@ outline: deep
 
 ## 目录
 
-- [写在前面](#写在前面)
+- [现象：闭包的定义为什么不够用](#现象-闭包的定义为什么不够用)
 - [一、执行上下文：JavaScript 代码运行的"现场"](#一、执行上下文-javascript-代码运行的-现场)
-- [二、变量环境与词法环境：为什么 ES6 之后要有两套环境](#二、变量环境与词法环境-为什么-es6-之后要有两套环境)
+- [二、变量环境与词法环境：两套环境如何分工](#二、变量环境与词法环境-两套环境如何分工)
 - [三、作用域链的构建机制：outer 指针串起的链条](#三、作用域链的构建机制-outer-指针串起的链条)
-- [四、从 V8 视角看闭包：Context 对象与逃逸分析](#四、从-v8-视角看闭包-context-对象与逃逸分析)
+- [四、从 V8 视角看闭包：Context 对象与作用域分析](#四、从-v8-视角看闭包-context-对象与作用域分析)
 - [五、闭包与内存泄漏的真实关系](#五、闭包与内存泄漏的真实关系)
-- [六、常见闭包陷阱与最佳实践](#六、常见闭包陷阱与最佳实践)
+- [六、闭包的使用边界与工程写法](#六、闭包的使用边界与工程写法)
 - [结语：闭包是作用域链在堆上的延续](#结语-闭包是作用域链在堆上的延续)
 - [FAQ](#faq)
 - [来源](#来源)
 
-## 写在前面
+## 现象：闭包的定义为什么不够用
 
-很多前端工程师对闭包的理解停留在面试题层面："函数内部返回一个函数，内部函数能访问外部变量"。这个定义没错，但太薄。再追问几个问题，往往就答不上来：
+"函数内部返回一个函数，内部函数能访问外部变量"这个定义没有错，但它解释不了下面这些问题：
 
 - `var` 和 `let` 在执行上下文里到底有什么不同？为什么 `let` 会有暂时性死区（TDZ）？
-- 为什么函数返回后，它内部的局部变量没有随栈帧一起销毁，而是还能被访问？
+- 为什么函数返回后，它内部的局部变量仍然可以被访问？
 - 闭包到底"捕获"了哪些变量？是全部捕获，还是只捕获用到的？这会怎么影响内存？
 - "闭包导致内存泄漏"这句话在什么前提下成立，什么前提下是被夸大的？
 
-要回答这些问题，必须从 JavaScript 的执行上下文（Execution Context）、环境记录（Environment Record）、作用域链（Scope Chain）一路讲到 V8 的堆内存模型。本文就是沿着这条路径展开的。
-
-::: tip 本节核心结论
-
-闭包的本质是：函数在创建时会捕获它定义时所处的词法环境；当这个函数被带到别处执行时，它仍然沿着这条被捕获的环境链查找变量。V8 把这条环境链以 `Context` 对象的形式放在堆上，这就是闭包能"记住"外部变量的底层原因。
-
-:::
+回答这些问题需要把规范模型和 V8 实现接起来：先看执行上下文创建了什么，再看环境记录如何串成链，最后看闭包在堆上留下什么。下面按这个依赖顺序展开。
 
 ---
 
@@ -62,7 +52,7 @@ outline: deep
 JavaScript 中有三种执行上下文：
 
 1. **全局执行上下文**：程序启动时创建，整个生命周期只有一个。它在浏览器里关联到全局对象 `window` / `globalThis`。
-2. **函数执行上下文**：每次调用函数时创建一个新的，函数返回后销毁（在没有闭包捕获的情况下）。
+2. **函数执行上下文**：每次调用函数时创建一个新的；函数返回后出栈，未被闭包引用的绑定随之不再可达。
 3. **Eval 执行上下文**：在 `eval` 中执行的代码。现代工程几乎不用，但它确实存在。
 
 ### 1. 执行上下文栈
@@ -70,30 +60,31 @@ JavaScript 中有三种执行上下文：
 JavaScript 是单线程的，同一时刻只能执行一个执行上下文。引擎用一个**执行上下文栈（Execution Context Stack，ECS）** 来管理：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
-    subgraph Stack["执行上下文栈 - 时间从下到上"]
+    subgraph Stack["执行上下文栈"]
         direction TB
-        S4[bar 执行上下文<br/>当前正在执行]
-        S3[foo 执行上下文]
-        S2[全局执行上下文]
-        S4 --> S3 --> S2
+        S2["全局执行上下文"]
+        S3["foo 执行上下文"]
+        S4["bar 执行上下文<br/>当前正在执行"]
+        S2 --> S3 --> S4
     end
 
-    subgraph Lifecycle[生命周期]
+    subgraph Lifecycle["生命周期"]
         direction LR
         L1["创建阶段<br/>创建变量/词法环境<br/>确定 this<br/>建立作用域链"] --> L2["执行阶段<br/>逐行执行<br/>赋值 / 调用函数"] --> L3["出栈<br/>上下文销毁<br/>栈帧回收"]
     end
 
-    Stack -. 栈顶上下文正在执行 .-> Lifecycle
+    Stack -. "栈顶上下文正在执行" .-> Lifecycle
 
-    classDef ctx fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef global fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef phase fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    class S4,S3 ctx;
-    class S2 global;
-    class L1,L2,L3 phase;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    class S3,S4 wait;
+    class S2 block;
+    class L1,L2,L3 work;
 ```
+
+左侧看栈的增长方向：每调用一层函数就压入一个上下文，返回时弹出；右侧看单个上下文从创建到出栈的三个阶段。只有栈顶的上下文正在执行。
 
 ```javascript
 function foo() {
@@ -124,26 +115,14 @@ var a = 1
 let b = 2
 ```
 
-::: tip 本节核心结论
-
-执行上下文是代码运行的"现场"，由栈管理。创建阶段会注册变量绑定、确定 `this`、建立作用域链。变量提升的本质是"创建阶段已注册，但值未初始化"。
-
-:::
-
-::: warning 常见误区
-
-把"变量提升"理解为"代码被物理移动到顶部"。实际上代码没有移动，提升发生在执行上下文的创建阶段，引擎在那一刻就把绑定加进了环境记录。
-
-:::
-
 ---
 
-## 二、变量环境与词法环境：为什么 ES6 之后要有两套环境
+## 二、变量环境与词法环境：两套环境如何分工
 
-在 ES5 时代，执行上下文只有一个 `VariableEnvironment`，用来存放 `var` 和 `function` 声明。ES6 引入 `let` / `const` / `class` 之后，规范把执行上下文的环境拆成了两个：
+ES5 规范里，执行上下文已经有 `LexicalEnvironment` 和 `VariableEnvironment` 两个组件；在函数代码中，它们通常指向同一个环境。ES6 引入 `let` / `const` / `class` 和块级作用域后，两者的分工才真正显现：
 
-- **VariableEnvironment（变量环境）**：存放 `var` 声明和 `function` 声明。整个函数执行期间不变。
-- **LexicalEnvironment（词法环境）**：存放 `let` / `const` / `class` 声明，同时也是**执行时标识符查找的起点**。它会随着进入新的块级作用域而更新。
+- **变量环境（Variable Environment，`VariableEnvironment`）**：存放 `var` 声明和 `function` 声明。整个函数执行期间不变。
+- **词法环境（Lexical Environment，`LexicalEnvironment`）**：存放 `let` / `const` / `class` 声明，同时也是**执行时标识符查找的起点**。它会随着进入新的块级作用域而更新。
 
 ### 1. 词法环境的结构
 
@@ -189,16 +168,8 @@ function demo() {
 demo()
 ```
 
-::: tip 本节核心结论
-
-ES6 拆出词法环境是为了支持块级作用域和 TDZ。`var` 走变量环境（函数级、初始化为 undefined），`let` / `const` 走词法环境（块级、声明前为 TDZ）。标识符查找永远从当前的词法环境开始。
-
-:::
-
-::: info 工程启示
-
-TDZ 不是"语法糖"，它是真实的运行时约束。在循环、条件块里用 `let` 声明依赖顺序敏感的变量时，TDZ 会帮你尽早暴露"先用后声明"的 bug，而 `var` 会静默给出 `undefined`。
-
+::: info TDZ 的工程价值
+TDZ 不是"语法糖"，而是真实的运行时约束。在循环、条件块里用 `let` 声明依赖顺序敏感的变量时，TDZ 会让"先用后声明"尽早报错；同样位置换成 `var`，只会静默得到 `undefined`。
 :::
 
 ---
@@ -233,7 +204,6 @@ fn() // 仍然是 'inner'，尽管调用处周围只有 'outer'
 下图展示了嵌套函数执行时作用域链的结构。注意 `outer` 指针是从内指向外的，它是在函数**创建**时就被固定下来的：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Inner["inner 函数执行上下文"]
         IE["函数词法环境<br/>绑定: 无"]
@@ -260,23 +230,17 @@ flowchart LR
     class Null ending;
 ```
 
-::: tip 本节核心结论
+读图时沿实线看 `outer` 指针的方向，沿虚线看一次 `x` 查找：先在 `inner` 环境未命中，再到 `outer` 环境命中，找到后停止。
 
-作用域链不是运行时动态拼接的，而是由各环境的 `outer` 指针在函数创建时固定下来的。词法作用域意味着"函数能访问哪些变量"在定义时就确定了，与调用位置无关。
-
-:::
-
-::: warning 常见误区
-
-认为函数的作用域取决于它在哪里被调用。只有 `eval` / `with` 这类动态作用域特性才会打破词法作用域规则，现代代码应当避免使用。
-
+::: warning 动态作用域的例外
+`eval` 和 `with` 会让标识符查找偏离静态结构，因此现代代码通常应避免使用。除此之外，函数能访问哪些变量在定义时就已确定，与调用位置无关。
 :::
 
 ---
 
-## 四、从 V8 视角看闭包：Context 对象与逃逸分析
+## 四、从 V8 视角看闭包：Context 对象与作用域分析
 
-前面讲的都是规范层面的模型。现在落到 V8 的真实实现上——这也是"闭包为什么不会随栈帧一起销毁"的答案所在。
+规范模型能解释变量如何查找，却解释不了变量为什么在堆上继续存活。答案在 V8 的实现里。
 
 ### 1. 函数对象里藏着一个 Context 指针
 
@@ -290,19 +254,21 @@ flowchart LR
 
 ### 2. 栈与堆的分工：为什么局部变量能"活下来"
 
-普通函数的局部变量存储在**调用栈**上，函数返回时栈帧弹出，变量立即销毁。这对非闭包变量是高效且正确的。
+普通函数的局部变量存储在**调用栈**上。函数返回时栈帧弹出，这些绑定不再可达，但它们占用的内存要等 GC 回收，并不是在返回瞬间归还。
 
-但闭包打破了这个前提：如果内部函数引用了外部函数的局部变量，那么外部函数返回后，这些变量必须仍然存活。V8 的做法是**逃逸分析（Escape Analysis）**：
+闭包打破了这个前提：如果内部函数引用了外部函数的局部变量，外部函数返回后这些变量仍须可访问。V8 在编译期通过**作用域分析（scope analysis）**决定哪些变量需要做上下文分配（context allocation）：
 
-- 如果一个变量被某个闭包引用（"逃逸"到了函数外部），V8 会把它从栈上"提升"到**堆上的 Context 对象**里。
-- 如果一个变量没有被任何闭包引用，它就留在栈上，函数返回时自动回收。
+- 被内层函数引用的变量，分配在**堆上的 Context 对象**里。
+- 没有被任何闭包引用的变量，仍随栈帧分配，返回后等待回收。
 
-这意味着：**闭包并不是把整个外部函数的活动记录都搬到堆上，而是只搬运"被引用"的那些变量**。这是一个常被忽略却很重要的优化。
+需要区分的是，TurboFan 里的**逃逸分析（Escape Analysis）**主要优化临时对象的堆分配，和这里的 Context 分配不是同一套机制。
+
+因此，**闭包并不是把整个外部函数的活动记录都搬到堆上，而是只保留被实际引用的变量**。这决定了闭包内存开销的上限。
 
 ```javascript
 function makeCounter() {
-  let count = 0           // 被 inner 引用 → 逃逸到堆 Context
-  let huge = new Array(1e6) // 没有被任何闭包引用 → 留在栈上，makeCounter 返回即回收
+  let count = 0             // 被 inner 引用 → 分配到堆 Context
+  let huge = new Array(1e6) // 没有被闭包引用 → 留在栈上，返回后等待回收
   return function inner() {
     count++
     return count
@@ -311,45 +277,38 @@ function makeCounter() {
 const counter = makeCounter()
 ```
 
-在这个例子里，`huge` 这个大数组虽然定义在 `makeCounter` 里，但因为没有任何闭包引用它，它不会进入 `Context` 对象，`makeCounter` 返回后就被释放。只有 `count` 会被保留在堆上的 `Context` 中。
+在这个例子里，`huge` 这个大数组虽然定义在 `makeCounter` 里，但因为没有任何闭包引用它，它不会进入 `Context` 对象，`makeCounter` 返回后只是不再可达。只有 `count` 会被保留在堆上的 `Context` 中。
 
 ### 3. 闭包的内存模型图
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
-    subgraph Heap["堆内存 - 闭包返回后仍然存活"]
+    subgraph Heap["堆内存 – 闭包返回后仍然存活"]
         direction TB
         FN["JSFunction: counter<br/>SharedFunctionInfo + Context 指针"]
         CTX["Context 对象<br/>count = 0<br/>outer → 全局 Context"]
-        FN -- Context 指针 --> CTX
+        FN -- "Context 指针" --> CTX
     end
 
-    subgraph Stack["调用栈 - makeCounter 返回后销毁"]
+    subgraph Stack["调用栈 – makeCounter 返回后销毁"]
         direction TB
-        FR["makeCounter 栈帧<br/>huge = Array(1e6)<br/>随栈帧回收"]
+        FR["makeCounter 栈帧<br/>huge = Array(1e6)<br/>不再可达"]
     end
 
-    CTX -. outer .-> GCTX[全局 Context]
+    CTX -. "outer" .-> GCTX["全局 Context"]
 
-    classDef fn fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef ctx fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef stack fill:#F8FAFC,stroke:#94A3B8,color:#172033,stroke-width:1.5px;
-    class FN fn;
-    class CTX,GCTX ctx;
-    class FR stack;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    class FN block;
+    class CTX,GCTX wait;
+    class FR work;
 ```
 
-::: tip 本节核心结论
+堆上的 `counter` 通过 Context 指针指向同一个 `Context` 对象，`count` 由此存活到函数返回之后；栈帧里的 `huge` 在返回后不再可达，等待 GC 回收。实线表示引用，虚线表示继续向上连接外层作用域。
 
-V8 通过逃逸分析决定变量存放位置：被闭包引用的变量进入堆上的 `Context` 对象，未被引用的留在栈上随栈帧回收。所以"闭包捕获整个外部作用域"是不准确的，它只捕获真正被引用的变量。
-
-:::
-
-::: info 工程启示
-
-这给了一个实用的排查思路：如果一段闭包代码占用了意外内存，先看它引用了哪些"大变量"。哪怕你没有显式使用某个变量，只要闭包链上有一个函数引用了它，它就会留在堆上。
-
+::: info 排查内存时的检查顺序
+如果一段闭包代码占用了意外内存，先看它引用了哪些"大变量"。哪怕你没有显式使用某个变量，只要闭包链上有一个函数引用了它，它就会留在堆上。
 :::
 
 ---
@@ -413,23 +372,15 @@ function get(key) {
 1. 拍一份堆快照（Heap snapshot）。
 2. 执行你怀疑泄漏的操作若干次。
 3. 再拍一份堆快照，选择 "Comparison" 模式对比。
-4. 按 **Retained Size** 排序，看是否有持续增长的对象，重点关注 `(closure)` 和 `(array)` 类型。
+4. 按 **Retained Size**（保留大小）排序，看是否有持续增长的对象，重点关注 `(closure)` 和 `(array)` 类型。
 
-::: tip 本节核心结论
-
-闭包不是泄漏，"长期存活的引用链 + 该回收却没回收"才是泄漏。排查时关注 Retained Size 持续增长的闭包对象，往往能定位到未清理的监听器或定时器。
-
-:::
-
-::: warning 常见误区
-
-认为"只要用了闭包就会有内存泄漏"，于是过度回避闭包。实际上现代 V8 的逃逸分析已经非常高效，正常使用的闭包开销极小。真正要管理的是闭包的**生命周期**，而不是回避闭包本身。
-
+::: warning 闭包不等于泄漏
+"只要用了闭包就会泄漏"这个判断并不成立。正常使用的短生命周期闭包开销很小，真正要管理的是闭包的**生命周期**与引用范围。排查时关注 Retained Size 持续增长的 `(closure)` 对象，通常能定位到未清理的监听器或定时器。
 :::
 
 ---
 
-## 六、常见闭包陷阱与最佳实践
+## 六、闭包的使用边界与工程写法
 
 ### 1. 循环中的闭包：var vs let
 
@@ -478,7 +429,7 @@ function handler() {
 }
 ```
 
-现代 V8 的逃逸分析会识别出 `onClick` 没有引用 `huge`，从而不把它放进 `Context`。但**不要依赖引擎优化**——更稳妥的写法是让大对象的作用域尽可能小，或者在用完后显式解引用：
+现代 V8 的作用域分析会识别出 `onClick` 没有引用 `huge`，从而不把它放进 `Context`。但**不要依赖引擎优化**——更稳妥的写法是让大对象的作用域尽可能小，或者在用完后显式解引用：
 
 ```javascript
 function handler() {
@@ -544,50 +495,35 @@ console.log(account.getBalance()) // 150
 // account.balance // undefined —— 状态被闭包保护
 ```
 
-::: tip 本节核心结论
-
-闭包的最佳实践：循环里用 `let` 而非 IIFE；大对象用完显式解引用；事件回调保存稳定引用以便解绑；用闭包封装私有状态。核心思路是"管理闭包的生命周期和引用范围"。
-
-:::
+闭包对象本身很小，真正占内存的是被捕获的变量以及它们存活的时间。因此工程上的重点不是减少闭包数量，而是缩小捕获范围、缩短引用链寿命。
 
 ---
 
 ## 结语：闭包是作用域链在堆上的延续
 
-把全文串起来：
+理解了闭包，也就理解了 JavaScript 里"变量可见性"和"变量寿命"是两件不同的事：可见性由词法结构决定，寿命由引用是否可达决定。
 
-1. 执行上下文是代码运行的现场，创建阶段注册变量绑定、确定 `this`、建立作用域链。
-2. ES6 把环境拆成变量环境（`var`）和词法环境（`let` / `const` + TDZ），标识符查找从词法环境出发。
-3. 作用域链由各环境的 `outer` 指针串成，在函数**定义时**就被固定（词法作用域）。
-4. 闭包的本质：函数创建时把"所在词法环境"存进 `Context` 指针；函数被带到别处调用时，仍沿这条链查找变量。
-5. V8 用逃逸分析决定变量去向——被闭包引用的进堆 `Context`，其余的留栈随栈帧回收。
-6. 闭包不是泄漏，"长期存活引用链 + 该回收未回收"才是泄漏。
-
-> **闭包不是语法技巧，而是作用域链在堆内存中的延续。理解它，你就理解了 JavaScript 里"状态"和"内存"的交汇点。**
+下一步，找一个你项目里长期存活的回调——事件监听、定时器或缓存——列出它实际引用的外部变量，再判断这条引用链是否应该活这么久。这比记住"闭包会泄漏"更能指导排查。
 
 ---
 
 ## FAQ
 
-### 1. 闭包为什么会"记住"外部变量，即使外部函数已经返回？
+### 1. 闭包捕获的是变量的值，还是变量本身？
 
-函数在创建时会把所在词法环境的引用存进自身的 `Context` 指针。外部函数返回只是栈帧弹出，但被闭包引用的变量已经被 V8 提升到堆上的 `Context` 对象，不随栈帧销毁。所以内部函数仍能通过 `Context` 指针访问到它们。
+捕获的是**变量绑定**，不是创建闭包那一刻的值的副本。多个闭包共享同一个外部变量时，一个闭包对它的修改，另一个闭包也能看到。只有在循环中使用 `let` 时，规范才为每次迭代创建新的绑定，从而让每个闭包拿到独立变量。
 
-### 2. `var` 和 `let` 在执行上下文里到底有什么区别？
+### 2. 箭头函数和普通函数在闭包行为上有区别吗？
 
-两者都会在创建阶段被注册到环境记录。区别在于：`var` 存在变量环境，函数级作用域，创建时初始化为 `undefined`；`let` / `const` 存在词法环境，块级作用域，在执行到声明语句前处于 TDZ（未初始化）。此外，`for` 循环里的 `let` 会为每次迭代创建独立绑定，这是循环闭包行为不同的根因。
+词法环境的捕获方式相同：两者都会记住定义时所在的环境。区别在于 `this`、`arguments`、`super` 和 `new.target`——箭头函数不创建自己的这些绑定，而是沿作用域链取外层值。因此闭包的内存模型对两者都适用，但涉及 `this` 时不能混用。
 
-### 3. 闭包会把外部函数的所有变量都保留下来吗？
+### 3. V8 的 `Context` 和规范里的词法环境是一回事吗？
 
-不会。V8 的逃逸分析只会把"被某个闭包实际引用"的变量提升到堆 `Context`，未被引用的变量留在栈上随栈帧回收。所以闭包的内存开销通常只与它真正使用的变量有关，而不是整个外部作用域。不过为稳妥起见，大对象用完后建议显式解引用。
+不是。规范用环境记录（Environment Record）和 `[[OuterEnv]]` 描述作用域链；`Context` 是 V8 的实现载体，除了变量槽位，还包含指向外层 Context 的指针。两者在变量查找这件事上对应，但不是一一映射，V8 还区分函数 Context、块 Context 等具体类型。
 
-### 4. "闭包导致内存泄漏"在什么前提下成立？
+### 4. 在 `let` 声明之前创建的闭包，为什么调用时会报 TDZ 错误？
 
-当一条**长期存活**的引用链（如未解绑的事件监听、未清除的定时器、无界缓存）持有了本该被回收的对象时，才构成泄漏。正常使用的短生命周期闭包不会泄漏。排查时用 Memory 面板的 Comparison 模式，按 Retained Size 看持续增长的闭包对象。
-
-### 5. 为什么 `for` 循环里 `let` 能解决闭包陷阱，而 `var` 不行？
-
-`var` 是函数级，三次迭代共享同一个 `i` 绑定，回调执行时读到的都是循环结束后的最终值。`let` 是块级，规范要求每次迭代都创建一个新的 `i` 绑定并复制上一轮的值，因此每个回调闭包捕获的是各自独立的 `i`。
+闭包捕获的是绑定，不是值。绑定在进入块时已经创建，但直到执行到 `let` 声明前都处于未初始化状态。闭包如果在初始化前被调用，读取该绑定就会触发 `ReferenceError`；在声明执行后再调用，读到的是初始化后的值。
 
 ---
 

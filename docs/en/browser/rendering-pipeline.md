@@ -12,58 +12,49 @@ outline: deep
 
 # Rendering Pipeline: From HTML to Pixels
 
-> Subtitle: From HTML streaming parsing, CSSOM construction, render-tree synthesis, layout calculation, paint layering, to GPU compositing.
->
-> Target readers: Intermediate and senior frontend engineers, frontend architects, performance owners.
->
-> Reading time: ~28 minutes.
+Most engineers can recite Layout, Paint, and Composite, yet still hesitate when asked which of them a particular DOM change will trigger. The stage names are not the difficulty; the trigger conditions and thread ownership are. This article rebuilds the pipeline as a chain with inputs, outputs, and skip conditions, then uses that same chain to explain CSS blocking, the difference between the render tree and the DOM tree, and the real cost of composited animation. After reading, you should be able to look at a change and predict its path before opening DevTools.
 
 ::: info In one sentence
-The rendering pipeline is not a straight line but a dependency state machine; understanding when each stage is triggered or skipped is the only way to pinpoint performance bottlenecks accurately.
+The pipeline is a dependency graph, not a checklist. A stage starts only after the previous stage has produced its input, and a change that skips a stage removes that dependency; performance problems usually come from a skip that did not happen or from a scope that grew.
 :::
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [1. Rendering Pipeline Overview](#1-rendering-pipeline-overview)
-- [2. HTML Streaming Parsing and DOM Construction](#2-html-streaming-parsing-and-dom-construction)
-- [3. CSSOM Construction and CSS Blocking](#3-cssom-construction-and-css-blocking)
-- [4. Render Tree Synthesis](#4-render-tree-synthesis)
-- [5. Layout (Reflow) Calculation](#5-layout-reflow-calculation)
-- [6. Paint and Layering](#6-paint-and-layering)
-- [7. Composite and GPU Acceleration](#7-composite-and-gpu-acceleration)
-- [8. Performance Bottlenecks at Each Stage](#8-performance-bottlenecks-at-each-stage)
-- [9. Which CSS Properties Trigger Which Paths](#9-which-css-properties-trigger-which-paths)
-- [10. Practice: Locating Bottlenecks with the Performance Panel](#10-practice-locating-bottlenecks-with-the-performance-panel)
-- [Conclusion: Manage the Pipeline as a State Machine](#conclusion-manage-the-pipeline-as-a-state-machine)
+- [Six Questions First](#six-questions-first)
+- [1. Rendering Pipeline Overview](#_1-rendering-pipeline-overview)
+- [2. HTML Streaming Parsing and DOM Construction](#_2-html-streaming-parsing-and-dom-construction)
+- [3. CSSOM Construction and CSS Blocking](#_3-cssom-construction-and-css-blocking)
+- [4. Render Tree Synthesis](#_4-render-tree-synthesis)
+- [5. Layout (Reflow) Calculation](#_5-layout-reflow-calculation)
+- [6. Paint and Layering](#_6-paint-and-layering)
+- [7. Composite and GPU Acceleration](#_7-composite-and-gpu-acceleration)
+- [8. Performance Bottlenecks at Each Stage](#_8-performance-bottlenecks-at-each-stage)
+- [9. Which CSS Properties Trigger Which Paths](#_9-which-css-properties-trigger-which-paths)
+- [10. Practice: Locating Bottlenecks with the Performance Panel](#_10-practice-locating-bottlenecks-with-the-performance-panel)
+- [Conclusion](#conclusion)
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Introduction
+## Six Questions First
 
-Many frontend engineers understand browser rendering as "DOM + CSS = page," and some know about Layout, Paint, and Composite. But questions quickly become fuzzy:
+The same DOM or CSS change walks a different length of the pipeline depending on the property. The questions below are often memorized as separate facts:
 
-- Is HTML parsed streaming or all at once? What exactly does the preload scanner do?
+- Is HTML parsed as a stream or all at once? What exactly does the preload scanner do?
 - Is CSSOM a tree or a table? Why does CSS block first render but not HTML parsing?
 - What is the difference between `display: none` and `visibility: hidden` in the render tree?
-- Is Layout really that expensive? Why does changing one `width` force a whole-page reflow?
+- Is Layout really that expensive? Why can changing one `width` reflow an entire page?
 - What sits between Paint and Composite? Why doesn't `transform` trigger Layout?
 - How does GPU compositing assemble multiple layers onto the screen?
 
-This article aims to build a **reasoning model**: after you change a piece of DOM or a CSS property, you can predict which pipeline stages the browser will walk through, the cost of each, and how they appear in the Performance panel.
-
-::: tip Core conclusion of this section
-The core of the rendering pipeline is understanding **trigger conditions** and **data flow**. Every stage has input, output, and trigger conditions; optimization means reducing unnecessary triggers and shrinking the scope of each trigger.
-:::
+All of them follow from the same dependency graph.
 
 ---
 
 ## 1. Rendering Pipeline Overview
 
-The modern browser rendering pipeline (using Chromium as reference) can be simplified into six stages:
+The modern rendering pipeline, using Chromium as the reference, can be simplified into six stages:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Parse["① Parse"]
         direction TB
@@ -115,143 +106,137 @@ flowchart LR
 
     Parse --> Render --> Layout --> Paint --> Raster --> Composite
 
-    classDef parse fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef render fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
-    classDef layout fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef paint fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef raster fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef composite fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
 
-    class A1,A2,A3,A4 parse;
-    class B1,B2 render;
-    class C1,C2,C3 layout;
-    class D1,D2 paint;
-    class E1,E2,E3 raster;
-    class F1,F2,F3 composite;
+    class A1,A2,A3,A4 wait;
+    class B1,B2 work;
+    class C1,C2,C3 block;
+    class D1,D2 work;
+    class E1,E2,E3 metric;
+    class F1,F2,F3 core;
 ```
 
-The input and output of each stage are roughly as follows:
+Read the diagram from left to right: parse, render tree, layout, paint, raster, composite. Focus first on each box's input and output, then on the arrows that cross stages. Parse output feeds the render tree, layout results determine what Paint describes, and Raster and Composite can already leave the main thread.
 
-| Stage | Main Input | Main Output | Thread |
+Each stage's input and output are roughly:
+
+| Stage | Main input | Main output | Thread |
 | --- | --- | --- | --- |
 | HTML parsing | HTML byte stream | DOM tree | Main thread |
 | CSS parsing | CSS byte stream | CSSOM | Main thread |
 | Style calculation | DOM + CSSOM | Final style of each DOM node | Main thread |
 | Layout | Render/Style tree + geometry constraints | Position and size of each node | Main thread |
-| Paint | Layout tree + styles | Paint Record (display list) + layer list | Main thread |
-| Raster | Layer + tile | Bitmap pixels (GPU texture) | Compositor thread + raster worker threads |
-| Composite | Textures of multiple layers | Composited frame | GPU process |
+| Paint | Layout tree + styles | Paint Record + layer list | Main thread |
+| Raster | Layer + tile | Pixel bitmap (GPU texture) | Compositor thread + raster workers |
+| Composite | Textures of multiple layers | Compositor frame | GPU process |
 
 ::: info Key insight
 
-Notice the division of labor among the **main thread / compositor thread / raster worker threads / GPU process**. **Layout and Paint run on the main thread**, so they block JavaScript and interaction; **Raster and Composite can happen off the main thread**, so `transform/opacity` animations remain smooth even when the main thread is occupied by JavaScript. This is the root cause behind all optimization strategies.
+Notice the division of labor among the **main thread, compositor thread, raster workers, and GPU process**. **Layout and Paint occupy the main thread**, so they delay JavaScript and interaction; **Raster and Composite can finish off the main thread**, which is why `transform/opacity` animations stay smooth even when JavaScript fills the main thread. Every optimization strategy later in this article rests on that split.
 :::
 
 ---
 
 ## 2. HTML Streaming Parsing and DOM Construction
 
-### 2.1 Incremental Parsing
+### 1. Incremental parsing
 
-The HTML parser does not wait for the entire HTML document to download before starting. It parses the byte stream as it arrives. Chromium hands the bytes received from the network layer to the HTML parser, which consumes bytes and builds DOM nodes at the same time.
+The HTML parser does not wait for the whole document to download. It parses the byte stream as it arrives. Chromium hands bytes from the network layer to the parser, which consumes them while building DOM nodes.
 
 This means:
 
 - The earlier HTML starts streaming back, the earlier DOM construction begins.
-- The server can return HTML in chunks (streaming SSR), letting the browser start parsing and discovering subresources earlier.
+- The server can return HTML in chunks (streaming SSR), letting the browser parse and discover subresources sooner.
 - Large HTML blocks still create long "Parse HTML" tasks.
 
-### 2.2 Preload Scanner
+### 2. Preload Scanner
 
-When the main parser encounters `<script src="...">` (without `defer`/`async`), it gets blocked, but the browser does not idle. A **preload scanner** continues scanning raw HTML tags ahead while the main parser is blocked, discovering images, CSS, JS, and other resources in advance and downloading them in parallel.
+When the main parser reaches `<script src="...">` without `defer` or `async`, it blocks, but parsing does not stop entirely. A **preload scanner** keeps scanning raw HTML ahead while the main parser waits, discovering images, CSS, JavaScript, and other resources in parallel.
 
 ```html
-<!-- The preload scanner can discover these -->
+<!-- The preload scanner can find these -->
 <link rel="stylesheet" href="/a.css">
 <script src="/b.js"></script>
 <img src="/hero.webp">
 
-<!-- The preload scanner cannot discover this: it only becomes known after JS executes -->
+<!-- The preload scanner cannot find this: it only exists after JS runs -->
 <div id="root"></div>
 <script>
-  // This image is discovered only after the script runs
+  // This image is discovered only after the script executes
   document.getElementById('root').innerHTML = '<img src="/late.webp">'
 </script>
 ```
 
-### 2.3 Blocking Points
+### 3. Blocking points
 
-There are two main blocking points during HTML parsing:
+HTML parsing has two main blocking points:
 
 - **Synchronous scripts**: block HTML parsing until the script is downloaded and executed.
-- **CSS blocks JS execution**: if a script queries element styles, CSS must be loaded first. So CSS does not block HTML parsing, but may block JS execution.
+- **CSS blocks JavaScript execution**: if a script reads element styles, CSS must be ready first. So CSS does not block HTML parsing, but it may block JavaScript execution.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
-    Start([HTML Arrives]) --> Parse[Main parser streams DOM]
-    Parse --> MeetCSS{CSS Link?}
+    Start([HTML arrives]) --> Parse[Main parser streams DOM]
+    Parse --> MeetCSS{CSS link?}
     MeetCSS -->|Yes| LoadCSS[Download CSS in parallel]
     LoadCSS --> Continue1[Continue parsing HTML]
     Continue1 --> MeetScript{Script?}
-    MeetScript -->|No defer/async| WaitCSS{CSS Ready?}
+    MeetScript -->|No defer or async| WaitCSS{CSS ready?}
     WaitCSS -->|No| Wait[Wait for CSS]
     Wait --> WaitJS[Download and execute JS]
     WaitCSS -->|Yes| WaitJS
     WaitJS --> Continue2[Continue parsing HTML]
-    MeetScript -->|defer/async| Parallel[Download in parallel]
+    MeetScript -->|defer or async| Parallel[Download in parallel]
     Parallel --> Continue2
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef normal fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef decision fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Parse,LoadCSS,Continue1,Parallel,Continue2 normal;
+    class Start core;
+    class Parse,LoadCSS,Continue1,Parallel,Continue2,MeetCSS,MeetScript,WaitCSS wait;
     class Wait,WaitJS block;
-    class MeetCSS,MeetScript,WaitCSS decision;
 ```
 
-::: tip Core conclusion of this section
+Top to bottom is the main parsing path; the right-hand branches are waits caused by CSS or scripts. The key turn is `WaitCSS`: when CSS is not ready, a synchronous script cannot run, and HTML parsing stops at that point.
 
-HTML parsing is streaming, so earlier bytes are better. Synchronous scripts and CSS are the main blockers. Putting first-screen critical resources in HTML and using `defer` for non-critical JS are the core ways to reduce parsing cost.
-:::
+Put first-screen critical resources early in the HTML, and move non-critical JavaScript off the parsing path with `defer` or `async`.
 
 ::: warning Common misconception
 
-Treating SSR as a performance silver bullet. SSR makes HTML return earlier, but if the SSR output is too large or stuffs all data into HTML, it can slow down the Parse HTML stage. Streaming SSR + putting critical content first is the right approach.
+Treating SSR as a performance silver bullet. SSR makes HTML return earlier, but if the output is too large or every piece of data is embedded in the HTML, the Parse HTML stage becomes longer. Streaming SSR with critical content placed first is usually safer.
 :::
 
 ---
 
 ## 3. CSSOM Construction and CSS Blocking
 
-### 3.1 What Is CSSOM
+### 1. What CSSOM is
 
-The CSS parser converts CSS text into the **CSSOM (CSS Object Model)**. The structure of CSSOM is tree-like, similar to DOM: selectors are organized by nesting relationships, and each rule ends up with a set of style declarations.
+The CSS parser turns CSS text into the **CSSOM (CSS Object Model)**. Its structure is tree-like, similar to the DOM: selectors are organized by nesting, and each rule carries a set of declarations.
 
-CSSOM is tree-like because CSS has inheritance and cascading:
+CSSOM is tree-shaped because CSS has inheritance and cascading:
 
-- **Inheritance**: properties such as `font-size` and `color` are inherited from parent nodes.
-- **Cascading**: when multiple rules apply to the same node, the final value is determined by priority, specificity, and origin.
+- **Inheritance**: properties such as `font-size` and `color` flow from parent nodes.
+- **Cascading**: when several rules apply to one node, priority, specificity, and origin decide the final value.
 
-### 3.2 CSS Blocks First Render
+### 2. CSS blocks first render
 
-CSS does not block HTML parsing (the parser can continue building the DOM), but it **blocks first render**. The reason is that the browser wants to avoid the flash of unstyled content (FOUC) — rendering a page without styles first, then repainting it with styles.
+CSS does not block HTML parsing, because the parser can keep building the DOM. It **blocks first render** instead. The browser avoids the flash of unstyled content (FOUC) that would come from painting an unstyled page and then repainting it with styles.
 
-::: info Key insight
+In other words, CSS is a render-blocking resource, not a parser-blocking resource.
 
-"CSS blocks rendering" does not mean "CSS blocks parsing." That is why we say CSS is a **render-blocking resource**, not a **parser-blocking resource**.
-:::
+### 3. CSS blocks JavaScript execution
 
-### 3.3 CSS Blocks JS Execution
+If a script queries element styles, for example through `getComputedStyle`, CSS must load first. So CSS also indirectly blocks later JavaScript execution.
 
-If a script queries element styles (e.g. `getComputedStyle`), CSS must be loaded first. So CSS also indirectly blocks subsequent JS execution.
+### 4. Media queries and non-blocking CSS
 
-### 3.4 Media Queries and Non-Blocking CSS
-
-`<link rel="stylesheet" media="print">` does not block first render because the browser knows it does not apply to the current media. You can use this mechanism to mark non-first-screen CSS as a different media, then switch it after load:
+`<link rel="stylesheet" media="print">` does not block first render because the browser knows it does not apply to the current media. You can use this to mark non-critical CSS for a different media and switch it after load:
 
 ```html
 <!-- Non-critical CSS: does not block first render -->
@@ -259,101 +244,95 @@ If a script queries element styles (e.g. `getComputedStyle`), CSS must be loaded
       media="print" onload="this.media='all'">
 ```
 
-### 3.5 Style Calculation Stage
+### 5. The Style calculation stage
 
-After both DOM and CSSOM are ready, the browser enters the **Style calculation** stage:
+Once DOM and CSSOM are ready, the browser enters **Style calculation**:
 
 1. For each DOM node, find all matching rules in the CSSOM.
 2. Sort by priority, specificity, and origin.
 3. Compute the final style (Computed Style).
 
-The cost of Style calculation depends on:
+Its cost depends on:
 
 - DOM node count
-- Number of CSS rules
-- Selector complexity (descendant selectors and universal selectors are more expensive)
+- number of CSS rules
+- selector complexity, where descendant and universal selectors are more expensive
 
-::: tip Core conclusion of this section
-
-CSS blocks first render but not HTML parsing. Critical CSS should load as early as possible; non-critical CSS can be made asynchronous with the media hack. Keep selectors simple and avoid large-scale descendant selectors.
-:::
+Among the three, selector complexity is the easiest to overlook: it rarely shows up inside one component, but it amplifies as the node count grows.
 
 ---
 
 ## 4. Render Tree Synthesis
 
-### 4.1 Render Tree ≠ DOM Tree
+### 1. Render Tree is not the DOM tree
 
-The **Render Tree** is the product of merging DOM and style information, but it **contains only nodes that need to be painted**:
+The **Render Tree** is the merged product of the DOM and style information, but it **contains only nodes that need to be painted**:
 
-- `display: none` elements are **not in the render tree** (no layout, no paint).
-- `visibility: hidden` elements are **still in the render tree** (they take up space but are not visible).
+- `display: none` elements are **not in the render tree** and take no part in layout or paint.
+- `visibility: hidden` elements **remain in the render tree**: they occupy space but are not visible.
 - Invisible elements such as `<head>` and `<script>` are not in the render tree.
 - Pseudo-elements such as `::before` and `::after` generate corresponding nodes in the render tree.
 
-### 4.2 Layout Tree vs Render Tree
+### 2. Layout Tree and Render Tree
 
-In Chromium's modern architecture, the concept of "render tree" is further broken down:
+In Chromium's modern architecture, the render tree concept is split further:
 
-- **Layout Tree**: nodes that participate in layout, each corresponding to a LayoutObject.
-- **Paint Layer**: layer units that participate in painting.
-- **Graphics Layer**: compositing layers that the compositor can handle independently.
+- **Layout Tree**: nodes that participate in layout, each backed by a LayoutObject.
+- **Paint Layer**: the layer unit that participates in painting.
+- **Graphics Layer**: a compositing layer the compositor can handle independently.
 
-The rules for building the Layout Tree are roughly:
+The Layout Tree is built roughly like this:
 
-```
+```text
 For each node in the DOM tree:
   If it generates a box (display is not none)
     Create a LayoutObject for it
   Else skip
 ```
 
-### 4.3 Key Implications
+### 3. Key implications
 
-Understanding the difference between render tree and DOM explains many phenomena:
+The difference between the render tree and the DOM explains several behaviors:
 
-- Why toggling `display: none` is more expensive than toggling `visibility: hidden`: the former rebuilds the render tree and triggers full Layout, the latter only triggers Paint.
-- Why a large number of `display: none` nodes slows initial rendering: although they are not painted, the DOM parsing and Style calculation stages still process them.
-- Why virtual lists optimize long lists: they reduce the number of Layout Tree nodes at the source.
+- Why toggling `display: none` costs more than toggling `visibility: hidden`: the former rebuilds render-tree nodes and triggers a full Layout; the latter triggers Paint only.
+- Why many `display: none` nodes slow initial rendering: they are not painted, but DOM parsing and Style calculation still process them.
+- Why virtual lists help long lists: they reduce Layout Tree nodes at the source.
 
-::: tip Core conclusion of this section
-
-Render tree ≠ DOM tree. `display: none` elements are not in the render tree and avoid initial Layout cost, but they are still in the DOM and still participate in parsing and Style calculation. Controlling DOM scale is the root solution.
-:::
+Controlling DOM scale and removing unnecessary render-tree nodes is more fundamental than optimizing Layout after the fact.
 
 ---
 
 ## 5. Layout (Reflow) Calculation
 
-### 5.1 What Layout Does
+### 1. What Layout does
 
-The Layout stage calculates the **geometry** of each node based on the render tree and viewport constraints: position (x, y), dimensions (width, height), z-order, and relationship to the parent.
+Layout calculates each node's **geometry** from the render tree and viewport constraints: position (x, y), size (width, height), z-order, and relationship to the parent.
 
-Layout is a recursive process: starting from the root node, it calculates layer by layer according to box-model constraints. Parent size may depend on children (e.g. `height: auto`), and child size may depend on the parent (e.g. `width: 50%`), so Layout often requires multiple iterations.
+It is a recursive process. Starting at the root, layout descends through box-model constraints. A parent's size may depend on its children, as with `height: auto`, and a child's size may depend on the parent, as with `width: 50%`, so Layout often needs several passes to converge.
 
-### 5.2 The Cost of Layout
+### 2. The cost of Layout
 
-Layout is one of the most expensive stages in the rendering pipeline because:
+Layout is one of the most expensive stages because:
 
-- **Global impact**: changing one node's size can affect the layout of the whole page.
-- **Multiple iterations**: flex layouts and adaptive layouts may need several calculations to converge.
-- **Synchronous execution**: it completes synchronously on the main thread and cannot be accelerated by Workers.
+- **Global reach**: a size change in one node can affect the whole page.
+- **Multiple passes**: flex and adaptive layouts may need repeated calculation to converge.
+- **Synchronous execution**: it runs on the main thread and cannot be accelerated by Workers.
 
-### 5.3 Incremental Layout
+### 3. Incremental layout
 
-The browser does not reflow the entire page just because one node changed. Chromium performs **incremental layout**: it marks dirty nodes and recalculates only the affected parts.
+The browser does not reflow the whole page for every changed node. Chromium performs **incremental layout**: it marks dirty nodes and recalculates only the affected parts.
 
-But the boundary of incremental layout does not always match developer intuition:
+The boundary of that increment does not always match intuition:
 
 - Changing a `width` may affect siblings and the parent.
-- Changing `font-size` may cause whole-page text reflow.
-- Changing the position of a floated element may affect all subsequent content.
+- Changing `font-size` may reflow text across the page.
+- Moving a floated element may affect all following content.
 
-### 5.4 Forced Synchronous Layout
+### 4. Forced synchronous layout
 
-When JavaScript reads layout properties and there are uncommitted style changes, the browser is **forced to execute Layout immediately** to return the correct value. This is the root of Layout Thrashing, which is covered in detail in the next article.
+When JavaScript reads a layout property while unprocessed style changes exist, the browser is **forced to run Layout immediately** to return a correct value. This is the root of [Layout Thrashing](/en/browser/layout-thrashing).
 
-Common reads that trigger Layout include:
+Common reads that trigger Layout:
 
 ```javascript
 element.offsetWidth / offsetHeight / offsetTop / offsetLeft
@@ -364,123 +343,114 @@ element.getBoundingClientRect()
 window.scrollX / scrollY / innerWidth / innerHeight
 ```
 
-::: tip Core conclusion of this section
-
-Layout is the most expensive stage of the rendering pipeline and has global impact. Prioritize avoiding it; when unavoidable, shrink its scope. Alternating reads and writes of layout information triggers forced synchronous layout; see the dedicated Layout Thrashing article.
-:::
+Optimizing Layout is therefore about reducing how often it triggers and how far it reaches, not about memorizing a list of expensive properties.
 
 ::: warning Common misconception
 
-"I made the animation use `transform`, so it won't trigger Layout, therefore I can use it anywhere." — `transform` does not trigger Layout, but abusing `will-change: transform` creates a large number of compositing layers, increasing memory and compositing cost.
+"I made the animation use `transform`, so it never triggers Layout and I can use it anywhere." Transform does not trigger Layout, but abusing `will-change: transform` creates many compositing layers, which increases memory and compositing cost.
 :::
 
 ---
 
 ## 6. Paint and Layering
 
-### 6.1 What Paint Does
+### 1. What Paint does
 
-The Paint stage does not directly produce pixels. It produces a **Paint Record / Display List**: at what coordinates to draw what color, what rectangle, what text, what image, and in what order.
+Paint does not produce pixels directly. It produces a **Paint Record / Display List**: what color, rectangle, text, or image to draw at which coordinates, and in what order.
 
 A Paint Record is a series of drawing instructions, similar to:
 
-```
+```text
 drawRect(0, 0, 100, 100, #ff0000)
 drawText("hello", 10, 50, font=...)
 drawImage(hero.webp, 0, 200, 800, 600)
 ```
 
-The order of these instructions matters because later draws overwrite earlier ones (painter's algorithm).
+Order matters because later draws cover earlier ones, following the painter's algorithm.
 
-### 6.2 Layer Splitting
+### 2. Layer splitting
 
-Paint does not draw the whole page as one big image. Instead, it **splits the page into multiple layers according to stacking context**, and each layer generates its own Paint Record independently.
+Paint does not draw the whole page as one image. It **splits the page into layers according to stacking context**, and each layer generates its own Paint Record.
 
-Common reasons for creating a new layer:
+Common reasons a new layer appears:
 
 - 3D transforms: `transform: translateZ(0)`, `translate3d`
-- `position: fixed`, `sticky` (in some browsers)
+- `position: fixed`, `sticky` in some browsers
 - `opacity < 1`
 - `will-change: transform / opacity`
 - `<video>`, `<canvas>`, WebGL elements
-- Positioned elements with `z-index` other than auto
+- positioned elements with a `z-index` other than auto
 
-Each layer is further cut into small **tiles** that are processed concurrently by raster worker threads.
+Each layer is then cut into small **tiles** for raster workers to process concurrently.
 
-### 6.3 The Cost of Paint
+### 3. The cost of Paint
 
-Paint cost mainly comes from:
+Paint cost comes mainly from:
 
-- Repaint area size
-- Paint complexity (shadows, blur, gradients, filters)
-- Number of layers (each layer must generate its own Paint Record)
+- repaint area
+- paint complexity: shadows, blur, gradients, filters
+- layer count, since each layer generates its own Paint Record
 
-A large-area blurred shadow such as `box-shadow: 0 0 50px rgba(0,0,0,0.5)` is very expensive because the browser either uses CPU software blur or multiple GPU samples.
+A large blurred shadow such as `box-shadow: 0 0 50px rgba(0,0,0,0.5)` is expensive because the browser either blurs in software on the CPU or samples repeatedly on the GPU.
 
-::: tip Core conclusion of this section
-
-Paint produces drawing instructions rather than pixels, organized by layers. Controlling repaint area, avoiding large-area blurred shadows, and using layers reasonably are the keys to reducing Paint cost.
-:::
+Controlling repaint area and paint complexity is usually more direct than adding layers.
 
 ---
 
 ## 7. Composite and GPU Acceleration
 
-### 7.1 What Composite Does
+### 1. What Composite does
 
-The Composite stage assembles multiple already-rasterized layers in the correct order and with the correct transforms, ultimately outputting them to the screen.
+The Composite stage assembles multiple rasterized layers in the correct order and with the correct transforms, then outputs the result to the screen.
 
-Key point: Composite happens **in the GPU process**, and the main thread is not involved. So as long as an animation only changes `transform` and `opacity`, even if the main thread is occupied by JavaScript, the compositor thread and GPU can continue to advance the animation.
+Compositing is performed mainly by the **compositor thread and GPU process**, not the main thread. As long as an animation changes only `transform` and `opacity`, the compositor and GPU can keep advancing it even when JavaScript occupies the main thread.
 
-### 7.2 Compositing Layer
+### 2. Compositing Layer
 
-When a layer is promoted to a **compositing layer**, it gets its own independent GPU texture and can be transformed and composited directly by the GPU without main-thread involvement.
+When a layer is promoted to a **compositing layer**, it gets its own GPU texture and can be transformed and composited directly by the GPU without the main thread.
 
-Common conditions for promotion to a compositing layer:
+Common promotion triggers:
 
 - 3D transforms
 - `<video>`, `<canvas>`, WebGL
-- `will-change: transform / opacity` (only when there is actually animation)
+- `will-change: transform / opacity`, provided a real animation exists
 - `position: fixed` with software compositing
-- Animated `transform / opacity`
+- animated `transform / opacity`
 
-### 7.3 Correct Understanding of GPU Acceleration
+### 3. Correct understanding of GPU acceleration
 
-"GPU acceleration" is an overused term. The accurate statement is: **this layer has been promoted to a compositing layer, and its transform and opacity changes are handled directly by the GPU without triggering Layout or Paint**.
+"GPU acceleration" is often treated as one switch, but it refers to different optimizations. The most common meaning is that **a layer has been promoted to a compositing layer, and its transform and opacity changes are handled directly by the GPU without triggering Layout or Paint**.
 
-Not all "GPU acceleration" is good:
+Not every form of GPU acceleration helps:
 
-- Each compositing layer consumes GPU memory.
-- Too many compositing layers slow down the Composite stage itself.
-- Abusing `will-change` causes memory bloat.
+- each compositing layer consumes GPU memory
+- many compositing layers slow the compositing stage itself
+- abusing `will-change` can blow up memory
 
-::: tip Core conclusion of this section
-
-Composite is the only key stage of the rendering pipeline that completes outside the main thread. Making animations "only change transform / opacity" is the fundamental prerequisite for smooth animation, but more compositing layers are not always better.
-:::
+Raster and Composite can leave the main thread, but starting a new layer or a new animation still needs it. That boundary determines how far an optimization can go.
 
 ::: warning Common misconception
 
-Adding `will-change: transform` or `transform: translateZ(0)` to all elements to "enable GPU acceleration." This creates a large number of compositing layers, slowing down the Composite stage and consuming memory. `will-change` should be added just before an animation starts and removed after it ends.
+Adding `will-change: transform` or `transform: translateZ(0)` to every element to "enable GPU acceleration." This creates many compositing layers, slows the compositing stage, and consumes memory. `will-change` should be added just before an animation starts and removed after it ends.
 :::
 
 ---
 
 ## 8. Performance Bottlenecks at Each Stage
 
-The following table summarizes common bottlenecks and optimization directions for each stage:
+Common bottlenecks and observable signals by stage:
 
-| Stage | Common Bottleneck | Optimization Direction | Performance Panel Marker |
+| Stage | Common bottleneck | Optimization direction | Performance panel marker |
 | --- | --- | --- | --- |
-| HTML parsing | Synchronous scripts blocking, large HTML | Use defer/async, streaming SSR | Blue Parse HTML |
-| CSS parsing | Large CSS files, many rules | Inline critical CSS, async non-critical CSS | Blue Parse Stylesheet |
+| HTML parsing | Synchronous scripts, oversized HTML | Use defer/async, streaming SSR | Blue Parse HTML |
+| CSS parsing | Large CSS files, many rules | Inline critical CSS, load non-critical CSS asynchronously | Blue Parse Stylesheet |
 | Style calculation | Many DOM nodes, complex selectors | Reduce DOM, simplify selectors | Purple Recalculate Style |
-| Layout | Frequent triggers, forced synchronous layout | Avoid read/write alternation, use transform for animations | Purple Layout |
+| Layout | Frequent triggers, forced synchronous layout | Avoid read/write alternation, animate with transform | Purple Layout |
 | Paint | Large-area repaint, complex effects | Control repaint area, avoid large blurred shadows | Green Paint |
-| Raster | Large layers, many tiles | Control layer size, avoid rasterizing entire long-list layers | Green Rasterize |
+| Raster | Large layers, many tiles | Control layer size, avoid rasterizing whole long lists | Green Rasterize |
 | Composite | Too many compositing layers | Use will-change carefully | Green Composite Layers |
 
-### A Typical "Full Pipeline Redo" Anti-pattern
+### A typical "full pipeline redo" anti-pattern
 
 ```javascript
 // Anti-pattern: one operation triggers the full pipeline
@@ -497,27 +467,23 @@ function updateList(items) {
 }
 ```
 
-Every call to this function triggers: DOM rebuild → Style recalculation → forced Layout → Paint → Raster → Composite, and repeats these in a loop. Optimization ideas:
+Each call triggers DOM rebuild → Style recalculation → forced Layout → Paint → Raster → Composite, and repeats it inside the loop. Ways to fix it:
 
-1. Build DOM in bulk with `DocumentFragment`.
+1. Build the DOM in bulk with `DocumentFragment`.
 2. Read `clientWidth` first, then write in batch.
-3. Make shadows static backgrounds or use `filter` (compositing layer).
+3. Make the shadow a static background or use `filter` on a compositing layer.
 
-::: tip Core conclusion of this section
-
-Bottleneck localization is answering one question: "Which pipeline stages does this operation trigger, and how expensive is each?" The color blocks in the Performance panel directly answer this.
-:::
+Answer which stages the operation triggers first, then choose a technique. Color blocks are clues, not conclusions.
 
 ---
 
 ## 9. Which CSS Properties Trigger Which Paths
 
-This is the most practical knowledge about the rendering pipeline: **modifying different CSS properties triggers different lengths of the pipeline**.
+This is the most practical part of the pipeline: **different CSS properties trigger pipelines of different lengths**.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
-    Start([Modify CSS Property]) --> Class{Property Category}
+    Start([Modify a CSS property]) --> Class{Property category}
 
     Class -->|"width/height/top/left<br/>margin/padding"| Layout
     Class -->|"color/background<br/>box-shadow/border"| Paint
@@ -530,23 +496,24 @@ flowchart TB
     Paint[Triggers Paint] --> Raster3[Raster]
     Raster3 --> Composite3[Composite]
 
-    Composite[Only Triggers Composite]
+    Composite[Usually Composite only]
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef decision fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
-    classDef layout fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef paint fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef composite fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Class decision;
-    class Layout layout;
-    class Paint,Paint2 paint;
-    class Raster2,Raster3,Raster composite;
-    class Composite,Composite2,Composite3 composite;
+    class Start core;
+    class Class wait;
+    class Layout block;
+    class Paint,Paint2,Raster2,Raster3,Raster work;
+    class Composite,Composite2,Composite3 metric;
 ```
 
-### 9.1 Properties That Trigger Layout
+The property category branches into three paths, and the chain gets shorter as it moves downstream. Note that `transform/opacity/filter` does not mean "no stage runs"; these properties usually land only on Composite, and the exact behavior still depends on whether the element is already on a compositing layer.
+
+### 1. Properties that trigger Layout
 
 Any property that changes element geometry triggers Layout:
 
@@ -555,12 +522,12 @@ Any property that changes element geometry triggers Layout:
 - `top`, `left`, `right`, `bottom`
 - `font-size`, `font-family`, `line-height`
 - `float`, `clear`
-- `text-align` (affects text flow)
+- `text-align`, which affects text flow
 - `display`
 
-### 9.2 Properties That Only Trigger Paint
+### 2. Properties that only trigger Paint
 
-Properties that do not change geometry but change visual appearance:
+Properties that leave geometry unchanged but alter visual appearance:
 
 - `color`, `background-color`
 - `border-color`
@@ -568,36 +535,30 @@ Properties that do not change geometry but change visual appearance:
 - `background-image`
 - `border-radius`
 
-### 9.3 The Golden Properties: Only Trigger Composite
+### 3. Properties that usually only trigger Composite
 
 - `transform`
 - `opacity`
-- `filter` (in some cases)
+- `filter`, in some cases
 
-These two properties are magical because they act on compositing layers: the browser does not need to recalculate layout or regenerate drawing instructions; it only changes the transform matrix or opacity during Composite.
+These act on the compositing layer: the browser does not recalculate layout or regenerate drawing commands, it only changes the transform matrix or opacity during compositing.
 
-::: tip Core conclusion of this section
+So prefer `transform` and `opacity` for animation, provided the element is on a compositing layer and no other paint-triggering property changes at the same time.
 
-For animations, prefer `transform` and `opacity`. Use `transform: translate()` for movement, `transform: rotate()` for rotation, `transform: scale()` for scaling, and `opacity` for fade in/out.
-:::
-
-::: info CSS Triggers Reference
-
-The site [csstriggers.com](https://csstriggers.com/) lists which rendering stage each CSS property triggers in major browsers. It is a good quick reference. But note that actual behavior is also affected by optimizations such as compositing-layer promotion and incremental layout.
-:::
+csstriggers.com lists the rendering stages each CSS property triggers in mainstream browsers and is a useful quick reference. Actual behavior is still affected by compositing-layer promotion and incremental layout.
 
 ---
 
 ## 10. Practice: Locating Bottlenecks with the Performance Panel
 
-### 10.1 How to Record
+### 1. Recording steps
 
-1. Open DevTools → Performance panel.
-2. Enable CPU 4× slowdown (to simulate low-end devices).
-3. Enable network throttling (optional).
+1. Open DevTools → Performance.
+2. Enable CPU 4× slowdown to simulate a low-end device.
+3. Enable network throttling if needed.
 4. Click record → interact with the page → stop.
 
-### 10.2 Color Mapping
+### 2. Color mapping
 
 | Color | Stage | Meaning |
 | --- | --- | --- |
@@ -605,17 +566,17 @@ The site [csstriggers.com](https://csstriggers.com/) lists which rendering stage
 | Purple | Recalculate Style / Layout | Style and layout |
 | Green | Paint / Raster / Composite | Painting and compositing |
 | Yellow | Evaluate Script / Function Call | JavaScript execution |
-| Red | Long task | Main thread occupied > 50 ms |
+| Red | Long task | Main thread occupied for over 50ms |
 
-### 10.3 Typical Problem Patterns
+### 3. Typical problem patterns
 
-- **Long Evaluate Script right after Parse HTML**: synchronous script blocking parsing.
-- **Continuous purple Layout blocks**: layout thrashing, possibly forced synchronous layout.
-- **Lots of green Paint blocks**: repaint area too large or effect too complex.
-- **Yellow long task + red triangle**: JavaScript occupying the main thread, affecting interaction (INP).
+- **Parse HTML followed by a long Evaluate Script**: a synchronous script is blocking parsing.
+- **Consecutive purple Layout blocks**: layout thrashing, possibly forced synchronous layout.
+- **Many green Paint blocks**: repaint area is too large or effects are too complex.
+- **Yellow long task with a red triangle**: JavaScript is occupying the main thread and hurting interaction (INP).
 - **Expensive Composite Layers**: too many compositing layers.
 
-### 10.4 Rendering Tab
+### 4. Rendering tab
 
 DevTools → More tools → Rendering provides:
 
@@ -624,69 +585,47 @@ DevTools → More tools → Rendering provides:
 - **Layer borders**: shows compositing-layer boundaries.
 - **FPS meter**: real-time frame rate.
 
-::: tip Core conclusion of this section
-
-The standard workflow for locating rendering bottlenecks: Performance recording → look at color distribution → find the longest block → locate the specific code → optimize specifically. The Rendering tab is used for auxiliary verification.
-:::
+Start with the longest event, then check whether your code triggered it directly or a resource delay caused it indirectly. The Rendering tab is for verification, not a substitute for judgment.
 
 ---
 
-## Conclusion: Manage the Pipeline as a State Machine
+## Conclusion
 
-After understanding the rendering pipeline, you should be able to answer these questions:
+Treat the pipeline as a dependency graph rather than six steps on an assembly line: parsing decides when input becomes available, Style decides which rules each node matches, Layout turns the tree into geometry, Paint and Raster turn geometry into pixels, and Composite delivers pixels to the screen. Each kind of change merely lights up different nodes on that graph.
 
-- Will this JavaScript modification trigger Layout? Why?
-- Should this animation use `transform` or `top/left`? Why?
-- Why is `display: none` switching more expensive than `visibility: hidden`?
-- Why can't `will-change` be abused?
-- Why are continuous purple Layout blocks in the Performance panel a bad signal?
-
-The final mental model should be:
-
-> **The rendering pipeline is a dependency state machine. Every DOM/JS/CSS change is an event, and the browser decides which pipeline stages to walk based on the event type. The essence of optimization is reducing the number of events, shrinking the scope of each event, and pushing the triggered stage as far back as possible (from Layout to Paint, from Paint to Composite).**
-
-Remember the key nodes of this state machine:
-
-1. **Parse** → decides when DOM and CSSOM are ready.
-2. **Style** → decides what each node looks like.
-3. **Layout** → decides where each node is and how big it is (most expensive).
-4. **Paint** → produces drawing instructions (medium).
-5. **Raster** → turns instructions into pixels (expensive, but on worker threads).
-6. **Composite** → assembles layers onto the screen (cheap, on GPU).
-
-Map every optimization strategy to these six nodes, and you will form a complete, self-consistent rendering performance model.
+Next, record one real interaction in the Performance panel. Find which fragment the longest event belongs to, then check whether your own code triggered it or a blocked resource did. Mapping an optimization to a specific node is more reusable than memorizing which property to avoid.
 
 ---
 
 ## FAQ
 
-### 1. Why is `transform: translate()` more suitable for animation than `top/left`?
+### 1. Why can `defer` and `async` still slow first paint?
 
-`top/left` changes geometric position, triggering Layout, which then triggers Paint, Raster, and Composite. `transform` acts on a compositing layer; the browser only needs to change the transform matrix during compositing, without triggering Layout or Paint, only Composite. The former occupies the main thread; the latter is done in the GPU process, so `transform` animations are smoother.
+Both keep scripts from blocking HTML parsing, but the script still has to execute on the main thread after download. `defer` executes in order after parsing finishes, while `async` may execute at any moment and interrupt other work. A heavy script occupies the main thread either way and delays first render or later interaction. They change scheduling, not execution cost.
 
-### 2. Which performs better, `display: none` or `visibility: hidden`?
+### 2. What is the difference between Style calculation and Layout?
 
-It depends on the scenario. During initial load, `display: none` elements are not in the render tree and do not participate in Layout or Paint, so initial rendering cost is lower. But when toggling, `display: none` must rebuild render-tree nodes and trigger full Layout, while `visibility: hidden` only triggers Paint. So use `visibility: hidden` for frequent toggling and `display: none` for long-term hiding.
+Style calculation answers "which CSS values does each node finally apply" and outputs computed styles. Layout answers "what geometry do those values imply" and outputs box positions and sizes. Changing a color usually requires only Style recalculation and Paint; changing a width may affect both.
 
-### 3. Does CSS selector complexity have a big performance impact?
+### 3. Why does changing `transform` sometimes still trigger Paint or Layout?
 
-In most scenarios the impact is small because modern browser style-matching algorithms are already fast. But when there are tens of thousands of DOM nodes and thousands of CSS rules, complex selectors (especially descendant selectors and universal selectors) can make the Recalculate Style stage noticeably slower. The rule is: use class names when possible, and avoid long-chain descendant selectors like `div ul li a`.
+Transform usually affects only the transform matrix in the compositing stage. But if the element is not on a compositing layer, if other geometric properties change at the same time, or if the transform makes content redraw, such as revealing a different face after a 3D transform, Paint or even Layout may still be triggered. Seeing `transform` in the code does not prove the change stays on Composite.
 
-### 4. Should `will-change` always be on?
+### 4. Can incremental layout guarantee that only a local area reflows?
 
-No. `will-change` creates compositing layers in advance and consumes GPU memory. Keeping it on all the time makes the browser reserve resources for animations that may not happen, causing memory waste and compositing-layer explosion. The correct approach is to add it just before an animation starts (e.g. on hover or when entering a scroll-triggered region) and remove it after the animation ends.
+No. Incremental layout tries to narrow the scope, but a node's change may affect its parent, siblings, or following text flow, depending on the box model, floats, fonts, and dependencies. It reduces cost; it is not a promise that changing one node recalculates only that node.
 
-### 5. Why does larger SSR HTML become slower?
+### 5. Does CSS selector complexity have a large performance impact?
 
-A larger HTML volume makes the Parse HTML stage longer, increasing main-thread occupancy and possibly blocking subsequent script execution and first-screen rendering. The value of SSR is making HTML return earlier + putting critical content directly in HTML (so the browser discovers it sooner), not stuffing all data into HTML. Streaming SSR + putting critical content first is the right approach.
+In most cases the impact is limited, because modern browsers match styles quickly. With tens of thousands of DOM nodes and many CSS rules, however, complex selectors, especially long descendant chains and universal selectors, can make Recalculate Style noticeably slower. Prefer class names and avoid structures like `div ul li a`.
 
 ---
 
 ## Sources
 
-This article is based on Chromium official documentation, the web.dev performance series, Chrome DevTools documentation, and the author's engineering practice. Key technical details can be found in:
+The following sources directly support the mechanisms and tooling described above:
 
 1. Chromium Graphics architecture documentation: [https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/](https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/)
 2. web.dev rendering performance series: [https://web.dev/articles/rendering-performance](https://web.dev/articles/rendering-performance)
 3. CSS Triggers: [https://csstriggers.com/](https://csstriggers.com/)
-4. Chrome DevTools Performance panel docs: [https://developer.chrome.com/docs/devtools/performance/](https://developer.chrome.com/docs/devtools/performance/)
+4. Chrome DevTools Performance panel documentation: [https://developer.chrome.com/docs/devtools/performance/](https://developer.chrome.com/docs/devtools/performance/)

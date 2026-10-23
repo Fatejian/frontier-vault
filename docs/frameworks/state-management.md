@@ -1,6 +1,5 @@
 ---
-title: "现代状态管理演进：从 Flux 到 Zustand 的设计哲学
-"
+title: "现代状态管理演进：从 Flux 到 Zustand 的设计哲学"
 description: 从 MVC 到 Flux、Redux、MobX、Zustand、Jotai，梳理前端状态管理的设计哲学与选型决策框架
 category: Frameworks
 tags:
@@ -15,73 +14,68 @@ outline: deep
 
 # 现代状态管理演进：从 Flux 到 Zustand 的设计哲学
 
-> 副标题：从 MVC 到 Flux、Redux、MobX、Zustand、Jotai——前端状态管理的设计哲学与选型决策框架
->
-> 目标读者：中高级前端工程师、前端架构师、需要做技术选型的工程师
->
-> 阅读时间：约 27 分钟
+几乎每个前端项目都会经历一次状态管理选型：先用组件内状态，随后引入 Context，再换成某个全局 store。换工具本身不解决问题，真正决定结果的是状态规模、更新粒度、可追踪性和团队协作成本。本文把主流方案放回各自要解决的约束里比较，再给出可以按条件执行的选型路径。
 
 ::: info 一句话
-前端状态管理演进的每一步，都在解决"状态变化的可追踪性"与"开发体验"之间的张力——从 Flux 强约束的单向流，到 Zustand 的极简 API，都是在重新权衡这两个维度。
+前端状态管理演进的每一步，都在解决“状态变化的可追踪性”与“开发体验”之间的张力——从 Flux 强约束的单向流，到 Zustand 的极简 API，都是在重新权衡这两个维度。
 :::
 
 ## 目录
 
 - [写在前面](#写在前面)
-- [一、MVC 时代的状态管理问题](#一-mvc-时代的状态管理问题)
-- [二、Flux：单向数据流的革命](#二-flux-单向数据流的革命)
-- [三、Redux：函数式与不可变性的极致](#三-redux-函数式与不可变性的极致)
-- [四、MobX：响应式状态管理](#四-mobx-响应式状态管理)
-- [五、Zustand 与 Jotai：回归简单的极简主义](#五-zustand-与-jotai-回归简单的极简主义)
-- [六、状态管理的选型决策框架](#六-状态管理的选型决策框架)
-- [七、趋势观察：状态管理正在"消失"](#七-趋势观察-状态管理正在-消失)
+- [一、决策背景：MVC 的网状状态为什么失控](#一、决策背景-mvc-的网状状态为什么失控)
+- [二、评价维度：选型时到底在权衡什么](#二、评价维度-选型时到底在权衡什么)
+- [三、方案比较：Flux 用单向数据流换约束](#三、方案比较-flux-用单向数据流换约束)
+- [四、方案比较：Redux 把约束推到极致](#四、方案比较-redux-把约束推到极致)
+- [五、方案比较：MobX 用响应式换开发效率](#五、方案比较-mobx-用响应式换开发效率)
+- [六、方案比较：Zustand 与 Jotai 减少约束](#六、方案比较-zustand-与-jotai-减少约束)
+- [七、约束与风险：反模式与边界条件](#七、约束与风险-反模式与边界条件)
+- [八、条件化建议：按项目条件选型](#八、条件化建议-按项目条件选型)
+- [决策清单](#决策清单)
+- [结语：先看清约束，再决定工具](#结语-先看清约束-再决定工具)
 - [FAQ](#faq)
 - [来源](#来源)
 
 ## 写在前面
 
-很多前端工程师对状态管理的认知是这样的：
+很多工程师的状态管理路径是这样的：
 
-- 项目开始时：用 useState，简单够用
-- 状态变多：提升到父组件，prop drilling
-- 嫌烦：装 Redux
-- 嫌 Redux 烦：换 MobX / Zustand / Jotai
-- 用了一会儿：好像每个方案都有不对劲的地方
+- 项目开始时用 `useState`，简单够用；
+- 状态变多后提升到父组件，开始 prop drilling；
+- 觉得麻烦，装 Redux；
+- 嫌 Redux 模板多，换 MobX / Zustand / Jotai；
+- 用了一段时间，发现每个方案都有不对劲的地方。
 
-这种"换工具"的过程，根本原因是没理解清楚不同方案要解决的问题。本文试图建立一个完整的"状态管理演进地图"，回答这些问题：
+换工具之所以反复发生，通常不是库选错了，而是没有先确认约束：状态到底有多大、更新有多频繁、是否需要审计、团队能维护多少约定。
 
-- Flux 为什么出现？它到底解决了 MVC 的什么问题？
-- Redux 的"三大原则"为什么是这三条？强制不可变是为了什么？
-- MobX 跟 Redux 是对立的吗？还是解决不同问题？
-- Zustand 这么简单，为什么能取代 Redux？它"少"了什么？
-- Jotai 的"原子化"跟 Zustand 的"集中式"有什么本质区别？
-- 在一个具体项目中，到底该怎么选？
+本文按决策顺序回答这些问题：
 
-::: tip 本文的核心论点
+- Flux 出现前，MVC 的状态流为什么会失控？
+- Redux 的三条原则各自约束了什么？
+- MobX 与 Redux 是对立关系，还是解决不同问题？
+- Zustand 和 Jotai 到底减掉了什么？
+- 已有方案运行良好时，什么条件下才值得迁移？
+- 服务端数据该不该放进全局 store？
 
-状态管理方案没有"绝对最优"。每个方案都是"约束 vs 自由"、"集中 vs 分布"、"显式 vs 隐式"的不同取舍。理解这些取舍维度，才能做出合适的选型，而不是被工具牵着走。
+文中代码用于展示结构，省略了错误处理和完整类型；标注为可运行的片段会说明版本与依赖。
 
-:::
+## 一、决策背景：MVC 的网状状态为什么失控
 
----
-
-## 一、MVC 时代的状态管理问题
-
-在前端框架化之前（约 2010-2014），Backbone.js、Ember.js、Knockout 等框架普遍采用 MVC 或 MVP 模式。Model 持有数据，View 监听 Model 变化并渲染，Controller 处理用户交互。
+在前端框架化之前（约 2010—2014），Backbone.js、Ember.js、Knockout 等框架普遍采用 MVC 或 MVP 模式。Model 持有数据，View 监听 Model 变化并渲染，Controller 处理用户交互。
 
 ### 1. 双向绑定的诱惑与陷阱
 
-早期 MVC 框架普遍支持双向绑定：View 的输入变化会写回 Model，Model 变化会刷新 View。这在简单场景下非常顺手，但在大型应用中迅速失控：
+早期 MVC 框架普遍支持双向绑定：View 的输入变化写回 Model，Model 变化刷新 View。简单场景下很顺手，应用一大就迅速失控。
 
 ```javascript
-// Backbone 风格的伪代码
+// Backbone 风格的伪代码，只保留双向绑定结构，不能直接运行
 const Model = Backbone.Model.extend({
-  defaults: { count: 0, total: 100 }
+  defaults: { count: 0, total: 100 },
 })
 
 const View = Backbone.View.extend({
   events: {
-    'input #count': 'onInput'  // View -> Model
+    'input #count': 'onInput', // View -> Model
   },
   initialize() {
     this.model.on('change', this.render, this) // Model -> View
@@ -89,23 +83,22 @@ const View = Backbone.View.extend({
   onInput(e) {
     this.model.set('count', e.target.value)
   },
-  render() { /* ... */ }
+  render() {},
 })
 ```
 
 ### 2. 状态流变得不可追踪
 
-当 Model 数量变多、View 之间互相依赖、Model 之间互相监听时，一个用户操作可能触发一连串难以追踪的变化：
+当 Model 数量变多、View 互相依赖、Model 互相监听时，一个用户操作可能触发一连串变化。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    V1[View A]
-    V2[View B]
-    V3[View C]
-    M1[Model 1]
-    M2[Model 2]
-    M3[Model 3]
+    V1["View A"]
+    V2["View B"]
+    V3["View C"]
+    M1["Model 1"]
+    M2["Model 2"]
+    M3["Model 3"]
 
     V1 -->|set| M1
     M1 -->|change| M2
@@ -116,76 +109,118 @@ flowchart LR
     M3 -->|change| V3
     V3 -->|set| M2
 
-    classDef view fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef model fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
 
-    class V1,V2,V3 view;
-    class M1,M2,M3 model;
+    class V1,V2,V3 wait;
+    class M1,M2,M3 block;
 ```
 
-这种"网状依赖"导致：
+图中没有起点也没有终点：View 写 Model，Model 又通过 change 事件影响其他 Model 和 View。只要有一条边形成环，一次输入就可能触发循环更新或级联更新，调试时很难判断最初的动作是什么。
 
-- **数据流不可预测**：一次输入可能触发循环更新、级联更新
-- **调试困难**：状态变化的源头难以追溯
-- **测试困难**：依赖大量隐式状态
+这种网状依赖带来三个问题：
 
-### 3. Facebook 的"MVC 不 scale"论断
+- **数据流不可预测**：一次输入可能触发循环或级联更新；
+- **调试困难**：状态变化的源头难以追溯；
+- **测试困难**：依赖大量隐式状态。
 
-2014 年 Facebook 的工程师 Chew Chua 在 Flux 演讲中展示了一张图：MVC 在大型应用中很快变成"V-C-M-V-M-C"的纠缠。这张图直接推动了 Flux 的诞生。
+### 3. Facebook 的“MVC 不 scale”论断
+
+2014 年，Facebook 工程师在 Flux 演讲中展示了 MVC 在大型应用中变成“V-C-M-V-M-C”纠缠的图。这幅图推动了 Flux 的诞生。
 
 ::: warning 常见误区
-
-很多人误解为"MVC 模式本身有问题"。实际上 MVC 在小型应用中工作得很好。问题在于"前端应用的规模上来后，缺乏对状态变化的统一约束"。Flux 的核心不是"取代 MVC"，而是"用单向数据流强制约束状态变化路径"。
-
+MVC 本身并没有问题。小型应用里它工作得很好，问题出在前端应用规模上来后，缺少对状态变化路径的统一约束。Flux 的核心不是取代 MVC，而是用单向数据流强制约束变化路径。
 :::
 
-::: tip 本节核心结论
+MVC 时代的核心问题是双向绑定加 Model 互相监听，让数据流变成网状。Flux 要做的，是把网状依赖压回单向链路。
 
-MVC 时代状态管理的核心问题是：双向绑定 + Model 间互相监听，导致数据流变成网状、不可追踪。Flux 的出现正是为了用单向数据流打破这种网状依赖。
+## 二、评价维度：选型时到底在权衡什么
 
-:::
+在比较具体库之前，先固定判断轴。否则很容易把“代码少”当成唯一标准，忽略团队协作和可追踪性。
 
----
+| 维度 | 要回答的问题 | 为什么会改变选型 |
+| --- | --- | --- |
+| 状态规模与生命周期 | 状态只在组件内、单个子树，还是全局长期存在？ | 全局化会扩大订阅面，也让清理责任变模糊 |
+| 状态形态 | 是集中可枚举的对象，还是大量动态生成、互相依赖的单元？ | 决定 selector 是否好用、依赖图是否会失控 |
+| 更新粒度 | 高频更新时，能否只重渲染受影响的组件？ | 组件级订阅在频繁更新场景下容易放大成本 |
+| 可追踪性 | 是否需要审计、回放、严格约束每一次变更？ | 强约束方案代码更多，但排障与协作边界更清晰 |
+| 团队协作成本 | 新人多久能上手？跨团队是否需要统一约定？ | 自由度高但约定弱的方案，规模越大越难维护 |
+| 服务端状态边界 | 这些数据的主人和新鲜度归谁？ | 服务端缓存有专门工具，混进通用 store 会增加负担 |
 
-## 二、Flux：单向数据流的革命
+### 1. 状态规模与生命周期
 
-Flux 是 Facebook 在 2014 年提出的状态管理架构。它不是库，而是一套设计模式。核心思想：**所有状态变化必须经过 Dispatcher，单向流动**。
+组件内部的表单输入、开关、临时动画状态，生命周期跟随组件，放回本地最省事。跨页面共享、需要长期保留的状态，才值得进入全局层。
+
+判断标准不是“有多少个变量”，而是“谁需要读、读多久、谁负责清理”。
+
+### 2. 状态形态
+
+集中式状态像一个对象加若干切片，适合用户信息、主题、配置这类可枚举结构。原子化状态适合大量动态生成、彼此依赖的单元，例如复杂表单字段、可增删的卡片。
+
+形态选错，后面会用更多 selector 或依赖声明去弥补。
+
+### 3. 更新粒度
+
+高频更新（拖拽、输入联想、实时协作）会放大订阅范围。组件级订阅意味着一次变化可能重跑整个组件；字段级订阅只触发相关 effect 或 selector。
+
+这一维度直接决定是否需要更细的响应式系统，而不是只看 API 长短。
+
+### 4. 可追踪性
+
+需要审计每一次状态变化、回放历史、跨团队排查问题时，显式 Action 与不可变更新会带来实际收益。反过来，如果状态变化只服务于本团队的快速迭代，强约束可能只是额外成本。
+
+### 5. 团队协作成本
+
+Redux Toolkit 的模板比早期 Redux 少很多，但仍要求团队理解 action、reducer 和中间件。Zustand 的 API 更短，但“什么时候该拆 store、selector 怎么写”需要团队自己约定。
+
+选型不只是技术判断，也是在选择一套团队需要长期维护的约定。
+
+### 6. 服务端状态边界
+
+从 API 拉来的数据有所有者、有新鲜度、需要一致性，它更像缓存而不是客户端状态。把这类数据放进通用 store，通常要自己补 loading、error、缓存失效和并发请求处理。
+
+先把服务端状态识别出来，剩下的客户端状态规模往往会小很多。
+
+## 三、方案比较：Flux 用单向数据流换约束
+
+Flux 是 Facebook 在 2014 年提出的架构。它不是库，而是一套设计模式，核心思想是：所有状态变化必须经过 Dispatcher，单向流动。
 
 ### 1. Flux 的四个角色
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    Action([Action<br/>type + payload])
-    Dispatcher([Dispatcher<br/>统一分发])
-    Store[Store<br/>持有状态 + 处理逻辑]
-    View[View<br/>渲染 + 触发 Action]
+    Action(["Action<br/>type + payload"])
+    Dispatcher(["Dispatcher<br/>统一分发"])
+    Store["Store<br/>持有状态 + 处理逻辑"]
+    View["View<br/>渲染 + 触发 Action"]
 
     Action -->|dispatch| Dispatcher
     Dispatcher -->|action| Store
     Store -->|change event| View
     View -->|user event| Action
 
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef dispatcher fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef view fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class Action action;
-    class Dispatcher dispatcher;
-    class Store store;
-    class View view;
+    class Action metric;
+    class Dispatcher core;
+    class Store block;
+    class View wait;
 ```
 
-- **Action**：描述"发生了什么"的纯对象 `{ type, payload }`
-- **Dispatcher**：统一分发 Action 到所有 Store
-- **Store**：持有状态，注册到 Dispatcher，根据 Action 类型更新自己
-- **View**：订阅 Store 变化、渲染、响应用户操作触发 Action
+四个角色围成一个闭环：View 产生 Action，Dispatcher 统一分发，Store 更新状态并发出 change 事件，View 再根据事件渲染。单向指的是状态变化只能沿这个方向走，Store 之间不能直接互相调用。
+
+- **Action**：描述“发生了什么”的纯对象 `{ type, payload }`；
+- **Dispatcher**：统一分发 Action 到所有 Store；
+- **Store**：持有状态，注册到 Dispatcher，根据 Action 类型更新自己；
+- **View**：订阅 Store 变化、渲染、响应用户操作触发 Action。
 
 ### 2. 简化实现
 
 ```javascript
-// Dispatcher: 简化实现
+// 只保留分发与订阅的主干，render / addButton 等外部引用省略
 class Dispatcher {
   constructor() {
     this.callbacks = []
@@ -203,7 +238,6 @@ class Dispatcher {
 
 const dispatcher = new Dispatcher()
 
-// Store
 class TodoStore {
   constructor() {
     this.todos = []
@@ -231,7 +265,6 @@ class TodoStore {
   }
 }
 
-// View
 const store = new TodoStore()
 store.subscribe(() => render(store.todos))
 addButton.onclick = () => {
@@ -250,52 +283,47 @@ addButton.onclick = () => {
 
 ### 4. Flux 的局限
 
-- **多 Store 协调麻烦**：一个 Action 可能要更新多个 Store，Store 之间还要等彼此完成（`waitFor`）
-- **没有标准实现**：Facebook 给了模式，但具体 API 各家不同
-- **冗余代码**：每个 Store 都要写 switch-case，模板代码多
+- **多 Store 协调麻烦**：一个 Action 可能更新多个 Store，Store 之间还要等彼此完成（`waitFor`）；
+- **没有标准实现**：Facebook 给了模式，具体 API 各家不同；
+- **冗余代码**：每个 Store 都要写 switch-case。
 
-这些局限直接催生了 Redux——一个"标准化、单一 Store、函数式"的 Flux 变体。
+这些局限直接催生了 Redux——一个标准化、单一 Store、函数式的 Flux 变体。
 
-::: tip 本节核心结论
+Flux 的贡献是把状态变化变成可枚举的事件，代价是每个事件都要手写分发与分支。
 
-Flux 用单向数据流（Action → Dispatcher → Store → View）打破了 MVC 的网状依赖。它的核心贡献是"约束"：所有状态变化必须是显式 Action。代价是模板代码多、多 Store 协调复杂——这正是 Redux 要解决的问题。
+## 四、方案比较：Redux 把约束推到极致
 
-:::
+Redux 由 Dan Abramov 与 Andrew Clark 在 2015 年创建。它把 Flux 的思想标准化，并确定了三条原则：
 
----
-
-## 三、Redux：函数式与不可变性的极致
-
-Redux 是 Dan Abramov 在 2015 年创建的库，它把 Flux 的思想推到了极致。Redux 的"三大原则"是：
-
-1. **单一数据源**：整个应用的状态保存在一棵 state tree 中
-2. **状态只读**：唯一改变状态的方式是 dispatch action
-3. **纯函数修改**：reducer 必须是纯函数，无副作用
+1. **单一数据源**：整个应用的状态保存在一棵 state tree 中；
+2. **状态只读**：唯一改变状态的方式是 dispatch action；
+3. **纯函数修改**：reducer 必须是纯函数，无副作用。
 
 ### 1. Redux 的核心模型
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    UI["UI: dispatch action"]
-    A["Action: {type, payload}"]
-    R["Reducer: pure function<br/>state, action -> newState"]
-    S["Store: single state tree"]
-    UI2["UI: subscribe state"]
+    UI["UI：dispatch action"]
+    A["Action：{type, payload}"]
+    R["Reducer：pure function<br/>state, action -> newState"]
+    S["Store：single state tree"]
+    UI2["UI：subscribe state"]
 
     UI --> A --> R --> S --> UI2
     UI2 -.user event.-> UI
 
-    classDef ui fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef reducer fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
 
-    class UI,UI2 ui;
-    class A action;
-    class R reducer;
-    class S store;
+    class UI,UI2 wait;
+    class A metric;
+    class R work;
+    class S block;
 ```
+
+图中 Action 是唯一的输入，Reducer 是纯计算，Store 是唯一状态源。虚线表示用户操作重新产生 Action，而不是直接改 Store；这条边界是 Redux 可追踪性的来源。
 
 ### 2. 完整的简化实现
 
@@ -325,7 +353,7 @@ function createStore(reducer, initialState) {
 function todosReducer(state = [], action) {
   switch (action.type) {
     case 'ADD_TODO':
-      return [...state, action.payload] // 新数组，不修改原 state
+      return [...state, action.payload]
     case 'TOGGLE_TODO':
       return state.map((t) =>
         t.id === action.payload.id ? { ...t, done: !t.done } : t
@@ -342,9 +370,11 @@ store.subscribe(() => console.log(store.getState()))
 store.dispatch({ type: 'ADD_TODO', payload: { id: 1, text: 'learn redux', done: false } })
 ```
 
+这段代码可以在 Node.js 18+ 或浏览器控制台直接运行，输出是包含一条 todo 的数组。
+
 ### 3. 为什么强制不可变
 
-Redux 最显著的特点是 reducer 必须返回新对象，不能直接修改原 state。原因有三：
+**不可变（Immutable）**指更新时创建新对象，而不是就地修改原对象。Redux 强制 reducer 返回新对象，原因有三。
 
 **第一，可追踪性**：每次 state 变化都是一次新引用，可以用 `===` 快速判断是否变化，无需深比较。
 
@@ -352,17 +382,17 @@ Redux 最显著的特点是 reducer 必须返回新对象，不能直接修改�
 // React-Redux 的优化基础
 function shallowEqual(a, b) {
   if (a === b) return true // 引用相等直接返回，O(1)
-  // ...
+  // 继续比较第一层字段
 }
 ```
 
-**第二，时间旅行**：因为 state 是不可变的，所有历史 state 都保留在内存中，可以回放。这是 Redux DevTools 的基础。
+**第二，时间旅行**：历史 state 都保留在内存中，可以回放。这是 Redux DevTools 的基础。
 
-**第三，纯函数可测试**：reducer 是纯函数，给定输入一定得到相同输出，测试不需要 mock。
+**第三，纯函数可测试**：reducer 给定输入一定得到相同输出，测试不需要 mock。
 
 ### 4. 中间件机制
 
-Redux 的副作用（异步、日志、错误处理）通过中间件实现。中间件是 `store.dispatch` 的包装器：
+Redux 的副作用——异步请求、日志、错误处理——通过中间件实现。中间件是 `store.dispatch` 的包装器。
 
 ```javascript
 function applyMiddleware(store, middlewares) {
@@ -381,7 +411,7 @@ const logger = (store) => (next) => (action) => {
   return result
 }
 
-// thunk 中间件：处理异步 action
+// thunk 中间件：处理函数形式的 action
 const thunk = (store) => (next) => (action) => {
   if (typeof action === 'function') {
     return action(store.dispatch, store.getState)
@@ -389,11 +419,9 @@ const thunk = (store) => (next) => (action) => {
   return next(action)
 }
 
-// 使用
 const store = createStore(reducer, initialState)
 const enhancedStore = applyMiddleware(store, [logger, thunk])
 
-// 异步 action
 const fetchTodos = () => async (dispatch) => {
   dispatch({ type: 'FETCH_TODOS_REQUEST' })
   try {
@@ -408,12 +436,12 @@ enhancedStore.dispatch(fetchTodos())
 
 ### 5. Redux 的代价
 
-Redux 的"约束力"是它的优点，也是它的代价：
+Redux 的约束力是优点，也是代价：
 
-- **模板代码多**：一个简单功能要写 action type / action creator / reducer / 连接组件
-- **不可变更新繁琐**：嵌套对象的 spread 操作可读性差、易错
-- **学习曲线陡**：纯函数、不可变、中间件、connect/Hooks 都要学
-- **过度工程**：小项目用 Redux 是杀鸡用牛刀
+- **模板代码多**：一个简单功能要写 action type、action creator、reducer、连接组件；
+- **不可变更新繁琐**：嵌套对象的 spread 可读性差、易错；
+- **学习曲线陡**：纯函数、不可变、中间件、connect/Hooks 都要学；
+- **过度工程**：小项目用 Redux 会带来不必要的约束。
 
 ```javascript
 // 嵌套更新的痛苦
@@ -432,68 +460,66 @@ function reducer(state, action) {
 }
 ```
 
-这种繁琐催生了 Immer 等工具，让 reducer 可以"用可变语法写不可变更新"：
+Immer 让 reducer 可以用可变语法写不可变更新。
 
 ```javascript
 import { produce } from 'immer'
 
 const reducer = produce((draft, action) => {
   switch (action.type) {
-    case 'UPDATE_TODO_TEXT':
+    case 'UPDATE_TODO_TEXT': {
       const todo = draft.todos.find((t) => t.id === action.payload.id)
       if (todo) todo.text = action.payload.text // 看起来可变，实际生成新 state
       break
+    }
   }
 })
 ```
 
-::: tip 本节核心结论
+Redux 适合把状态变化当作可审计事件的场景，代价是每次扩展都要维护一套 action/reducer 约定。是否值得，取决于可追踪性对团队是否真的重要。
 
-Redux 把 Flux 推向极致：单一 Store、纯函数 reducer、强制不可变。它换来了可追踪性、时间旅行、纯函数测试，代价是大量模板代码和繁琐的不可变更新。Redux 适合"大型应用 + 团队需要强约束"的场景。
+## 五、方案比较：MobX 用响应式换开发效率
 
-:::
-
----
-
-## 四、MobX：响应式状态管理
-
-MobX 走了完全相反的路。它的核心理念是："通过响应式系统自动追踪依赖，让状态管理变成'修改数据'本身"。
+MobX 走了相反的路：通过响应式系统自动追踪依赖，让状态管理回到“修改数据”本身。
 
 ### 1. MobX 的核心模型
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
-    S[Observable State<br/>可变状态]
-    A[Action<br/>直接修改 state]
-    D[Derived Value<br/>computed]
-    R[Reaction<br/>自动响应变化]
+    S["Observable State<br/>可变状态"]
+    A["Action<br/>直接修改 state"]
+    D["Derived Value<br/>computed"]
+    R["Reaction<br/>自动响应变化"]
 
     A -->|mutate| S
     S -->|track| D
     S -->|track| R
     D -->|track| R
 
-    classDef state fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef action fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef derived fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef reaction fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class S state;
-    class A action;
-    class D derived;
-    class R reaction;
+    class S block;
+    class A metric;
+    class D work;
+    class R wait;
 ```
+
+MobX 的入口是 Action，出口是 Reaction。Observable 被读取时自动记录依赖，被修改时自动通知；Derived 与 Reaction 都通过 track 挂在状态上。这里没有手写订阅列表，依赖由读取行为决定。
 
 ### 2. 简化实现
 
+下面这段代码展示“Proxy + 自动依赖收集”的最小结构，不是 MobX 源码。
+
 ```javascript
-// 简化的 observable：本质是 Vue 3 的 reactive
+// 简化的 observable：思路接近 Vue 3 的 reactive
 function observable(target) {
   const deps = new Map() // key -> Set<reaction>
   let currentReaction = null
 
-  return new Proxy(target, {
+  const proxy = new Proxy(target, {
     get(t, key) {
       if (currentReaction) {
         if (!deps.has(key)) deps.set(key, new Set())
@@ -507,59 +533,73 @@ function observable(target) {
       return true
     },
   })
-}
 
-function autorun(fn) {
-  const reaction = () => {
-    currentReaction = reaction
-    try {
-      fn()
-    } finally {
-      currentReaction = null
+  function autorun(fn) {
+    const reaction = () => {
+      currentReaction = reaction
+      try {
+        fn()
+      } finally {
+        currentReaction = null
+      }
     }
+    reaction()
   }
-  reaction()
+
+  return { proxy, autorun }
 }
 
-// 使用
 const state = observable({ count: 0, todos: [] })
 
-autorun(() => {
-  console.log('count is', state.count) // 自动追踪 count
+state.autorun(() => {
+  console.log('count is', state.proxy.count)
 })
 
-state.count = 1 // 控制台输出: count is 1
-state.todos.push({}) // 不会触发上面的 autorun（因为没读 todos）
+state.proxy.count = 1 // 控制台输出: count is 1
+state.proxy.todos.push({}) // 不会触发上面的 autorun，因为没有读取 todos
 ```
 
-### 3. MobX 的关键设计
+### 3. MobX 6 的写法
 
-**第一，状态可变**：直接 `state.count++`，无需 reducer、无需 dispatch、无需不可变更新。
+实际项目通常用 `makeAutoObservable` 让类字段、getter 和 action 自动变成 observable、computed 和 action。
 
-**第二，自动依赖追踪**：reaction 运行时读取了哪些 observable，就自动订阅哪些。无需手写依赖列表。
+```javascript
+import { makeAutoObservable, autorun } from 'mobx'
 
-**第三，细粒度更新**：每个 observable 属性都有自己的订阅集合，更新某个属性只触发相关 reaction，不触发其他。
+class TodoStore {
+  todos = []
+
+  constructor() {
+    makeAutoObservable(this)
+  }
+
+  get unfinishedCount() {
+    return this.todos.filter((t) => !t.done).length
+  }
+
+  addTodo(text) {
+    this.todos.push({ text, done: false })
+  }
+}
+
+const store = new TodoStore()
+autorun(() => console.log('unfinished:', store.unfinishedCount))
+store.addTodo('learn mobx') // 控制台输出: unfinished: 1
+```
+
+以上示例基于 MobX 6。更早版本使用装饰器或显式 `observable` 包装，写法不同。
+
+### 4. MobX 的关键设计
+
+**第一，状态可变**：直接 `state.count++`，无需 reducer、dispatch 或不可变更新。
+
+**第二，自动依赖追踪**：reaction 运行时读取了哪些 observable，就订阅哪些，无需手写依赖列表。
+
+**第三，细粒度更新**：每个 observable 属性都有自己的订阅集合，更新某个属性只触发相关 reaction。
 
 **第四，computed 缓存**：衍生状态自动缓存，依赖不变时返回旧值。
 
-```javascript
-import { observable, computed, autorun } from 'mobx'
-
-const store = observable({
-  todos: [],
-  get unfinishedCount() {
-    return computed(() => this.todos.filter((t) => !t.done).length).get()
-  },
-})
-
-autorun(() => {
-  console.log('unfinished:', store.unfinishedCount)
-})
-
-store.todos.push({ done: false }) // 自动输出: unfinished: 1
-```
-
-### 4. Redux vs MobX
+### 5. Redux vs MobX
 
 | 维度 | Redux | MobX |
 |------|-------|------|
@@ -572,40 +612,28 @@ store.todos.push({ done: false }) // 自动输出: unfinished: 1
 | 调试 | 时间旅行、Action 回放 | 难以回放（状态被直接修改） |
 | 适合规模 | 大型团队、需要约束 | 中小型、追求开发效率 |
 
-::: warning 关键认知
+Redux 和 MobX 不是好与坏的关系，而是约束与自由的取舍。Redux 的强约束让大型团队协作更安全，MobX 的自由让中小型项目开发更快；在不需要严格审计每一次状态变化的场景下，MobX 的开发体验通常更好。
 
-Redux 和 MobX 不是"好与坏"的关系，而是"约束 vs 自由"的取舍。Redux 的强约束让大型团队协作更安全，MobX 的自由让中小型项目开发更快。在不需要"严格审计每一次状态变化"的场景下，MobX 的开发体验远好于 Redux。
+## 六、方案比较：Zustand 与 Jotai 减少约束
 
-:::
+到 2017—2019 年，社区对 Redux 的繁琐越来越不满，一批极简状态管理库出现，其中最有代表性的是 Zustand 和 Jotai，另有 Recoil、Valtio 等。
 
-::: tip 本节核心结论
+### 1. Zustand：保留 store，去掉模板
 
-MobX 用响应式系统把"状态变化"和"UI 更新"自动绑定，让开发者直接修改状态而不需要 Action/Reducer。代价是失去了"显式可追踪"的审计能力。它是"自由派"的代表，与 Redux 的"约束派"形成对立。
+Zustand 的目标是保留 Redux 的“显式 store”理念，但去掉样板代码。以下示例基于 Zustand 4/5 与 React 18+。
 
-:::
-
----
-
-## 五、Zustand 与 Jotai：回归简单的极简主义
-
-到 2017-2019 年，社区对 Redux 的繁琐越来越不满。一批"极简状态管理"库出现，其中最有代表性的是 Zustand 和 Jotai（以及 Recoil、Valtio 等）。
-
-### 1. Zustand：极简的"小型 Redux"
-
-Zustand 的设计目标：保留 Redux 的"显式 store"理念，但去掉所有模板代码。
-
-```javascript
+```jsx
 import { create } from 'zustand'
 
 const useStore = create((set, get) => ({
   count: 0,
   todos: [],
   increment: () => set((state) => ({ count: state.count + 1 })),
-  addTodo: (text) => set((state) => ({ todos: [...state.todos, { text, done: false }] })),
+  addTodo: (text) =>
+    set((state) => ({ todos: [...state.todos, { text, done: false }] })),
   getUnfinished: () => get().todos.filter((t) => !t.done).length,
 }))
 
-// 使用
 function Counter() {
   const count = useStore((state) => state.count)
   const increment = useStore((state) => state.increment)
@@ -613,24 +641,28 @@ function Counter() {
 }
 ```
 
-**关键设计**：
+关键设计：
 
-- **store 是一个 hook**：直接在组件中调用，无需 Provider
-- **状态和 action 放一起**：不再分离 reducer/action creator
-- **可变或不可变都可以**：`set` 接受新对象，也可以用 Immer 中间件写可变语法
-- **selector 优化**：组件只订阅自己关心的切片
+- **store 是一个 hook**：直接在组件中调用，无需 Provider；
+- **状态和 action 放一起**：不再分离 reducer / action creator；
+- **可变或不可变都可以**：`set` 接受新对象，也可以配合 Immer 写可变语法；
+- **selector 优化**：组件只订阅自己关心的切片。
+
+简化实现大致如下：
 
 ```javascript
-// 简化实现
+import { useSyncExternalStore } from 'react'
+
 function createStore(createState) {
   let state
   const listeners = new Set()
 
   const setState = (partial) => {
     const nextState = typeof partial === 'function' ? partial(state) : partial
-    if (nextState !== state) {
+    if (!Object.is(nextState, state)) {
+      const previousState = state
       state = Object.assign({}, state, nextState)
-      listeners.forEach((l) => l())
+      listeners.forEach((l) => l(previousState, state))
     }
   }
   const getState = () => state
@@ -643,21 +675,20 @@ function createStore(createState) {
   state = createState(setState, getState, api)
 
   const useStore = (selector = (s) => s) => {
-    return useSyncExternalStore(
-      subscribe,
-      () => selector(getState())
-    )
+    return useSyncExternalStore(subscribe, () => selector(getState()))
   }
   Object.assign(useStore, api)
   return useStore
 }
 ```
 
+这个简化版本没有处理 selector 返回新对象时的缓存问题。Zustand 实际使用 `useSyncExternalStoreWithSelector`，并通过 `Object.is` 比较快照，避免无变化时反复渲染。
+
 ### 2. Jotai：原子化状态
 
-Jotai（受 Recoil 启发）走完全不同的路线：**状态不是集中在一棵树里，而是分散为独立的"原子"**。
+Jotai 受 Recoil 启发，走完全不同的路线：状态不集中在一棵树里，而是分散为独立的原子。以下示例基于 Jotai 2.x。
 
-```javascript
+```jsx
 import { atom, useAtom } from 'jotai'
 
 // 原子：状态的最小单元
@@ -669,7 +700,7 @@ const unfinishedCountAtom = atom((get) =>
   get(todosAtom).filter((t) => !t.done).length
 )
 
-// 派生可写原子
+// 可写派生原子
 const addTodoAtom = atom(null, (get, set, text) => {
   set(todosAtom, [...get(todosAtom), { text, done: false }])
 })
@@ -678,31 +709,24 @@ function Counter() {
   const [count, setCount] = useAtom(countAtom)
   return <button onClick={() => setCount(count + 1)}>{count}</button>
 }
-
-function TodoList() {
-  const [unfinished] = useAtom(unfinishedCountAtom)
-  const [, addTodo] = useAtom(addTodoAtom)
-  // ...
-}
 ```
 
-**关键设计**：
+关键设计：
 
-- **状态分散**：每个 atom 独立，不需要集中 store
-- **图状依赖**：atom 可以依赖其他 atom，自动形成依赖图
-- **细粒度订阅**：组件只订阅自己用的 atom，atom 变化只触发相关组件
-- **可派生**：atom 可以是只读的衍生状态、可写的转换 atom
+- **状态分散**：每个 atom 独立，不需要集中 store；
+- **图状依赖**：atom 可以依赖其他 atom，自动形成依赖图；
+- **细粒度订阅**：组件只订阅自己使用的 atom；
+- **可派生**：atom 可以是只读衍生状态，也可以是可写转换 atom。
 
 ### 3. Zustand vs Jotai
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Zustand["Zustand：集中式"]
-        Z1[Store<br/>集中状态树]
-        Z2[Selector<br/>订阅切片]
-        Z3[Component A]
-        Z4[Component B]
+        Z1["Store<br/>集中状态树"]
+        Z2["Selector<br/>订阅切片"]
+        Z3["Component A"]
+        Z4["Component B"]
 
         Z1 --> Z2
         Z2 --> Z3
@@ -710,11 +734,11 @@ flowchart TB
     end
 
     subgraph Jotai["Jotai：分布式"]
-        J1[countAtom]
-        J2[todosAtom]
-        J3[filterAtom<br/>derived]
-        J4[Component A]
-        J5[Component B]
+        J1["countAtom"]
+        J2["todosAtom"]
+        J3["filterAtom<br/>derived"]
+        J4["Component A"]
+        J5["Component B"]
 
         J1 --> J4
         J2 --> J3
@@ -722,225 +746,197 @@ flowchart TB
         J2 --> J5
     end
 
-    classDef store fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef atom fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef selector fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef component fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
 
-    class Z1 store;
-    class J1,J2,J3 atom;
-    class Z2 selector;
-    class Z3,Z4,J4,J5 component;
+    class Z1 block;
+    class J1,J2,J3 work;
+    class Z2 metric;
+    class Z3,Z4,J4,J5 wait;
 ```
+
+左边 Zustand 只有一个状态源，组件通过 selector 取切片；右边 Jotai 有多个原子，派生原子再把依赖连成图。图中的边越多，越需要考虑依赖是否需要拆分，而不是继续堆在一个 store 里。
 
 | 维度 | Zustand | Jotai |
 |------|---------|-------|
 | 状态形态 | 集中式 store | 分散原子 |
-| 心智模型 | "全局对象 + selector" | "原子 + 依赖图" |
+| 心智模型 | 全局对象 + selector | 原子 + 依赖图 |
 | 适合场景 | 业务状态、可枚举状态集合 | 状态依赖复杂、动态生成状态 |
 | 状态共享 | 默认全局 | 默认全局，可作用域隔离 |
 | API 风格 | 命令式 set/get | 声明式 atom |
 
-### 4. 为什么 Zustand/Jotai 能取代 Redux
+### 4. 它们减掉了什么
 
-::: tip 共同的设计哲学
+Zustand 和 Jotai 的共同设计取向：
 
-1. **零模板代码**：没有 reducer、没有 action creator、没有 switch-case
-2. **零 Provider**：直接在组件中 import 使用，不污染组件树
-3. **不强制不可变**：但鼓励，配合 Immer 也容易
-4. **基于 Hooks**：天然契合 React 函数式组件范式
-5. **足够小**：Zustand ~1KB，Jotai ~3KB，加起来比 Redux Toolkit 还小
+1. **零模板代码**：没有 reducer、action creator、switch-case；
+2. **零 Provider**：直接在组件中 import 使用，不污染组件树；
+3. **不强制不可变**：但鼓励，配合 Immer 也容易；
+4. **基于 Hooks**：天然契合 React 函数式组件；
+5. **体积小**：具体大小随版本和打包方式变化，但都在几 KB 量级。
 
-:::
+它们也少了一些 Redux 的能力：没有强制的 Action 类型、没有原生的时间旅行（Zustand 需配合中间件）、没有标准化的副作用方案（需要自己选 saga、observable 或 async）。
 
-但它们也"少"了 Redux 的一些东西：没有强制的 Action 类型、没有时间旅行（虽然 Zustand 可以配合中间件实现）、没有标准化的副作用方案（需要自己用 saga/observable/async）。
+Zustand 和 Jotai 代表“回归简单”的趋势。Zustand 保留集中 store，去掉模板；Jotai 把状态分散为最小单元，用依赖图管理。两者都用减少约束换来了开发体验，但把约定责任交给了团队。
 
-::: tip 本节核心结论
+## 七、约束与风险：反模式与边界条件
 
-Zustand 和 Jotai 代表了"回归简单"的趋势。Zustand 是"小型 Redux"——保留集中 store，去掉模板代码；Jotai 是"原子化状态"——把状态分散为最小单元，依赖图自动管理。两者都通过"减少约束"换来了开发体验的提升。
+选型不是一次性的。下面三类反模式和几个趋势会改变前面的判断。
 
-:::
+### 1. 反模式：所有状态都进全局 store
 
----
+```jsx
+// 反例：只在一个表单里使用的输入，被放进了全局 store
+const useFormStore = create((set) => ({
+  value: '',
+  setValue: (value) => set({ value }),
+}))
 
-## 六、状态管理的选型决策框架
+// 正例：组件内状态足够
+const [value, setValue] = useState('')
+```
 
-理解了不同方案的设计哲学，下一个问题是：在具体项目中怎么选？下面是一个基于实践的决策框架。
+判断原则：只有“跨多组件共享”且“长期存在”的状态才进全局 store。表单临时输入、动画状态、UI 局部开关都应该用组件本地状态。
 
-### 1. 决策树
+### 2. 反模式：用通用状态库管理服务端状态
+
+```jsx
+// 反例：自己维护服务端列表的缓存、loading 和错误
+const [todos, setTodos] = useState([])
+useEffect(() => {
+  fetchTodos().then(setTodos)
+}, [])
+```
+
+服务端状态有专门的库：TanStack Query、SWR、RTK Query。它们解决缓存、重新验证、loading 状态、并发请求等问题。
+
+```jsx
+// 正例：交给 query 库管理缓存与请求状态
+const { data: todos, isLoading, error } = useQuery({
+  queryKey: ['todos'],
+  queryFn: fetchTodos,
+})
+```
+
+### 3. 反模式：选型不考虑团队
+
+新人多的团队选 Redux，是在为约束付费，但学习成本很高；强协作场景选 MobX，是在为自由付费，但难以追溯状态变化。选型决策必须考虑团队结构，不能只看技术指标。
+
+### 4. 服务端状态正在被独立出去
+
+React Query、SWR、RTK Query 把服务端数据缓存从状态管理中剥离。开发者不再需要把 API 数据存进 Redux，而是用 query 库管理。在很多业务应用里，所谓的“状态”大部分是服务端数据的本地缓存。
+
+### 5. 框架内置能力在增强
+
+- React Server Components 把服务端状态直接渲染进组件树；
+- React 的 `use` Hook 让异步数据可以按 Suspense 语义读取；
+- VueUse 的 `useStorage`、`useAsyncState` 等组合式函数覆盖了常见场景；
+- SvelteKit、SolidStart 等元框架内置了数据加载和状态同步。
+
+框架覆盖得越多，通用状态库需要承担的部分越少。
+
+### 6. URL 正在承担一部分共享状态
+
+搜索条件、过滤器、分页、tab 选中状态越来越多地被搬进 URL。URL 状态天然可分享、可前进后退、可服务端渲染，这进一步减少了“需要管理”的客户端状态。
+
+### 7. 边界：状态库不会消失
+
+剩下的客户端状态更少了：用户偏好、UI 状态、本地草稿、协作状态。这部分用 Zustand 或 Jotai 通常足够，但在需要审计、跨团队协作或复杂异步编排时，Redux Toolkit 这类强约束方案仍然有位置。
+
+如果服务端状态、URL 状态和框架内置状态继续吸收通用需求，状态管理库会更多回归“局部工具”的角色，而不是项目架构的核心。这个判断成立的前提是应用仍以服务端数据为主；本地优先、离线协作类应用会走出不同的路径。
+
+## 八、条件化建议：按项目条件选型
+
+把前面的维度收成一条决策路径，先看规模和生命周期，再看共享范围，最后看审计需求与状态形态。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart TB
-    Start([开始选型])
+    Start(["开始选型"])
 
-    Q1{状态规模?}
-    Q2{是否需要<br/>跨组件共享?}
-    Q3{团队规模?}
-    Q4{状态形态?}
-    Q5{是否需要<br/>审计/回放?}
-    Q6{是否大量<br/>动态状态?}
+    Q1{"状态规模与生命周期?"}
+    Q2{"共享范围?"}
+    Q3{"需要审计 / 回放?"}
+    Q4{"状态形态?"}
 
-    R1[useState / useReducer<br/>组件内状态]
-    R2[Context + useReducer<br/>局部共享]
-    R3[Zustand<br/>轻量全局]
-    R4[Jotai<br/>原子化]
-    R5[Redux Toolkit<br/>强约束大型应用]
-    R6[MobX<br/>响应式风格团队]
+    R1["useState / useReducer<br/>组件内状态"]
+    R2["Context + useReducer<br/>单个子树共享"]
+    R3["Zustand<br/>集中式全局状态"]
+    R4["Jotai<br/>原子化 / 图状依赖"]
+    R5["Redux Toolkit<br/>强约束 / 可审计"]
+    R6["MobX<br/>响应式可变状态"]
 
     Start --> Q1
-    Q1 -->|少量, 局部| R1
-    Q1 -->|中等, 需共享| Q2
-    Q1 -->|大量, 复杂| Q3
+    Q1 -->|"少量且局部"| R1
+    Q1 -->|"中等且需共享"| Q2
+    Q1 -->|"大量且长期"| Q3
+    Q2 -->|"单个子树"| R2
+    Q2 -->|"跨页面全局"| Q3
+    Q3 -->|"是"| R5
+    Q3 -->|"否"| Q4
+    Q4 -->|"集中可枚举"| R3
+    Q4 -->|"动态图状"| R4
+    Q4 -->|"响应式可变"| R6
 
-    Q2 -->|否| R1
-    Q2 -->|是| Q3
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    Q3 -->|个人/小团队| Q4
-    Q3 -->|大团队/多团队协作| Q5
-
-    Q4 -->|集中可枚举| R3
-    Q4 -->|动态/图状依赖| R6
-    Q5 -->|是| R5
-    Q5 -->|否| Q6
-
-    Q6 -->|是| R4
-    Q6 -->|否| R3
-
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef question fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef result fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-
-    class Start start;
-    class Q1,Q2,Q3,Q4,Q5,Q6 question;
-    class R1,R2,R3,R4,R5,R6 result;
+    class Start core;
+    class Q1,Q2,Q3,Q4 wait;
+    class R1,R2,R3,R4,R5,R6 work;
 ```
 
-### 2. 四个核心维度
+决策树把问题按顺序收敛：先排除不需要全局化的状态，再判断共享范围，最后才比较库的形态。它不是评分表；如果团队已经有成熟约定，这条路径只用来检查是否漏掉了关键约束。
 
-**维度 1：状态规模**
+按条件给出的建议如下。
 
-- 单组件内部：`useState` / `useReducer` 足够
-- 跨几个组件但有限范围：Context + useReducer
-- 全局大量状态：Zustand / Redux Toolkit / MobX
+| 条件 | 优先方案 | 收益 | 代价与不适用情况 |
+| --- | --- | --- | --- |
+| 状态只在组件内或单个子树 | `useState` / `useReducer` / Context | 零依赖、边界清晰 | 跨页面共享时会变成多层透传 |
+| 全局状态集中、团队较小、迭代快 | Zustand | API 短、订阅粒度可控 | 审计与约定需团队自己补 |
+| 大量动态单元、依赖关系像图 | Jotai | 原子级订阅、派生自然 | 原子过多时依赖图难梳理 |
+| 跨团队协作、需要审计与回放 | Redux Toolkit + RTK Query | 变更显式、工具链成熟 | 模板与学习成本更高 |
+| 团队熟悉响应式、状态高频变化 | MobX | 自动追踪、字段级更新 | 变更来源分散，回放困难 |
+| 大部分数据来自 API | TanStack Query / SWR / RTK Query | 缓存、重验证、并发请求有现成方案 | 仍需要客户端状态库处理 UI 状态 |
 
-**维度 2：状态形态**
+迁移要看收益是否大于成本。已有 Redux Toolkit 且运行稳定的项目，如果主要痛点是服务端数据，优先引入 RTK Query，而不是整体换库；只有现有约束持续阻碍交付时，迁移才值得进入排期。
 
-- 集中、可枚举：Zustand、Redux Toolkit
-- 分散、动态生成：Jotai
-- 响应式风格、可变：MobX
+## 决策清单
 
-**维度 3：团队规模与协作需求**
+- [ ] 列出所有全局状态，标注每个状态的读写方；只有一个组件读写的项移回本地状态。
+- [ ] 区分服务端数据与客户端状态；服务端数据交给 query 库，并确认缓存失效策略。
+- [ ] 明确是否需要变更审计或回放；需要时优先选择显式 Action 方案，而不是事后补日志。
+- [ ] 用一个真实页面测量最频繁更新的状态，确认订阅粒度不会导致整页重渲染。
+- [ ] 检查团队已有的约定、调试工具与迁移成本；新库更短不等于总成本更低。
+- [ ] 为本次选型写下重新评估的条件，例如状态规模、团队规模或服务端数据占比发生变化。
 
-- 个人或小团队：选开发体验好的（Zustand、Jotai、MobX）
-- 大型团队、需要审计：Redux Toolkit（Action 可追溯）
-- 跨团队共享状态：必须有强约束（Redux Toolkit）
+## 结语：先看清约束，再决定工具
 
-**维度 4：性能要求**
+把状态管理史看成一条工具替换链，很容易得出“新库更好”的结论；把它看成约束的重新分配，结论会不同。Flux 用单向流换可追踪性，Redux 把约束制度化，MobX 用响应式换开发效率，Zustand 与 Jotai 则把约束交还给使用者和团队约定。
 
-- 频繁更新 + 大量订阅：Jotai / MobX（细粒度订阅）
-- 一般场景：Zustand / Redux Toolkit（selector 优化足够）
+下一次选型时，先写下三个条件：状态主要来自服务端还是客户端、是否需要审计每一次变更、团队能否长期维护一套约定。答案通常会直接排除一半方案，剩下的再比较 API 和体积才有意义。
 
-### 3. 常见反模式
-
-**反模式 1：所有状态都进全局 store**
-
-```javascript
-// ❌ 表单临时状态进 Redux
-const [formValue, setFormValue] = useFormState() // 用 useState 就好
-```
-
-判断原则：**只有"跨多组件共享"且"长期存在"的状态才进全局 store**。表单临时输入、动画状态、UI 局部开关都应该用组件本地状态。
-
-**反模式 2：服务端状态用 Redux 管理**
-
-```javascript
-// ❌ 把 todo 列表数据存进 Redux
-const [todos, setTodos] = useState([])
-useEffect(() => fetchTodos().then(setTodos), [])
-// 还要管 loading、error、缓存、重新验证...
-```
-
-服务端状态有专门的库：React Query、SWR、RTK Query。它们解决了缓存、重新验证、loading 状态、并发请求等问题，比手写 Redux 副作用干净得多。
-
-**反模式 3：选型不考虑团队**
-
-新人多的团队选 Redux 是"为约束付钱"，但学习成本很高；强协作场景选 MobX 是"为自由付钱"，但难以追溯状态变化。**选型决策必须考虑团队结构，不能只看技术指标**。
-
-::: tip 本节核心结论
-
-状态管理选型没有"最优解"，只有"合适解"。核心维度是：状态规模、状态形态、团队规模、性能要求。同时要避免"所有状态进全局"和"用状态管理库管理服务端状态"这两个反模式。
-
-:::
-
----
-
-## 七、趋势观察：状态管理正在"消失"
-
-最近两年的趋势是：**前端状态管理的"显式感"正在变弱**。
-
-### 1. 服务端状态被独立出去
-
-React Query / SWR / RTK Query 把"服务端数据缓存"从状态管理中剥离。开发者不再需要把 API 数据存进 Redux，而是用专门的 query 库管理。这极大简化了"状态管理"的负担——大部分"状态"其实是"服务端数据的本地缓存"。
-
-### 2. 框架内置状态能力增强
-
-- React Server Components 把"服务端状态"直接渲染到组件树
-- React `use` Hook 让异步数据可以"同步化"使用
-- Vue 的 `useStorage`、`useAsyncState` 等组合式函数覆盖了大部分场景
-- SvelteKit / SolidStart 等元框架内置了数据加载和状态同步
-
-### 3. URL 作为状态
-
-越来越多的状态被搬到 URL：搜索条件、过滤器、分页、tab 选中状态。URL 状态天然可分享、可前进后退、可服务端渲染。这进一步减少了"需要管理"的状态量。
-
-### 4. "状态管理库"的未来
-
-剩下的真正"客户端状态"变少了：用户偏好、UI 状态、本地草稿、协作状态。这部分用 Zustand / Jotai 已经足够，很少需要 Redux 这种重型方案。
-
-::: warning 趋势判断
-
-未来 3-5 年，"状态管理"作为独立技术命题的权重会下降。开发者会更多关注：服务端状态（React Query 类）、URL 状态、框架内置状态、Server Components。状态管理库会回归"局部工具"的角色，而不是项目架构的核心。
-
-:::
-
-::: tip 本节核心结论
-
-理解状态管理演进，不只是为了"选对库"，而是为了理解前端应用的数据流。在服务端状态、URL 状态、客户端状态被分门别类管理后，传统"全局状态管理"的领域正在收窄。这正是 Zustand/Jotai 这样的轻量方案能崛起的根本原因。
-
-:::
-
----
+如果已经有一套运行良好的方案，迁移的唯一合理理由是现有约束开始阻碍交付，而不是新库在示例里更短。
 
 ## FAQ
 
-### 1. 为什么 Redux 现在不流行了？
+### 1. 已有 Redux Toolkit 的项目，值得迁到 Zustand 吗？
 
-不是"不流行"，而是"使用场景变窄了"。Redux 的核心价值是"大型团队的强约束"，但当大部分应用状态被 React Query（服务端状态）和 URL（共享状态）接管后，需要 Redux 管理的状态变少了。中小型项目用 Zustand 足够。但大型企业级应用（如金融、ERP）仍然适合用 Redux Toolkit + RTK Query。
+先看迁移要解决什么。如果痛点是模板多，RTK 的 slice API 已经削减了大部分样板；如果痛点是服务端缓存，优先引入 RTK Query。只有团队规模缩小、状态大幅简化，且现有约束确实阻碍交付时，整体迁移才可能划算。迁移成本包括重写测试、调试工具链和团队再培训。
 
-### 2. Zustand 真的能完全替代 Redux 吗？
+### 2. Zustand 的 selector 为什么会造成额外重渲染？
 
-在大部分场景下可以。Zustand 缺失的是：标准的 Action 类型（需要自己约定）、原生的时间旅行（需要中间件）、强约束的代码风格（需要团队规范）。如果你的项目不需要这些"约束能力"，Zustand 完全够用。
+`useStore(selector)` 在每次快照变化时都会重新执行 selector。如果 selector 返回新对象或新数组，例如 `(s) => ({ a: s.a, b: s.b })`，引用每次都不同，React 会认为快照变了。解决方式是拆成多个只返回原始值的 selector，或用 `useShallow` 做浅比较。Zustand 内部的 `useSyncExternalStoreWithSelector` 会做比较，但前提是选择器结果稳定。
 
-### 3. Jotai 的"原子化"和 Redux 的"集中式"哪个更好？
+### 3. 小团队也需要“可追踪性”吗？
 
-看状态形态。如果你的状态是"一个对象 + 几个 slice"（如用户信息、主题、配置），集中式（Zustand/Redux）更直观。如果你的状态是"大量动态生成的小单元"（如表单字段、动态卡片），原子化（Jotai）更合适。两者也可以混用。
+取决于排障成本。小团队、短周期项目里，直接修改状态通常更快；一旦出现“谁改了这个值”难以定位、线上问题需要复现操作序列，显式变更记录的价值就会上升。可追踪性不是大团队专属，而是由问题复杂度决定的。
 
-### 4. MobX 在 React 中还有未来吗？
+### 4. 团队已有 MobX，要不要因为生态趋势更换？
 
-MobX 仍有用户群体，特别是 Vue 背景的开发者转到 React 时偏好它。但社区趋势是 Zustand/Jotai 占主导。MobX 的劣势是：脱离了 React 主流生态（基于外部响应式系统而非 React 的 reconciliation）、与 Suspense/Server Components 集成困难。这些是结构性问题。
-
-### 5. 状态管理和服务端数据缓存有什么区别？
-
-状态管理（client state）：用户偏好、UI 开关、本地草稿、表单临时输入。这些是"客户端独有的、可变的、不需要服务端验证"的状态。
-
-服务端数据缓存（server state）：从 API 拉来的数据。这些状态有"所有者"（服务端）、有"新鲜度"（可能过期）、有"一致性"要求（多视图看到的数据要一致）。React Query 类库专门解决这些问题，比通用状态管理库更合适。
-
-### 6. 是否有必要学 Redux 的源码？
-
-值得学。`createStore` 的实现只有几十行，但涵盖了"发布订阅、纯函数 reducer、不可变更新、中间件组合"四个核心概念。这是函数式编程在前端的经典案例，对理解更多库（RxJS、Express 中间件、Webpack loader 链）都有帮助。但要区分"学源码"和"在项目中用 Redux"——前者是思维训练，后者是工程决策。
-
----
+不建议只因为趋势更换。MobX 在响应式风格、字段级更新和开发效率上仍有优势；需要评估的是具体痛点：是否难以回放状态、是否与 Suspense / Server Components 集成受阻、是否招不到熟悉该方案的成员。只有这些成本持续高于迁移成本时，更换才有理由。
 
 ## 来源
 
@@ -950,4 +946,4 @@ MobX 仍有用户群体，特别是 Vue 背景的开发者转到 React 时偏好
 4. Jotai GitHub：<https://github.com/pmndrs/jotai>
 5. Dan Abramov - You Might Not Need Redux：<https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367>
 
-本文同时基于作者对多个状态管理库源码的实践阅读与项目经验总结。
+本文同时基于作者对多个状态管理库源码的阅读与项目经验总结。

@@ -12,11 +12,9 @@ outline: deep
 
 # Technical Growth Path: Capability Leaps from Junior to Architect
 
-> Subtitle: Core characteristics of five stages, four key leaps, turning points and bottlenecks, and the compounding effect.
->
-> Target readers: Frontend engineers planning their next stage of growth, engineering managers identifying team members' bottlenecks, and individual contributors weighing whether to move toward architecture.
->
-> Reading time: ~28 minutes.
+Years accumulate; capability sometimes does not. The usual explanation is insufficient effort, but a more common cause is that the object of work never changed.
+
+This article divides growth by that object—code, feature, system, domain, business—and examines what each leap replaces, where people stall, and when changing teams actually helps. It is written for engineers who can already ship features and want to know why the next level feels out of reach. By the end, you can place yourself on the curve, test whether a move would produce a real leap, and pick one action that raises the complexity of your next task.
 
 ::: info In one sentence
 Technical growth is a series of "capability leaps," not a smooth climb. Each leap upgrades the object of your work from a concrete thing to a more abstract system.
@@ -24,144 +22,144 @@ Technical growth is a series of "capability leaps," not a smooth climb. Each lea
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [1. The Non-linear Nature of Technical Growth](#1-the-non-linear-nature-of-technical-growth)
-- [2. Core Characteristics of the Five Stages](#2-core-characteristics-of-the-five-stages)
-- [3. Junior → Intermediate: From "Can Write" to "Writes Well"](#3-junior--intermediate-from-can-write-to-writes-well)
-- [4. Intermediate → Senior: From Feature to System Thinking](#4-intermediate--senior-from-feature-to-system-thinking)
-- [5. Senior → Expert: From Implementation to Design Abstraction](#5-senior--expert-from-implementation-to-design-abstraction)
-- [6. Expert → Architect: From Technology to Global Vision](#6-expert--architect-from-technology-to-global-vision)
-- [7. The Compounding Effect of Technical Growth](#7-the-compounding-effect-of-technical-growth)
+- [Before We Start](#before-we-start)
+- [1. The Non-linear Nature of Technical Growth](#_1-the-non-linear-nature-of-technical-growth)
+- [2. Core Characteristics of the Five Stages](#_2-core-characteristics-of-the-five-stages)
+- [3. Junior → Intermediate: From "Can Write" to "Writes Well"](#_3-junior-→-intermediate-from-can-write-to-writes-well)
+- [4. Intermediate → Senior: From Feature to System Thinking](#_4-intermediate-→-senior-from-feature-to-system-thinking)
+- [5. Senior → Expert: From Implementation to Design Abstraction](#_5-senior-→-expert-from-implementation-to-design-abstraction)
+- [6. Expert → Architect: From Technology to Global Vision](#_6-expert-→-architect-from-technology-to-global-vision)
+- [7. The Compounding Effect of Technical Growth](#_7-the-compounding-effect-of-technical-growth)
 - [Conclusion: A Leap Is Not About Working Harder, but Upgrading the Object of Work](#conclusion-a-leap-is-not-about-working-harder-but-upgrading-the-object-of-work)
 - [FAQ](#faq)
 - [Sources](#sources)
 
-## Introduction
+## Before We Start
 
-Many frontend engineers carry an implicit assumption when planning their careers:
+### 1. A Common Assumption
 
-> As long as I keep learning technology and shipping projects, my capability will rise linearly over time, and eventually I will naturally become an architect.
+Many frontend engineers carry an implicit assumption when planning their careers: as long as they keep learning technology and shipping projects, capability will rise linearly over time, and they will eventually become architects.
 
-This assumption is wrong.
+That assumption does not survive inspection. If every year brings the same kind of problem, ten years of experience may be the same year repeated ten times. Years accumulate familiarity; they do not automatically add complexity.
 
-Technical growth is stepwise leaps, not a smooth climb. Each leap requires a thorough refresh of the object of work, the mode of thinking, and the value delivered. Without actively completing this switch, 10 years of work is no different from 3 years of capability — you have just repeated 3 years of experience 7 times.
+### 2. This Article's Judgment and Main Line
 
-::: info In one sentence
-Technical growth is an upgrade of the object of work: from a piece of code, to a feature, to a system, to a domain, to a business.
-:::
+This article treats technical growth as an upgrade of the object of work: from a piece of code, to a feature, to a system, to a domain, to a business. Each upgrade changes the value produced, the scope of judgment, and the amount of uncertainty by one notch.
 
-The diagram below shows the five-stage growth path from junior to architect, along with the core transformation each leap requires:
+The main line follows a decision order: why growth is non-linear, how the five stages and four leaps compare, which constraints appear as plateaus and environment effects, and what actions follow under which conditions. The diagram below gives the five-stage skeleton:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6', 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Stage1["Junior"]
-        S1["Work Object: A Piece of Code<br/>Value: Complete Tasks"]
+        S1["Work object: a piece of code<br/>Value: complete tasks"]
     end
 
     subgraph Stage2["Intermediate"]
-        S2["Work Object: A Feature<br/>Value: Independent Delivery"]
+        S2["Work object: a feature<br/>Value: independent delivery"]
     end
 
     subgraph Stage3["Senior"]
-        S3["Work Object: A System<br/>Value: Own a Business Line"]
+        S3["Work object: a system<br/>Value: own a business line"]
     end
 
     subgraph Stage4["Expert"]
-        S4["Work Object: A Domain<br/>Value: Cross-team Influence"]
+        S4["Work object: a domain<br/>Value: cross-team influence"]
     end
 
     subgraph Stage5["Architect"]
-        S5["Work Object: A Business<br/>Value: Define Direction"]
+        S5["Work object: a business<br/>Value: define direction"]
     end
 
-    Stage1 -->|Write Well| Stage2
-    Stage2 -->|System Thinking| Stage3
-    Stage3 -->|Abstract Design| Stage4
-    Stage4 -->|Global Vision| Stage5
+    Stage1 -->|Write well| Stage2
+    Stage2 -->|System thinking| Stage3
+    Stage3 -->|Abstract design| Stage4
+    Stage4 -->|Global vision| Stage5
 
-    classDef s1 fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef s2 fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef s3 fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef s4 fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef s5 fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:2px;
-    classDef leap fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-dasharray: 4 3;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
 
-    class Stage1,S1 s1;
-    class Stage2,S2 s2;
-    class Stage3,S3 s3;
-    class Stage4,S4 s4;
-    class Stage5,S5 s5;
+    class Stage1,S1,Stage2,S2 wait;
+    class Stage3,S3 work;
+    class Stage4,S4 metric;
+    class Stage5,S5 core;
 ```
+
+The words on the arrows are leap conditions, not job titles. To place yourself, look at the object of work, not the title; the same title often covers different objects.
 
 ---
 
 ## 1. The Non-linear Nature of Technical Growth
 
-First accept a counterintuitive fact: **technical capability and years of experience have a stepwise relationship, not a linear one**.
+Accept a counterintuitive fact first: **technical capability and years of experience have a stepwise relationship, not a linear one**.
 
-Plot capability on the vertical axis and years on the horizontal axis, and the real curve looks more like this:
+Plot capability on the vertical axis and years on the horizontal axis, and the curve looks closer to a set of plateaus with occasional jumps:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
     P1((Start))
-    P2["Plateau 1<br/>Can Write Code"]
+    P2["Plateau 1<br/>Can write code"]
     P3((Leap 1))
-    P4["Plateau 2<br/>Can Build Features"]
+    P4["Plateau 2<br/>Can build features"]
     P5((Leap 2))
-    P6["Plateau 3<br/>Can Build Systems"]
+    P6["Plateau 3<br/>Can build systems"]
     P7((Leap 3))
-    P8["Plateau 4<br/>Can Build Domains"]
+    P8["Plateau 4<br/>Can build domains"]
     P9((Leap 4))
-    P10["Plateau 5<br/>Can Drive Business"]
+    P10["Plateau 5<br/>Can drive business"]
 
     P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9 --> P10
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef plateau fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef leap fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
 
-    class P1,P10 start;
-    class P2,P4,P6,P8 plateau;
-    class P3,P5,P7,P9 leap;
+    class P1,P10 core;
+    class P2,P4,P6,P8 wait;
+    class P3,P5,P7,P9 metric;
 ```
 
-Growth within each plateau is slow because you are already close to that stage's ceiling. Real improvement happens during a "leap" — once you complete an upgrade of the object of work, the capability curve jumps to a new plateau.
+Plateaus and leaps alternate. A plateau is where you get comfortable with the current object; the leap is where the capability curve jumps. Doing only plateau work flattens the curve.
 
 This non-linearity has two direct implications:
 
-1. **A plateau cannot be broken through by "working harder"**: Working harder at your current stage only brings you closer to the ceiling; the ceiling itself does not rise.
-2. **A leap must be actively designed**: Leaps do not happen on their own. You have to actively change the object of work and the mode of thinking.
-
-::: tip Core conclusion of this section
-
-Technical growth is non-linear. Plateaus are accumulated by "doing better," and leaps are broken through by "upgrading the object of work." Identifying which stage you are currently in and whether you are close to the ceiling is the prerequisite for planning growth.
-:::
+1. **A plateau cannot be broken by working harder.** Working harder at the current stage only brings you closer to the ceiling; the ceiling itself does not rise.
+2. **A leap must be actively designed.** Leaps do not happen on their own. You have to change the object of work and the scope of judgment.
 
 ---
 
 ## 2. Core Characteristics of the Five Stages
 
-Before diving into the specific leaps, here is a brief list of the core characteristics of the five stages as a reference for what follows.
+Before the specific leaps, put the five stages side by side. The table is a reference for what follows; the years are common experience ranges.
 
-| Stage | Object of Work | Core Capability | Value Output | Typical Years |
+| Stage | Object of Work | Core Capability | Value Output | Typical Experience Range |
 | --- | --- | --- | --- | --- |
 | Junior | A piece of code | Implement clear tasks | Complete development tasks | 0-2 years |
-| Intermediate | A feature | Independently deliver modules | Independently complete features | 2-4 years |
+| Intermediate | A feature | Deliver a module independently | Complete a feature independently | 2-4 years |
 | Senior | A system | Design technical solutions | Own a business line | 4-6 years |
-| Expert | A domain | Cross-team drive | Platformization | 6-8 years |
+| Expert | A domain | Drive across teams | Platformization | 6-8 years |
 | Architect | A business | Global trade-offs | Define technical direction | 8+ years |
 
-The core question at each stage is different:
+The core question differs at each stage:
 
-- Junior: "How do I write this feature?"
-- Intermediate: "How do I write this feature well and make it maintainable by others?"
-- Senior: "How should this system be designed to support the business over the next 1-2 years?"
-- Expert: "What are the common problems in this domain, and can they be solved through platformization?"
-- Architect: "Where should this business's technical investment be directed?"
+- Junior: how do I write this feature?
+- Intermediate: how do I write it well enough for others to maintain?
+- Senior: how should this system be designed to support the business over the next one or two years?
+- Expert: what are the common problems in this domain, and can they be solved through platformization?
+- Architect: where should this business's technical investment go?
 
-The four leaps below answer the question of "how to upgrade from one problem to the next."
+The four leaps below answer how to move from one question to the next.
+
+### Can a Change of Environment Produce a Leap?
+
+Before changing teams or companies, pass three questions:
+
+- Is the current team still producing problems of higher complexity?
+- Have you already handled the typical problems of your current stage independently?
+- Can the target environment offer the next object of work, or only a higher title?
+
+If the first two answers are no, changing environment probably only changes colleagues. A move becomes a leap condition only when the target actually offers a new object of work.
 
 ---
 
@@ -169,17 +167,17 @@ The four leaps below answer the question of "how to upgrade from one problem to 
 
 ### 1. What the Leap Changes
 
-A junior engineer's core capability is "writing a feature" — given clear designs and interfaces, they can produce runnable code.
+A junior engineer's core capability is writing a feature: given a clear design and API contract, produce runnable code.
 
-An intermediate engineer's core capability is "writing a feature well" — code that is maintainable, testable, and extensible, and can independently handle edge cases and exceptions.
+An intermediate engineer's core capability is writing it well: maintainable, testable, extensible, with edge cases and exceptions handled independently.
 
-This leap is from "implementing a feature" to "implementing an engineered feature."
+This leap moves from "implementing a feature" to "implementing an engineered feature."
 
 ### 2. Key Transformations
 
 #### Transformation 1: From "As Long As It Runs" to "Maintainable Code"
 
-Junior engineers typically write code like this:
+Junior code usually runs, but mixes implementation, requests, notifications, and error handling together:
 
 ```javascript
 // Typical junior code: runs but is hard to maintain
@@ -201,7 +199,7 @@ function handleSubmit() {
 }
 ```
 
-An intermediate engineer would write code like this:
+Intermediate code separates concerns and handles failure explicitly:
 
 ```typescript
 // Intermediate code: abstracted, typed, with error handling
@@ -235,57 +233,52 @@ async function handleSubmit(values: FormValues) {
 }
 ```
 
-The difference is not "knowing TypeScript" but a shift across three dimensions:
+Both snippets keep only the differences relevant to the leap; definitions such as `Result`, `parseApiError`, and `notify` are omitted. The difference is not knowing TypeScript, but a shift on three levels:
 
-- **Typed thinking**: Clarify the shape of the data before writing the implementation.
-- **Error-handling thinking**: All external calls can fail; errors should be explicit.
-- **Abstract thinking**: API calls, UI notifications, and form submission are separate concerns and should be kept apart.
+- **Typed thinking**: clarify the shape of the data before writing the implementation
+- **Error-handling thinking**: every external call can fail, so failure is explicit
+- **Abstract thinking**: API calls, UI notifications, and form submission are separate concerns
 
 #### Transformation 2: From "Works for Me" to "Others Can Take Over"
 
-Junior engineers often write code that "only they can understand": abbreviated variable names, magic numbers, implicit dependencies, and no documentation.
+Junior engineers often write code only they can understand: abbreviated names, magic numbers, implicit dependencies, and no explanation.
 
-Intermediate engineers start to consider, "If I leave, how long would it take someone else to take over this code?" Specific behaviors:
+Intermediate engineers ask, "If I leave, how long would someone else need to take over?" Specific behaviors:
 
-- Clear naming; avoid meaningless names like `data1`, `temp`, or `handle`.
-- Key logic has comments explaining "why it is done this way," not "what it does."
-- Public functions have simple JSDoc describing parameters and return values.
-- Complex business logic has a brief design explanation.
+- Clear naming; avoid `data1`, `temp`, or `handle`
+- Comments explain why the code is written this way, not what it does
+- Public functions have a short description of parameters and return values
+- Complex business logic has a brief design note
 
 #### Transformation 3: From "Tested It, Should Be Fine" to "Protected by Tests"
 
-A junior engineer's "testing" is manually clicking around a few times and thinking, "Should be fine."
+A junior's testing is often a few manual clicks plus "should be fine."
 
-An intermediate engineer writes unit tests, at least covering core logic:
+An intermediate engineer writes unit tests that at least cover core logic:
 
-- Utility functions have complete tests.
-- Key business logic has path coverage.
-- Edge cases have explicit tests.
+- Utility functions have complete tests
+- Key business paths have coverage
+- Edge cases have explicit tests
 
 ### 3. Key Turning Point
 
-The turning point of this leap is **the first time you take over someone else's code**.
+The turning point is usually the first time you take over someone else's code for a long period.
 
-When you painfully maintain poorly written code left by someone else, you suddenly realize: "If they had written it this way back then, I wouldn't be this tired now." In that moment, you start leaping from "can write" to "writes well."
+When you spend days understanding code nobody maintains, you start asking why it was written that way. That question is when you begin moving from "can write" to "writes well."
 
 ### 4. Common Bottlenecks
 
 #### Bottleneck 1: Stuck in Framework Documentation
 
-Many junior engineers think "intermediate = knowing more framework APIs," so they keep learning new features of React, Vue, and Angular. The direction is wrong — no matter how many APIs you learn, the code you write is still hard to maintain.
+Many juniors assume intermediate means knowing more framework APIs, so they chase new features in React, Vue, and Angular. The direction is wrong: more APIs do not make code easier to maintain.
 
-**Breakthrough**: Pick a feature you recently wrote and actively ask a senior engineer for an in-depth code review. Focus on "why this is not written well," not "what APIs I haven't learned yet."
+**Breakthrough**: pick a feature you recently wrote and ask a senior engineer for a deep Code Review. Ask "why is this not good," not "which API should I learn next."
 
 #### Bottleneck 2: Stagnant Business Understanding
 
-Junior engineers are easily consumed by "implementing requirements" and do not think about the business goals behind them. The result is that after 1 year they are still at the level of "writing code according to the PRD."
+Juniors are easily consumed by implementation and do not ask what business goal the requirement serves. After a year, they still write code according to the PRD.
 
-**Breakthrough**: Ask yourself once a week, "What user problem does this requirement solve?" Accumulate business understanding over the long term.
-
-::: tip Core conclusion of this section
-
-The leap from junior to intermediate is from "implementing a feature" to "implementing an engineered feature." The core is a comprehensive upgrade in code quality, maintainability, and testing awareness — not learning more APIs.
-:::
+**Breakthrough**: once a week, ask yourself what user problem this requirement solves, and write the answer down. Over time, that becomes business judgment.
 
 ---
 
@@ -293,107 +286,81 @@ The leap from junior to intermediate is from "implementing a feature" to "implem
 
 ### 1. What the Leap Changes
 
-An intermediate engineer's object of work is "a feature" — able to independently complete something from design to launch.
+An intermediate engineer's object of work is a feature, delivered independently from design to launch.
 
-A senior engineer's object of work is "a system" — how multiple features combine, how data flows, and how to support the long-term development of the business.
+A senior engineer's object of work is a system: how features combine, how data flows, and how the system supports the business over time.
 
-This leap is from a "feature perspective" to a "system perspective."
+This leap moves from a feature perspective to a system perspective.
 
 ### 2. Key Transformations
 
 #### Transformation 1: From "Implementing Requirements" to "Designing Technical Solutions"
 
-When an intermediate engineer receives a requirement, the first reaction is "how to implement it."
+An intermediate engineer's first reaction to a requirement is how to implement it. A senior engineer's first reaction is how it will affect the system:
 
-When a senior engineer receives a requirement, the first reaction is "how will this requirement affect the system":
+- What new data does it introduce?
+- How does that data relate to existing data?
+- How might it extend in the future?
+- Can it reuse existing underlying capabilities?
 
-- What new data will this requirement introduce?
-- What is the relationship between this data and existing data?
-- How might this requirement extend in the future?
-- Can this requirement reuse underlying capabilities from existing features?
+Take "add batch export to the user list" as an example. The intermediate approach is to add a button, call an API, generate an Excel file, and trigger a download. The senior approach answers several questions first:
 
-A concrete example. The requirement is "add a batch export feature to the user list."
+- Will this later expand to PDF export or selected columns? If so, abstract a unified export capability.
+- How large is the data? Synchronous export or an asynchronous task? Large volumes need backend taskization and frontend polling.
+- How is export permission controlled? Reuse the existing permission system rather than building a second one.
+- How are failures reported? Are retries and observable metrics needed?
 
-An intermediate engineer's thinking:
-
-```text
-1. Add an export button
-2. Call the backend API to get data
-3. Use SheetJS to generate an Excel file
-4. Trigger a download
-```
-
-A senior engineer's thinking:
-
-```text
-1. Will this export feature extend in the future? (e.g., export PDF, export selected columns)
-   → If yes, it should be abstracted into a unified export capability
-2. How large is the data volume? Synchronous export or asynchronous task?
-   → Large data volumes need backend taskization with frontend polling
-3. How is export permission controlled? How does it integrate with the existing permission system?
-   → It cannot be a separate system; it must reuse the permission system
-4. How are export failures reported? Is retry needed?
-   → Failures must be observable and have a retry mechanism
-```
-
-The difference is not "implementation ability" but "dimension of thinking." Before starting, a senior engineer has already thought through the impact on the entire system.
+The difference is not implementation ability, but whether the system impact has been thought through before writing code.
 
 #### Transformation 2: From "Local Optimum" to "Global Trade-off"
 
-An intermediate engineer's optimizations are often local: "This component renders slowly; add memo."
+An intermediate optimization is often local: the component renders slowly, so add `memo`.
 
-A senior engineer looks at problems globally:
+A senior engineer first asks:
 
-- Why is this component rendering slowly? Is it a data structure problem or a design problem?
-- Does adding memo treat the symptom or the root cause? Will it introduce new memory issues?
-- If we do not optimize, what is the actual impact on user experience?
-- Is the cost-benefit ratio of the optimization reasonable?
+- Why is it slow: a data structure problem or a design problem?
+- Does `memo` treat the symptom or the cause? Will it introduce a memory problem?
+- Without optimization, what is the real impact on user experience?
+- Is the investment proportional to the payoff?
 
 #### Transformation 3: From "Writing Well Myself" to "Team Standards"
 
-An intermediate engineer can write good code, but only takes responsibility for their own code.
+An intermediate engineer can write good code but is responsible only for their own code. A senior engineer copies personal quality into the team:
 
-A senior engineer starts to establish team standards, replicating their "good" across the entire team:
-
-- Define a code review checklist.
-- Drive commit standards, lint rules, and test coverage thresholds.
-- Design the team's tech stack and directory structure standards.
-- Lead technical sharing and documentation.
+- Define a Code Review checklist
+- Drive commit conventions, lint rules, and test coverage thresholds
+- Design the team's stack and directory standards
+- Lead technical talks and documentation
 
 ### 3. Key Turning Point
 
-The turning point of this leap is usually **the first time you independently own a complete business module**.
+The turning point is usually the first time you independently own a complete business module.
 
-When you need to design a module's technical solution from scratch, consider future extensions, and align with multiple parties, you are forced to upgrade from a "feature perspective" to a "system perspective."
+Designing a technical solution from scratch, planning for extension, and aligning with multiple parties forces the shift from feature to system.
 
 ### 4. Common Bottlenecks
 
 #### Bottleneck 1: Insufficient Technical Depth to Locate Root Causes
 
-An intermediate engineer can locate "which component is slow," but not "why it is slow" — because the latter requires understanding the browser rendering pipeline, framework scheduling mechanisms, and the V8 execution model.
+An intermediate engineer can locate which component is slow, but not why. The latter requires understanding the browser rendering pipeline, framework scheduling, and the V8 execution model.
 
-**Breakthrough**: Pick a real performance issue, start with browser DevTools, and gradually dig into the rendering pipeline, framework source code, and runtime mechanisms. Write the whole process down.
+**Breakthrough**: pick a real performance problem, start from DevTools, and dig into the rendering pipeline, framework source, and runtime. Write the process down.
 
-#### Bottleneck 2: Lack of Cross-functional Alignment Ability
+#### Bottleneck 2: Lack of Cross-Functional Alignment
 
-Intermediate engineers are used to "handling things themselves," but senior engineers need to frequently align with product, backend, and QA. This transformation is painful for many people.
+Intermediate engineers are used to handling things themselves; senior engineers align frequently with product, backend, and QA. That shift is painful for many people.
 
-**Breakthrough**: Actively take on a cross-functional project, such as a complex requirements review, a cross-end integration, or a post-incident retrospective. These scenarios force you to practice cross-functional communication.
+**Breakthrough**: take on a cross-functional project such as a complex requirements review, cross-platform integration, or incident retrospective. These scenarios force alignment practice.
 
 #### Bottleneck 3: Business Understanding Stuck at "Implementing the PRD"
 
-Although an intermediate engineer can identify edge cases in PRDs, they lack an overall understanding of the business, leading to technical solutions that are often "over-engineered" or "under-engineered."
+Identifying edge cases is not the same as understanding the business. Without business judgment, a technical solution is easily over-engineered or under-designed.
 
-**Breakthrough**: Spend 1-2 months actively learning the core metrics, user personas, and business model of the business line you are responsible for. This is the key step from "feature engineer" to "system engineer."
-
-::: tip Core conclusion of this section
-
-The leap from intermediate to senior is from a "feature perspective" to a "system perspective." The core is a comprehensive upgrade in technical solution design, global trade-off, and team standard-setting abilities.
-:::
+**Breakthrough**: spend time understanding the core metrics, user personas, and business model of your business line, then revisit which technical investments actually moved those metrics.
 
 ::: warning Common misconception
 
-Equating "knowing more tools" with senior capability. Knowing Webpack, Vite, and Turbo Pack does not make you a senior engineer; making the right choice in specific scenarios does.
+Equating "knowing more tools" with senior capability. Knowing Webpack, Vite, and Turbopack is breadth; making the right choice for a specific scenario and owning the result is senior capability.
 :::
 
 ---
@@ -402,89 +369,80 @@ Equating "knowing more tools" with senior capability. Knowing Webpack, Vite, and
 
 ### 1. What the Leap Changes
 
-A senior engineer's object of work is "a system" — able to design technical solutions and own a business line.
+A senior engineer's object of work is a system: designing technical solutions and owning a business line.
 
-An expert's object of work is "a domain" — commonalities across multiple systems, platformization capabilities, and cross-team influence.
+An expert's object of work is a domain: commonalities across systems, platform capabilities, and cross-team influence.
 
-This leap is from "solving specific problems" to "identifying patterns and abstracting."
+This leap moves from solving specific problems to recognizing patterns and abstracting them.
 
 ### 2. Key Transformations
 
 #### Transformation 1: From "Solving Problems" to "Eliminating Problems"
 
-A senior engineer solves specific problems: this page is slow; let me optimize it.
+A senior engineer solves a specific problem: this page is slow, so optimize it.
 
-An expert identifies problem patterns: Why are pages across our team generally slow? Is it a missing engineering system, inadequate standards, or a problematic component library design?
+An expert identifies the pattern: why are pages across the team generally slow? Is the engineering system missing, are standards inadequate, or is the component library design wrong?
 
-For example, five business lines in the team are repeatedly implementing "paginated table + filters + export."
+Suppose five business lines each implement "paginated table + filters + export."
 
-- Senior engineer: Refactor all five implementations into a unified component.
-- Expert: Recognize this as a common problem in admin backends and design a low-code platform so that non-core businesses can generate pages through configuration.
+- Senior engineer: refactor the five implementations into one shared component
+- Expert: recognize this as a common back-office problem and design configuration capability so non-core businesses can generate it
 
-The difference: a senior engineer solves "repetition," while an expert eliminates "the cause of repetition."
+The difference: a senior engineer removes duplication; an expert removes the cause of duplication.
 
 #### Transformation 2: From "Technical Solution" to "Domain Design"
 
-A senior engineer designs technical solutions: how to implement this feature, what tech stack to use, how to extend it.
+A senior engineer designs a technical solution: how to implement, which stack, how to extend.
 
-An expert designs domain models: what are the core concepts in this domain, where different businesses differ, and how to abstract reusable models.
+An expert designs a domain model: what the core concepts are, where businesses differ, and what reusable model captures the difference. Common abstraction directions:
 
-Typical examples of domain abstraction:
+- A component library distinguishes base, composite, and business components instead of piling up components
+- A monitoring system separates performance, stability, and business metric layers instead of piling up metrics
+- An engineering platform divides build, deploy, monitor, and governance instead of piling up tools
 
-- When designing a component library, do not just pile up components; abstract a three-layer model of "atomic components / composite components / business components."
-- When designing a monitoring system, do not just pile up metrics; abstract a three-layer indicator system of "performance / stability / business."
-- When designing an engineering platform, do not just pile up tools; abstract four domains: "build / deploy / monitor / govern."
+#### Transformation 3: From "Within-Team Influence" to "Cross-Team Influence"
 
-#### Transformation 3: From "Within-team Influence" to "Cross-team Influence"
+A senior engineer's influence stays inside the business line. An expert must drive work across teams:
 
-A senior engineer's scope of influence is the business line they own.
+- Lead cross-team technical projects such as unified login, performance governance, or shared component libraries
+- Participate in decisions at the technical committee level
+- Influence other teams' technical direction
 
-An expert needs to drive things in cross-team scenarios:
-
-- Lead cross-team technical projects (such as unified login, performance optimization, and component library co-construction).
-- Participate in decision-making at the technical committee level.
-- Influence other teams' technical direction.
-
-The key to cross-team drive is "being able to identify different teams' needs + find win-win points + push forward in a way the other party can accept." Being technically strong alone is not enough.
+The key to cross-team drive is identifying each team's needs, finding a win-win, and pushing in a form they can accept. Technical strength alone is not enough.
 
 ### 3. Key Turning Point
 
-The turning point of this leap is usually **the first time you lead a cross-team project**.
+The turning point is usually the first time you lead a cross-team project.
 
-When you find that the way you communicate within your team cannot drive a cross-team project, you are forced to upgrade your thinking mode: from "explaining the technology clearly" to "identifying interests + designing win-win outcomes."
+When within-team communication no longer moves a cross-team project, you move from "explaining the technology" to "identifying interests and designing a win-win."
 
 ### 4. Common Bottlenecks
 
 #### Bottleneck 1: Stagnant Technical Depth
 
-Many senior engineers' technical depth stagnates at the L3 stage — they can locate common performance issues, but are helpless when facing deep issues (such as abnormal GC behavior, cross-process communication costs, or JIT deoptimization).
+Many senior engineers stop early in technical depth: they can locate common performance problems but are helpless with abnormal GC behavior, cross-process communication cost, or JIT deoptimization.
 
-**Breakthrough**: Select 1-2 underlying domains for deep penetration, such as fully understanding the V8 execution pipeline, Chromium rendering architecture, or the HTTP/3 protocol. This depth gives you "authority" in cross-team scenarios.
+**Breakthrough**: choose one or two low-level domains for deep penetration, such as the full V8 execution pipeline, Chromium rendering architecture, or HTTP/3. That depth becomes judgment authority in cross-team settings.
 
 #### Bottleneck 2: Lack of Abstraction Ability
 
-Senior engineers are used to "solving specific problems," but abstraction ability requires deliberate practice.
+Senior engineers are used to solving concrete problems; abstraction needs deliberate practice.
 
 **Breakthrough**:
 
-- After solving each common problem, ask yourself, "Can this type of problem be fundamentally eliminated?"
-- Lead a platformization project (component library, toolchain, low-code platform).
-- Learn Domain-Driven Design (DDD) and understand how to abstract domain models from business.
+- After solving a common problem, ask whether the whole class of problems can be eliminated
+- Lead one platform project such as a component library, toolchain, or low-code platform
+- Learn Domain-Driven Design to understand how to abstract a domain model from business
 
-#### Bottleneck 3: Insufficient Cross-team Drive Ability
+#### Bottleneck 3: Insufficient Cross-Team Drive
 
-This is the most common bottleneck in the L3 → L4 leap. The manifestation is "technically strong, but cross-team projects always fail to move forward."
+This is the most common bottleneck from senior to expert: strong technical work that cannot move across teams.
 
 **Breakthrough**:
 
-- Lead a cross-team project and identify in advance "which teams need to cooperate, what each cares about, and where potential resistance lies."
-- Before each cross-team meeting, prepare an "other-party perspective" analysis: Why should the other party cooperate with me? What concerns do they have?
-- Retrospect on every cross-team collaboration to find your own communication blind spots.
-
-::: tip Core conclusion of this section
-
-The leap from senior to expert is from "solving specific problems" to "identifying patterns and abstracting." The core is a comprehensive upgrade in abstraction ability, domain design ability, and cross-team drive ability.
-:::
+- Lead a cross-team project and identify early which teams must cooperate, what each cares about, and where resistance lies
+- Before each cross-team meeting, prepare an "other side's view": why should they cooperate, and what concerns do they have
+- Review each collaboration to find your recurring communication blind spots
 
 ---
 
@@ -492,244 +450,202 @@ The leap from senior to expert is from "solving specific problems" to "identifyi
 
 ### 1. What the Leap Changes
 
-An expert's object of work is "a domain" — able to do platformization in that domain and influence across teams.
+An expert's object of work is a domain: platform construction and cross-team influence within it.
 
-An architect's object of work is "a business" — able to make trade-offs across multiple domains, define technical direction, and be responsible for business outcomes.
+An architect's object of work is a business: trade-offs across domains, technical direction, and accountability for business outcomes.
 
-This leap is from "technical optimum" to "global optimum."
+This leap moves from technical optimum to global optimum.
 
 ### 2. Key Transformations
 
-#### Transformation 1: From "Technology-driven" to "Business-driven"
+#### Transformation 1: From "Technology-Driven" to "Business-Driven"
 
-An expert's technical decisions tend to be "technically optimum" oriented: this solution performs better, is more scalable, and is more elegant.
+An expert's technical decisions often aim at technical optimum: better performance, more extensibility, cleaner design.
 
-An architect's technical decisions are "business optimum" oriented:
+An architect's decisions aim at business optimum and start with:
 
-- How much impact will this technical investment have on business metrics?
-- Is the cost (people, time, maintenance) of this solution reasonable?
-- Does this solution fit the business's development direction over the next 1-2 years?
-- If the business direction changes, how much sunk cost will this solution incur?
+- How much does this technical investment affect business metrics?
+- Are the people, time, and maintenance costs reasonable?
+- Does it fit the business direction for the next one or two years?
+- If the direction changes, how large is the sunk cost?
 
-A concrete example. The team discusses "whether to build a state management library in-house."
+Take "should we build our own state management library" as an example. The expert view sees a better fit, better performance, and more control. The architect view first estimates two things: how many person-months development and ongoing maintenance require, and whether the business will become complex enough within a year to justify it. If not, an open-source solution plus an adapter may fit better.
 
-- Expert perspective: Building in-house can better fit business needs, perform better, and offer more control.
-- Architect perspective: Building in-house requires 2 person-months of development plus ongoing maintenance costs. Will the business expand to the point of needing in-house development within the next year? If not, is an open-source solution plus an adapter layer more appropriate?
+#### Transformation 2: From "Single-Domain Depth" to "Cross-Domain Trade-offs"
 
-#### Transformation 2: From "Single-domain Depth" to "Cross-domain Trade-offs"
+An expert has depth in one domain and tends to center cross-domain decisions on it. An architect trades off across domains:
 
-An expert has depth in their own domain, but when making cross-domain decisions, they tend to be "centered on their own domain."
+- Performance versus development efficiency
+- Stability versus iteration speed
+- Technical advancement versus team adoption
+- Short-term gain versus long-term investment
 
-An architect needs to make trade-offs across multiple domains:
-
-- Performance vs. development efficiency.
-- Stability vs. iteration speed.
-- Technical advancement vs. team adoption ability.
-- Short-term gains vs. long-term investment.
-
-A trade-off is "identifying what matters most to the business; everything else can be compromised."
+A trade-off means identifying what matters most to the business and letting the rest compromise.
 
 #### Transformation 3: From "Technical Leadership" to "Organizational Leadership"
 
-An expert's leadership is reflected in technical direction: what tech stack the team should use, how systems should be designed.
+An expert's leadership shows in technical direction: which stack, how systems are designed.
 
-An architect's leadership is reflected at the organizational level:
+An architect's leadership shows at the organizational level:
 
-- How should team structure be designed (by business line / by technical domain / by platform)?
-- How should talent structure be configured (ratio of senior / intermediate / junior)?
-- How should the tech stack evolution roadmap be planned (which technologies to invest in, which to retire)?
-- How should team effectiveness be measured (not just lines of code, but business results + engineering quality + talent growth)?
+- How team structure is designed: by business line, technical domain, or platform
+- How talent is composed across senior, intermediate, and junior levels
+- How the stack evolution roadmap is planned: what to invest in and what to retire
+- How team effectiveness is measured, beyond lines of code, through business results, engineering quality, and talent growth
 
 ### 3. Key Turning Point
 
-The turning point of this leap is **the first time you take full responsibility for business outcomes**.
+The turning point is usually the first time you are fully accountable for a business outcome.
 
-When you realize you are not just "completing technical projects" but are responsible for the business's core metrics (such as GMV, retention, and conversion rate), your perspective is forced to expand from "technology" to "business + organization + technology."
+When you are responsible not only for completing a technical project but for metrics such as GMV, retention, or conversion, your perspective expands from technology to the combination of business, organization, and technology.
 
 ### 4. Common Bottlenecks
 
-#### Bottleneck 1: Technical Inertia, Unable to Break Out of the "Technical Perspective"
+#### Bottleneck 1: Technical Inertia
 
-Many experts, after becoming architects, still habitually view problems from a technical perspective — when business stakeholders propose requirements, the first reaction is "how to implement," not "whether this requirement is worth doing."
+Many experts still view problems from a technical angle after becoming architects: when the business proposes a requirement, the first reaction is how to implement it, not whether it is worth doing.
 
 **Breakthrough**:
 
-- Actively participate in business planning meetings to understand business strategy and priorities.
-- Establish regular communication with business leaders, not just listening to technical requests.
-- Learn business analysis methods: user funnels, ROI calculation, and business models.
+- Join business planning meetings to understand strategy and priorities
+- Establish regular communication with business leaders, not only technical requests
+- Learn business analysis methods such as user funnels, ROI, and business models
 
 #### Bottleneck 2: Lack of Organizational Design Ability
 
-An architect does not just design technical architecture; they also design team architecture. This is a blind spot for many experts.
+An architect designs not only technical architecture but team architecture. This is a blind spot for many experts.
 
 **Breakthrough**:
 
-- Learn Conway's Law: system architecture and team architecture influence each other.
-- Observe the pros and cons of different team structures: functional teams vs. business teams vs. platform teams.
-- Actively participate in team building, talent hiring, and performance evaluation design.
+- Learn Conway's Law and how system and team architecture influence each other
+- Observe the strengths and weaknesses of functional, business, and platform teams
+- Participate in team building, hiring, and performance review design
 
 #### Bottleneck 3: Losing Technical Sensitivity
 
-Some architects, after moving up, become so busy with business and organizational affairs that their technical sensitivity declines, eventually becoming "people who only draw PPTs."
+Some architects become busy with business and organizational work, their technical judgment declines, and they end up only drawing diagrams.
 
 **Breakthrough**:
 
-- Keep at least 20% of your time for deep technical work (code review, critical issue troubleshooting, technical pre-research).
-- Regularly have 1:1s with frontline engineers to understand real technical problems.
-- Retain a technical domain that you continuously follow so you do not become completely disconnected from code.
-
-::: tip Core conclusion of this section
-
-The leap from expert to architect is from "technical optimum" to "global optimum." The core is a comprehensive upgrade in business-driven decision-making, cross-domain trade-offs, and organizational leadership.
-:::
+- Keep a fixed block of technical time, for example one day per week with no meetings, for Code Review, root-cause work, or technical research
+- Hold regular 1:1s with frontline engineers to hear real technical problems
+- Keep one technical domain under continuous study so you do not disconnect from code
 
 ::: warning Common misconception
 
-Thinking that an architect is someone who "draws architecture diagrams." Architecture diagrams are just artifacts; the core ability of an architect is "making trade-offs across multiple uncertain dimensions and being responsible for the results."
+Thinking an architect is someone who draws architecture diagrams. A diagram is only an artifact; the core ability is making trade-offs across uncertain dimensions and owning the result.
 :::
 
 ---
 
 ## 7. The Compounding Effect of Technical Growth
 
-The previous four sections all discussed "leaps," but leaps do not fall from the sky. What supports leaps is continuous accumulation during plateaus. This accumulation relies on the **compounding effect**.
+The previous sections covered leaps, but leaps do not happen from nothing. What supports them is accumulation during plateaus, and accumulation depends on compounding.
 
 ### 1. The Three Elements of Compounding: Input, Practice, Output
 
-The compounding of technical growth comes from a closed loop of three links:
+Compounding in technical growth comes from a closed loop of three links:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F7F9FC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'fontSize': '13px'}}}%%
 flowchart LR
-    I["Input<br/>Learn New Knowledge"]
-    P["Practice<br/>Apply to Real Problems"]
-    O["Output<br/>Distill into Reusable Assets"]
+    I["Input<br/>Learn new knowledge"]
+    P["Practice<br/>Apply to real problems"]
+    O["Output<br/>Distill into reusable assets"]
 
     I --> P --> O
-    O -. Feedback .-> I
+    O -. feedback .-> I
 
-    classDef input fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef practice fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef output fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class I input;
-    class P practice;
-    class O output;
+    class I wait;
+    class P block;
+    class O work;
 ```
+
+The three links connect end to end; break one and compounding stops. Input without practice fades quickly, and practice without output stays with one person.
 
 #### Input: Learning New Knowledge
 
-Input is not "scrolling through tech news" but learning with purpose. Three levels:
+Input is not scrolling tech news; it is learning with a target. Roughly three levels:
 
-- **L1 input**: Reading tech articles and watching video tutorials. Passive reception, low retention.
-- **L2 input**: Reading classic books, official documentation, and source code. Systematic learning, medium retention.
-- **L3 input**: Learning with a specific problem in mind. For example, reading the React SSR implementation to solve a hydration problem. High retention.
+- **Passive input**: articles and video tutorials, low retention
+- **Systematic input**: classic books, official documentation, source code, medium retention
+- **Problem-driven input**: learning with a concrete problem, such as reading the React SSR implementation to fix a hydration issue, highest retention
 
-The core of effective input is "learning with a problem," not "learning first and using later."
+The core of effective input is learning with a problem, not learning first and applying later.
 
-#### Practice: Apply to Real Problems
+#### Practice: Applying to Real Problems
 
-Practice is the key to compounding. Without practice, input is quickly forgotten.
+Practice is the key link. Input without practice fades quickly.
 
-The key to practice is "real problems" — not writing demos, but using new knowledge to solve problems in real business scenarios. The complexity of real problems exposes blind spots in learning.
+Practice must involve a real problem: applying new knowledge under business constraints, not writing a demo. The complexity of a real problem exposes the blind spots in what you learned.
 
-#### Output: Distill into Reusable Assets
+#### Output: Distilling into Reusable Assets
 
-Output is the amplifier of compounding. Without output, practice can only precipitate into personal experience; with output, practice can precipitate into reusable assets.
+Output amplifies compounding. Practice without output stays personal experience; practice with output can become a reusable asset. Common forms:
 
-Forms of output:
-
-- Technical articles / team sharing: Write down the process of solving a problem.
-- Open-source contributions / internal component library: Precipitate general solutions into code.
-- Technical standards / checklists: Precipitate experience into team standards.
-- Training / mentorship: Pass experience on to others.
+- Technical articles or team talks: write down the process of solving a problem
+- Open-source work or an internal component library: turn a general solution into code
+- Technical standards or checklists: turn experience into team rules
+- Training or mentorship: pass experience to others
 
 ### 2. The Non-linear Nature of Compounding
 
-The core of compounding is non-linearity:
+The return on compounding is not evenly distributed:
 
-- Year 1: Output one technical note per week; capability improvement is not obvious.
-- Year 2: Previous notes become references; problem-solving speed accelerates.
-- Year 3: Accumulated notes can be combined into systematic articles / sharing.
-- Year 5: Systematic output makes you a "domain expert" within the team.
+- Year 1: writing a technical note every week, with little visible improvement
+- Year 2: old notes become references, and problem solving speeds up
+- Year 3: accumulated notes combine into systematic articles or talks
+- Year 5: systematic output creates domain recognition inside the team
 
-But many people cannot persist until the compounding inflection point. A common situation is: after writing technical notes for 3 months without seeing obvious results, they give up.
+These time points are observations, not promises. Many people stop before the inflection point: after a few months of notes with no visible effect, they quit. They often stop just before compounding starts to work.
 
-::: tip Core conclusion of this section
+### 3. An Engineering Method for Compounding
 
-The compounding effect relies on a closed loop of "input — practice — output." All three links are indispensable. The inflection point of compounding usually appears after 2-3 years; giving up before the inflection point is the biggest waste.
-:::
+To put compounding into daily work, set a sustainable rhythm. The following is an example, not a standard:
 
-### 3. The Engineering Method of Compounding
+- **A fixed weekly input block**: source code, official documentation, or a classic book
+- **Several real-scenario applications per week**: use what you learn on problems with business constraints
+- **A fixed monthly output**: a technical talk, an article, or a Code Review summary
 
-To put compounding into daily practice, use the "3-3-3 principle":
-
-- **3 hours of input per week**: Read source code, official documentation, and classic books.
-- **3 deep practices per week**: Apply new knowledge in real business scenarios.
-- **3 outputs per month**: Technical sharing, articles, or code review summaries.
-
-This pace may not seem fast, but after one year there will be significant compounding: 50+ technical notes, 150+ deep practices, and 36+ outputs. This is the capability foundation for moving from L2 to L3 and from L3 to L4.
-
-::: info Engineering insight
-
-Compounding relies on "establishing a sustainable rhythm," not "working harder." 3-3-3 per week is more effective than cramming 30 hours per month — because compounding depends on consistency, not intensity.
-:::
+One example rhythm is three hours of input per week, three real-scenario applications per week, and three outputs per month. The numbers are not the point; sustainability is. A few dozen hours crammed into a month usually beats nothing, but steady weekly investment usually beats bursts, because compounding depends on continuity rather than intensity.
 
 ---
 
 ## Conclusion: A Leap Is Not About Working Harder, but Upgrading the Object of Work
 
-Back to the opening question: Why are 10 years of work and 3 years of capability no different?
+The useful question is not how hard you are working, but what complexity you currently solve and what object of work comes next.
 
-The answer: **They are solving problems of the same complexity, just repeating them for 7 years.**
+The next leap rarely arrives as a promotion notice. It usually appears as a task you cannot fully handle yet: a requirement that asks you to design rather than implement, a project that asks you to drive across teams rather than finish alone. Decide whether to take it by asking whether it moves you from the current object of work to the next layer.
 
-Real growth happens through upgrades of the object of work:
-
-- From "a piece of code" to "a feature."
-- From "a feature" to "a system."
-- From "a system" to "a domain."
-- From "a domain" to "a business."
-
-Each upgrade raises the scale, impact scope, and uncertainty of the problems you face by an order of magnitude. This upgrade does not happen naturally; it requires active design:
-
-- Actively take on tasks slightly harder than your current capability.
-- Actively expand from "writing well yourself" to "team standards."
-- Actively expand from a "technical perspective" to a "business perspective."
-- Actively expand from "your own team" to "cross-team."
-
-The process of leaping is painful — you are forced to abandon familiar ways of working and learn new modes of thinking. But this pain is worthwhile, because every leap moves your capability curve to a new plateau.
-
-::: info In one sentence
-
-Technical growth is not about working harder, but about upgrading the object of work. Identifying your current object of work and actively seeking the next one is the core of planning growth.
-:::
+If you take one action, choose an object of work slightly above your current capability for the next six months, and define the verification signal in advance: after delivery, who can observe what change. Without that, more growth methodology only changes your posture inside the same plateau.
 
 ---
 
 ## FAQ
 
-### 1. I have been working for 4 years and am still doing "implementing the PRD" work. How do I break through?
+### 1. I have worked for four years and still do "implement the PRD" work. How do I break through?
 
-First determine whether it is "the team is not giving you opportunities" or "you are not actively seeking them." If it is the former, you can try: (1) actively communicate your growth aspirations with your leader and fight for participation in more complex projects; (2) in your current work, actively do "above expectations" things, such as proactively considering extensibility when doing requirements, proactively writing tests, and proactively doing performance analysis. If it is the latter, you need to reflect on whether you have always stayed in your comfort zone — growth requires actively taking on tasks slightly harder than your current capability.
+First separate "the team gives no opportunity" from "I have not asked for one." If it is the team, state your growth request to your lead or ask to join a more complex project. If you have stayed in a comfort zone, take one extra step on the current requirement: consider extensibility, add tests, run a performance analysis. The point is not a new task type, but making the next task slightly more complex than the last.
 
-### 2. Do leaps require changing companies? Can multiple leaps be completed within one company?
+### 2. Can multiple leaps happen inside one company?
 
-Yes, but under conditions. The premise of completing multiple leaps within one company is: (1) the company's business is growing and continuously producing new complexity; (2) the team has reasonable promotion paths and training mechanisms; (3) you can actively fight for work beyond your current level. If none of the three conditions are met, changing companies may be a more effective way to leap. But note: changing companies only changes the environment, not the object of work, and will not bring a real leap.
+Yes, under conditions. The business must keep producing higher-complexity problems, the team must have room you can compete for, and you must actively take on work above your current level. When all three hold, you do not need to change companies. When none holds, a move may help, but changing environment without changing the object of work still produces no leap.
 
-### 3. I have been working for 6 years and am at L3, but L4 feels far away. What should I do?
+### 3. Does an architect have to do management? How do I choose between the expert and management paths?
 
-The L3 → L4 leap is hard because it involves the transformation from "within-team influence" to "cross-team influence." First identify your specific bottleneck: (1) insufficient technical depth? Pick an underlying domain for deep penetration; (2) insufficient abstraction ability? Lead a platformization project; (3) insufficient cross-team drive ability? Actively take on a cross-team project. The most important thing: L4 requires actively creating opportunities, not waiting for opportunities to be assigned. If there are no cross-team projects in your current team, you can initiate one yourself.
+Architect and engineering manager are different directions. An architect makes technical trade-offs across uncertain dimensions; a manager gets results through a team. They overlap but do not replace each other.
 
-### 4. Is the compounding effect really useful? I have been writing technical notes for a year and don't feel much capability improvement.
+Two questions help: would you rather spend time judging solutions or judging people and organization, and which failure can you tolerate more, a wrong technical judgment or a team result that misses? Both paths can reach a high level.
 
-The inflection point of compounding usually appears after 2-3 years; not seeing results after 1 year is normal. But also check the quality of your "output": (1) Are you just taking copycat notes? This kind of output has low value; (2) Are you not combining it with practice? Writing without practicing will not precipitate knowledge into capability; (3) Are you not forming a system? Scattered notes are less valuable than systematic output. It is recommended to reorganize scattered notes into "a complete solution to a specific problem"; this kind of output has higher value.
+### 4. Does compounding really work? I wrote notes for a year and feel little improvement.
 
-### 5. Does an architect have to do management? How do I choose between the technical expert path and the management path?
-
-Architect and engineering manager are two different directions. The core of an architect is "making technical trade-offs across multiple uncertain dimensions," while the core of an engineering manager is "getting results through the team." The two overlap but are not identical. Which path to choose depends on personal preference: choose architect if you like deep technical trade-offs, and choose management if you like leading teams to get results. Both paths can reach the L5 level; there is no need to force the idea that "an architect must do management."
+Seeing little in one year is normal; the inflection usually comes later. Also check output quality: is it copied from books, disconnected from practice, or too scattered to reuse? Reorganize scattered notes into "a complete solution to a specific problem" and compounding has a chance to start.
 
 ---
 
 ## Sources
 
-This article is based on industry practice and the author's experience. The five-stage growth model references the engineering ladder systems of multiple Internet companies; the "input-practice-output" framework for the compounding effect comes from long-term personal practice and observation.
+The stage division and leap descriptions come from the author's synthesis of engineer growth paths at several internet companies. They are an experience model and do not correspond to any company's job ladder. The "input-practice-output" framework comes from long-term personal observation, not from empirical research. All year ranges are common experience ranges, not promotion thresholds; the timing of compounding inflection points is likewise an experience judgment with large individual variation.

@@ -1,6 +1,5 @@
 ---
-title: "绘制与光栅化：从图层合成到屏幕显示
-"
+title: "绘制与光栅化：从图层合成到屏幕显示"
 description: 从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，拆解 transform/opacity 为何不触发 Layout
 category: Browser
 tags:
@@ -15,36 +14,30 @@ outline: deep
 
 # 绘制与光栅化：从图层合成到屏幕显示
 
-> 副标题：从 Paint Record 生成、图层分层、Tile 光栅化到 GPU 合成的完整链路，拆解 transform/opacity 为何不触发 Layout
->
-> 目标读者：中高级前端工程师、前端架构师、动画与渲染性能优化负责人
->
-> 阅读时间：约 26 分钟
+主线程卡死时动画仍在动、图片下载完却迟迟不显示，这些现象常被归因于"GPU 加速"或"网络慢"，却很少被放回同一条渲染链路里解释。本文的判断是：Paint 之后的工作被拆分到不同线程与进程，图层是理解这一切的核心单位。沿着绘制指令、图层、Tile 与合成的顺序，你会得到一套能定位瓶颈、也能判断优化代价的模型。
 
 ::: info 一句话
-从 Paint 到屏幕，是一条"指令生成 → 图层切分 → Tile 光栅化 → GPU 合成"的流水线；理解这条流水线，才能解释为什么 transform 动画能在主线程卡顿时仍然丝滑。
+从 Paint 到屏幕并不是一条单线程的直线：绘制指令、光栅化与合成分布在不同线程和进程，图层决定了哪些工作可以绕过主线程。动画是否流畅，取决于这种分工，而不只是绘制内容的多少。
 :::
 
 ## 目录
 
-- [写在前面](#写在前面)
-- [一、绘制（Paint）阶段做什么](#一、绘制paint阶段做什么)
-- [二、图层（Layer）与层叠上下文](#二、图层layer-与层叠上下文)
-- [三、光栅化（Raster）：从矢量到位图](#三、光栅化raster从矢量到位图)
-- [四、合成（Composite）：GPU 合成原理](#四、合成composite-gpu-合成原理)
-- [五、transform/opacity 为何不触发 Layout](#五、transformopacity-为何不触发-layout)
+- [从几个现象开始](#从几个现象开始)
+- [一、绘制（Paint）阶段做什么](#一、绘制-paint-阶段做什么)
+- [二、图层（Layer）与层叠上下文](#二、图层-layer-与层叠上下文)
+- [三、光栅化（Raster）：从矢量到位图](#三、光栅化-raster-从矢量到位图)
+- [四、合成（Composite）：GPU 合成原理](#四、合成-composite-gpu-合成原理)
+- [五、transform/opacity 为何不触发 Layout](#五、transform-opacity-为何不触发-layout)
 - [六、硬件加速的正确理解](#六、硬件加速的正确理解)
 - [七、合成线程与主线程的协作](#七、合成线程与主线程的协作)
-- [八、实战：定位 Paint 与 Raster 瓶颈](#八、实战定位-paint-与-raster-瓶颈)
-- [结语：合成是性能优化的终极战场](#结语-合成是性能优化的终极战场)
+- [八、实战：定位 Paint 与 Raster 瓶颈](#八、实战-定位-paint-与-raster-瓶颈)
+- [结语](#结语)
 - [FAQ](#faq)
 - [来源](#来源)
 
-## 写在前面
+## 从几个现象开始
 
-在前一篇《渲染流水线》里，我们介绍了 Layout 之前的几个阶段。本文聚焦 Layout 之后的另一半：**从绘制指令到屏幕像素**的完整链路。
-
-这条链路常被前端工程师忽视，因为它"看起来离业务很远"。但它恰恰是解释很多现象的关键：
+同一条渲染链路，在前端日常里留下许多看似无关的现象：
 
 - 为什么 `transform: translate()` 的动画即使主线程被 JS 卡死也能丝滑？
 - 为什么 `will-change` 不能滥用，但又确实有效？
@@ -53,12 +46,7 @@ outline: deep
 - 为什么 GPU 加速不是免费的？
 - 为什么 LCP 图片下载完了还要等几百毫秒才能显示？
 
-理解这条链路，就是理解"浏览器如何把抽象的图层模型变成具体的像素"。本文会带你走完从 Paint 到屏幕的每一步，最终建立一个能解释上述所有现象的模型。
-
-::: tip 本节核心结论
-
-Paint 和 Raster 是两件事：Paint 生成绘制指令（在主线程），Raster 把指令变成像素（在工作线程 + GPU）。Composite 把多个图层拼起来（在 GPU 进程）。`transform/opacity` 之所以不触发 Layout，是因为它们作用在合成阶段，而不是 Paint 阶段。
-:::
+这些现象都指向同一个问题：抽象的图层模型如何变成屏幕上的像素。
 
 ---
 
@@ -70,7 +58,7 @@ Paint 和 Raster 是两件事：Paint 生成绘制指令（在主线程），Ras
 
 Paint Record 类似这样一组抽象指令：
 
-```
+```text
 pushClip(0, 0, 1440, 900)
   drawRect(0, 0, 1440, 900, color=#ffffff)
   drawRect(20, 20, 200, 50, color=#3b82f6)
@@ -111,10 +99,7 @@ Paint 阶段除了产生 Paint Record，还会**根据层叠上下文把页面�
 
 不是每个 Paint Layer 都会升级成 Graphics Layer。只有满足特定条件（如 3D 变换、`will-change`、被动画的 transform/opacity）的图层，才会被提升为合成层。
 
-::: tip 本节核心结论
-
-Paint 产生绘制指令而非像素，按图层组织。最贵的 Paint 操作是大面积模糊阴影和复杂滤镜。Paint 的输出是 Paint Record + Layer 列表，后续交给光栅化和合成处理。
-:::
+Paint 的输出因此包含两部分：绘制指令和图层列表。后续的光栅化与合成都以图层为组织单位。
 
 ---
 
@@ -149,7 +134,7 @@ Paint 产生绘制指令而非像素，按图层组织。最贵的 Paint 操作�
 
 ### 3. 合成层（Compositing Layer）
 
-合成层是图层里的"VIP"：它有自己独立的 GPU 纹理，可以被合成器直接处理，不需要主线程参与。
+合成层是可以被合成器独立处理的图层：它有自己独立的 GPU 纹理，变换和透明度变化不需要主线程参与。
 
 合成层提升的常见触发条件：
 
@@ -172,7 +157,6 @@ Paint 产生绘制指令而非像素，按图层组织。最贵的 Paint 操作�
 - **重绘成本**：合成层内容变化时，要重新光栅化整个图层
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([页面 DOM]) --> Stack[分析层叠上下文]
     Stack --> PaintLayer[划分 Paint Layer]
@@ -184,23 +168,20 @@ flowchart TB
     GPU --> Composite2[合成器直接处理]
     Shared --> Composite2
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef normal fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef decision fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef gpu fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef software fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Stack,PaintLayer normal;
-    class Promote decision;
-    class Compositing,GPU,Composite2 gpu;
-    class Software,Shared software;
+    class Start core;
+    class Stack,PaintLayer wait;
+    class Promote block;
+    class Compositing,GPU,Composite2 metric;
+    class Software,Shared work;
 ```
 
-::: tip 本节核心结论
-
-图层来自层叠上下文，合成层是图层里的 VIP。合成层能跳过主线程直接由 GPU 合成，但每个合成层都消耗 GPU 内存。`will-change` 滥用会导致"合成层爆炸"，反而拖慢性能。
-:::
+图中从页面 DOM 出发，先划分 Paint Layer，再判断是否提升为合成层。两条分支的差别在输出：合成层获得独立纹理，普通图层继续共享父图层纹理；成本也由此分叉。
 
 ::: warning 常见误区
 
@@ -260,10 +241,7 @@ LCP（Largest Contentful Paint）的完成时间，本质上取决于"**LCP 元�
 
 这就是为什么主线程长任务会拖慢 LCP——主线程被占用时，Paint 阶段无法启动，光栅化也就没法开始。
 
-::: tip 本节核心结论
-
-光栅化把绘制指令变成像素位图，按 Tile 切分并发执行。GPU 光栅化是主流，但某些复杂滤镜会回退到软件。LCP 的最终时间取决于光栅化完成时间，主线程卡顿会拖慢整个链路。
-:::
+因此，优化 LCP 时要把下载、解码、布局、光栅化分开看；"图片已到达"不等于"已经可以显示"。
 
 ---
 
@@ -275,7 +253,7 @@ LCP（Largest Contentful Paint）的完成时间，本质上取决于"**LCP 元�
 
 合成就是一系列**纹理 + 变换矩阵**的组合：
 
-```
+```text
 合成帧 = [
   { texture: layer1, transform: identity, opacity: 1.0 },
   { texture: layer2, transform: translate(100, 50) rotate(15deg), opacity: 0.8 },
@@ -306,12 +284,11 @@ Chromium 的合成分两步：
 
 ### 4. 合成的频率
 
-合成是按帧进行的，60fps 意味着每 16.6ms 一次合成。即使页面完全静止，浏览器仍然在做合成（合成静态帧），只是成本很低。
+合成按需发生：页面静止时通常不会持续生成新帧；有动画或滚动时，才按显示刷新率推进，60fps 对应约 16.6ms 一帧。
 
 当用户滚动时，合成器线程可以直接更新滚动位置并重新合成，**不需要主线程参与**——这就是"非主线程滚动"的基础。前提是滚动容器没有 `scroll` 事件监听器，或者监听器用了 `passive: true`。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Main[主线程]
         direction TB
@@ -351,27 +328,24 @@ flowchart LR
     C1 --> C3 --> G1
     G1 --> G2
 
-    classDef main fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef comp fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef gpu fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
 
-    class M1,M2,M3,M4 main;
-    class C1,C2,C3 comp;
+    class M1,M2,M3,M4 block;
+    class C1,C2,C3 wait;
     class W1,W2,W3 work;
-    class G1,G2 gpu;
+    class G1,G2 metric;
 ```
 
-::: tip 本节核心结论
-
-合成是渲染流水线的最后一步，在合成线程和 GPU 进程完成，主线程不参与。这是 transform/opacity 动画能在主线程卡顿时仍然流畅的根本原因。滚动可以是"非主线程滚动"，前提是合理使用 passive 监听器。
-:::
+图中从左到右是主线程、合成线程、光栅化工作线程和 GPU 进程。关键转折在 `Paint Record` 之后：图层与 Tile 的调度离开了主线程，因此主线程被 JS 占满时，已经开始的合成仍能继续。
 
 ---
 
 ## 五、transform/opacity 为何不触发 Layout
 
-这是渲染流水线最神奇的现象，也是面试常考题。理解了前面的链路，这个问题就一目了然。
+理解了前面的链路，这个问题可以直接从"哪个阶段被触发"来回答。
 
 ### 1. transform 的本质
 
@@ -389,7 +363,7 @@ flowchart LR
 
 transform 作用在**合成阶段**：
 
-```
+```text
 Layout（不变） → Paint（不变） → Raster（不变） → Composite（应用 transform）
 ```
 
@@ -399,14 +373,13 @@ Layout（不变） → Paint（不变） → Raster（不变） → Composite（
 
 `opacity` 改变的是**绘制时的透明度**，不改变布局，也不改变绘制内容。合成器在把图层纹理画到屏幕时，按 opacity 调整透明度即可：
 
-```
+```text
 合成输出像素 = 原像素 × opacity + 下方像素 × (1 - opacity)
 ```
 
 ### 4. 完整对比
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     subgraph Width["改 width/height"]
         direction LR
@@ -423,16 +396,18 @@ flowchart TB
         T1[Composite]
     end
 
-    classDef expensive fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:1.5px;
-    classDef medium fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef cheap fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
 
-    class W1,W2,W3,W4,W5 expensive;
-    class C1,C2,C3,C4 medium;
-    class T1 cheap;
+    class W1,W2,W3,W4,W5 metric;
+    class C1,C2,C3,C4 block;
+    class T1 work;
 ```
 
-### 5. 为什么 transform 必须作用在合成层
+图中三条链路从下到上越来越短：改几何属性要走完 Style 到 Composite；改颜色只需从 Paint 开始；改 transform/opacity 只剩 Composite。关键不是属性名字，而是它把哪一段工作留在了主线程。
+
+### 5. 为什么 transform 动画需要合成层
 
 如果元素不在合成层，transform 动画的每一帧都要：
 
@@ -444,11 +419,6 @@ flowchart TB
 
 这比"只做合成"贵得多。所以浏览器会**自动把"被动画的 transform/opacity"的元素提升为合成层**，确保动画期间只走合成路径。
 
-::: tip 本节核心结论
-
-transform/opacity 不触发 Layout 的根因：它们改变的是合成阶段的变换矩阵和透明度，不改变布局信息，也不改变绘制内容。浏览器会把被动画的这类元素自动提升为合成层，让动画完全走合成路径。
-:::
-
 ::: info 关键认知
 
 "transform 不触发 Layout" 这句话完整说应该是："transform 作用在合成层、且只改 transform/opacity 时，整条流水线只在合成阶段执行"。如果元素不是合成层（比如某些边界情况），或者同时改了其他属性，可能仍会触发 Paint 甚至 Layout。
@@ -458,7 +428,7 @@ transform/opacity 不触发 Layout 的根因：它们改变的是合成阶段的
 
 ## 六、硬件加速的正确理解
 
-### 1. "GPU 加速"是个被滥用的词
+### 1. "GPU 加速"指的不止一件事
 
 业界常说的"GPU 加速"通常指：**某个图层被提升为合成层，它的变换/透明度由 GPU 直接处理**。
 
@@ -494,7 +464,7 @@ transform/opacity 不触发 Layout 的根因：它们改变的是合成阶段的
 
 `will-change` 是浏览器提供的"预告"机制：告诉浏览器某个属性即将变化，请预先准备。
 
-正确用法：
+适用方式：
 
 ```css
 /* 元素 hover 时即将开始动画 */
@@ -506,7 +476,7 @@ transform/opacity 不触发 Layout 的根因：它们改变的是合成阶段的
 }
 ```
 
-错误用法：
+反例：
 
 ```css
 /* 给所有卡片永久开启 will-change */
@@ -515,7 +485,7 @@ transform/opacity 不触发 Layout 的根因：它们改变的是合成阶段的
 }
 ```
 
-正确做法是**事件驱动**：在动画即将开始时加上 will-change，动画结束后移除。例如 React 中：
+正确做法是**事件驱动**：在动画即将开始时加上 will-change，动画结束后移除。下面的 React 代码是示意，省略了 import 与 ref 初始化：
 
 ```jsx
 function Card() {
@@ -539,16 +509,13 @@ function Card() {
 
 ### 4. 内存成本
 
-每个合成层的 GPU 纹理大小大致是：`宽 × 高 × 4 字节（RGBA）`。
+按未压缩 RGBA 估算，每个合成层的 GPU 纹理大小约为 `宽 × 高 × 4 字节`。
 
 - 1920×1080 的图层约 8MB
-- 一个页面有 20 个这样的图层，就是 160MB GPU 内存
+- 一个页面有 20 个这样的图层，就是约 160MB GPU 内存
 - 显存不够时，浏览器会回退到软件合成，性能急剧下降
 
-::: tip 本节核心结论
-
-"GPU 加速"准确说法是"图层提升为合成层"。`will-change` 应该事件驱动、用完即移除，不能永久开启。每个合成层都消耗 GPU 内存，过多会导致性能反而下降。
-:::
+实际占用还会受纹理格式、Tile 对齐和驱动开销影响，上面的数字只用于量级判断。
 
 ::: warning 常见误区
 
@@ -600,10 +567,10 @@ function Card() {
 所以移动端滚动性能优化的第一条：**scroll 监听器加 `passive: true`**。
 
 ```javascript
-// 坏：阻塞滚动
+// 反例：阻塞滚动
 element.addEventListener('scroll', handleScroll)
 
-// 好：不阻塞滚动
+// 正例：不阻塞滚动
 element.addEventListener('scroll', handleScroll, { passive: true })
 ```
 
@@ -611,10 +578,7 @@ element.addEventListener('scroll', handleScroll, { passive: true })
 
 合成线程还负责处理部分输入事件（如触摸、滚轮）。合成线程可以把事件转发给主线程（如 `click`），也可以直接消费（如非被动滚动）。如果主线程被长任务占用，事件会排队，造成 INP 恶化。
 
-::: tip 本节核心结论
-
-合成线程和工作线程独立于主线程，是"transform 动画不卡主线程"和"非主线程滚动"的基础。但新动画启动、Style/Layout 更新仍需主线程参与。移动端 scroll 监听器必须加 `passive: true`。
-:::
+合成线程和工作线程独立于主线程，但新动画启动、Style/Layout 更新仍需主线程参与。理解这条边界，才能判断一次优化是在减少主线程工作，还是只是把工作挪到了别的线程。
 
 ---
 
@@ -660,73 +624,44 @@ DevTools → More tools → Layers：
 | 图层尺寸过大 | 拆分大图层，或用 `contain` 隔离 |
 | 光栅化慢 | 控制图层数量和尺寸，避免大列表整层光栅化 |
 
-::: tip 本节核心结论
-
-Paint 与 Raster 瓶颈的定位：Performance 面板看绿色块的分布和耗时，Layers 面板看图层数量和内存，Paint flashing 看重绘区域。优化方向是减少重绘面积、控制合成层数量、避免大面积模糊效果。
-:::
+定位时先分清是 Paint 面积、Raster 数量还是 Composite 成本在增长；三者对应不同的优化方向，混在一起看很容易把问题归错阶段。
 
 ---
 
-## 结语：合成是性能优化的终极战场
+## 结语
 
-理解了 Paint → Raster → Composite 的完整链路，你应该能回答：
+把渲染后半段重新理解为一次分工，而不是一条顺序执行的管道：主线程负责生成指令，光栅化线程负责把指令变成像素，GPU 负责把图层拼成帧。图层是这份分工的边界，合成层则决定了哪些工作可以脱离主线程。
 
-- 为什么 `transform` 动画能在主线程卡顿时仍然丝滑？
-- 为什么 `will-change` 不能滥用？
-- 为什么 LCP 图片下载完还要等光栅化？
-- 为什么 GPU 加速不是免费的？
-- 为什么大量 `box-shadow` 模糊会让 FPS 暴跌？
-
-最终的心智模型：
-
-> **渲染流水线后半段（Paint → Raster → Composite）的核心是"图层"。每个图层独立产生绘制指令、独立光栅化、独立合成。`transform/opacity` 之所以便宜，是因为它们只作用在合成阶段，跳过了前面的全部主线程工作。**
-
-记住几个关键认知：
-
-1. **Paint 产生指令而非像素**：在主线程，会阻塞交互
-2. **Raster 把指令变成像素**：在工作线程 + GPU，不阻塞主线程
-3. **Composite 把图层拼起来**：在 GPU 进程，最便宜
-4. **transform/opacity 只走 Composite**：这是动画流畅的根本
-5. **合成层有代价**：GPU 内存 + 合成成本，不能滥用
-
-把所有性能优化策略都对应到这条链路上，你就能形成一个完整的"后半段"性能模型。
+下一步，选一个你怀疑掉帧的页面，在 Performance 面板比较 Paint、Raster 与 Composite 的占比，再用 Layers 面板确认合成层数量与纹理内存。若主线程很忙但 Composite 很轻，优先减少主线程阶段的工作；若 Composite 本身变重，先检查是否提升了过多图层。
 
 ---
 
 ## FAQ
 
-### 1. 为什么 `transform` 动画在主线程卡死时仍然丝滑？
+### 1. 只改 `transform/opacity` 为什么仍可能掉帧？
 
-因为 `transform` 作用在合成阶段，合成线程和 GPU 进程独立于主线程。即使主线程被 JS 长任务占用，合成线程仍然能继续推进 transform 动画——它只需要更新变换矩阵并重新合成。
+只有元素已经位于合成层、且这些属性没有连带触发其他效果时，动画才会完全走合成路径。如果图层很大、合成层数量过多、纹理上传或光栅化跟不上，或者同时修改了会触发 Paint 的属性，仍然会掉帧。判断依据是 Performance 面板里实际出现的阶段，而不是属性名。
 
-### 2. `will-change` 应该一直开着吗？
+### 2. 快速滚动时出现白块或模糊，和 Tile 光栅化有什么关系？
 
-不应该。`will-change` 会预先创建合成层并占用 GPU 内存。一直开着会让浏览器为不一定发生的动画预留资源，导致内存浪费和合成层爆炸。正确做法是事件驱动：动画即将开始时加上，动画结束后移除。
+合成层被切成 Tile 后按需光栅化，滚动速度超过光栅化速度时，新进入视口的 Tile 可能还没准备好，于是出现空白或低分辨率占位。浏览器会预光栅化周边区域来缓解，但大图层、复杂绘制或主线程繁忙都会让预取跟不上。优化方向是控制图层尺寸、降低绘制复杂度，而不是单纯增加合成层。
 
-### 3. 为什么 `box-shadow: 0 0 100px` 会让 FPS 暴跌？
+### 3. `filter`、`opacity` 一定会创建合成层吗？
 
-大面积模糊阴影非常贵，浏览器要么用 CPU 软件模糊，要么用 GPU 多次采样。如果元素还在动画中反复重绘，每次重绘都要重新计算模糊，FPS 自然暴跌。优化方向：减小阴影面积、用静态图片替代、或把阴影做成合成层（用 `filter: drop-shadow` + `will-change`）。
+不一定。`opacity < 1` 会创建层叠上下文，`filter` 也会影响绘制，但是否提升为合成层取决于浏览器实现、属性值和是否存在动画等因素。把"写了某个属性"等同于"已经 GPU 加速"是常见误判，应该用 Layers 面板确认实际图层。
 
-### 4. LCP 图片下载完为什么还要等几百毫秒才能显示？
+### 4. Layers 面板的纹理内存为什么和"宽 × 高 × 4"估算对不上？
 
-LCP 的完成时间取决于"光栅化完成时间"，不只是"下载完成时间"。即使图片下载完、解码完、布局完，如果主线程被占用（Parse HTML、JS 长任务），Paint 阶段无法启动，光栅化也就没法开始。优化方向：减少首屏 JS 长任务、把 LCP 图片直接放在 HTML 中（更早被发现）。
-
-### 5. GPU 加速是免费的吗？
-
-不是。每个合成层都消耗 GPU 内存（约 `宽×高×4 字节`），过多合成层会让合成阶段本身变慢，显存不足时还会回退到软件合成。`will-change` 和 `transform: translateZ(0)` 滥用会导致"合成层爆炸"，反而拖慢性能。GPU 加速是优化手段，但不是免费午餐。
-
-### 6. 为什么 scroll 监听器要加 `passive: true`？
-
-非 passive 的 scroll 监听器会阻塞滚动：浏览器必须等主线程执行完监听器，才能开始滚动，导致滚动卡顿。`passive: true` 告诉浏览器"这个监听器不会调用 `preventDefault`"，浏览器可以直接在合成线程推进滚动，主线程监听器异步执行。移动端滚动性能优化的第一条就是给 scroll/touchmove 监听器加 `passive: true`。
+这个公式只计算未压缩 RGBA 的理想大小。实际纹理还会受 Tile 对齐、纹理格式、mipmap、驱动分配粒度和图层重叠影响，通常会更大。估算只适合判断量级，排查内存问题时要以 Layers 面板和浏览器进程的实际占用为准。
 
 ---
 
 ## 来源
 
-本文基于 Chromium 渲染管线文档、web.dev 性能系列、Chrome DevTools 文档及作者工程实践总结。涉及的关键技术细节可参考：
+以下资料可直接支撑文中的机制与工具说明：
 
 1. web.dev - Stick to compositor-only properties and manage layer count：[https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count](https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count)
 2. Chromium Graphics 文档：[https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/](https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/)
 3. web.dev - Animate with will-change：[https://web.dev/articles/animations-guide#will-change](https://web.dev/articles/animations-guide#will-change)
-4. Chrome DevTools - Layers 面板文档：[https://developer.chrome.com/docs/devtools/performance/inspector/](https://developer.chrome.com/docs/devtools/performance/inspector/)
+4. Chrome DevTools - Layers 面板文档：[https://developer.chrome.com/docs/devtools/layers/](https://developer.chrome.com/docs/devtools/layers/)
 5. MDN - CSS will-change：[https://developer.mozilla.org/zh-CN/docs/Web/CSS/will-change](https://developer.mozilla.org/zh-CN/docs/Web/CSS/will-change)

@@ -1,6 +1,5 @@
 ---
-title: "渲染流水线：从 HTML 到像素
-"
+title: "渲染流水线：从 HTML 到像素"
 description: 从 HTML 流式解析、CSSOM 构建、渲染树合成、布局计算、绘制分层到 GPU 合成的完整链路深度解析
 category: Browser
 tags:
@@ -13,19 +12,15 @@ outline: deep
 
 # 渲染流水线：从 HTML 到像素
 
-> 副标题：从 HTML 流式解析、CSSOM 构建、渲染树合成、布局计算、绘制分层到 GPU 合成的完整链路
->
-> 目标读者：中高级前端工程师、前端架构师、性能优化负责人
->
-> 阅读时间：约 28 分钟
+很多工程师能背出 Layout、Paint、Composite 的顺序，却说不清一次具体的 DOM 修改会走到哪一步。问题不在于阶段名称，而在于每个阶段的触发条件和线程归属。本文把这些阶段还原成一条有输入、输出和跳过条件的链路，并用同一套判断解释 CSS 阻塞、渲染树差异与合成动画的代价。
 
 ::: info 一句话
-渲染流水线不是一条直线，而是一张带依赖关系的状态机；理解每个阶段何时被触发、何时被跳过，才能精准定位性能瓶颈。
+渲染流水线的关键不是阶段数量，而是依赖关系：前一阶段的输出决定后一阶段能否开始，某些修改则可以跳过中间阶段。性能问题通常来自"本可跳过却被触发"或"触发范围被放大"。
 :::
 
 ## 目录
 
-- [写在前面](#写在前面)
+- [先看六个问题](#先看六个问题)
 - [一、渲染流水线全景图](#一、渲染流水线全景图)
 - [二、HTML 流式解析与 DOM 构建](#二、html-流式解析与-dom-构建)
 - [三、CSSOM 构建与 CSS 阻塞机制](#三、cssom-构建与-css-阻塞机制)
@@ -36,13 +31,13 @@ outline: deep
 - [八、每个阶段的性能瓶颈](#八、每个阶段的性能瓶颈)
 - [九、不同 CSS 属性触发不同路径](#九、不同-css-属性触发不同路径)
 - [十、实战：用 Performance 面板定位瓶颈](#十、实战-用-performance-面板定位瓶颈)
-- [结语：把流水线当作状态机来管理](#结语-把流水线当作状态机来管理)
+- [结语](#结语)
 - [FAQ](#faq)
 - [来源](#来源)
 
-## 写在前面
+## 先看六个问题
 
-很多前端工程师对"浏览器渲染"的理解停留在"DOM + CSS = 页面"，再深一点知道有 Layout、Paint、Composite，但再追问下去就模糊了：
+同一段 DOM 或 CSS 修改，在不同属性上会走不同长度的链路。下面几个问题常被当作零散知识点记住：
 
 - HTML 解析是流式还是一次性？预加载扫描器到底干了什么？
 - CSSOM 是一棵树还是一张表？为什么 CSS 会阻塞首次渲染却不阻塞 HTML 解析？
@@ -51,12 +46,7 @@ outline: deep
 - Paint 和 Composite 之间到底隔了什么？为什么 `transform` 不触发 Layout？
 - GPU 合成到底是怎么把多个图层拼到屏幕上的？
 
-本文的目标是建立一个**可推理的模型**：当你修改了一段 DOM 或一个 CSS 属性后，能准确预测浏览器会走流水线上的哪几段、各自付出什么代价、如何被 Performance 面板观察到。
-
-::: tip 本节核心结论
-
-渲染流水线的核心是理解**触发条件**与**数据流转**。每一段都有输入、输出和触发条件，优化就是减少不必要的触发、缩小每次触发的范围。
-:::
+这些问题都可以从同一张依赖图推出来。
 
 ---
 
@@ -65,7 +55,6 @@ outline: deep
 现代浏览器的渲染流水线（以 Chromium 为参考）可以简化为以下六个阶段：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6', 'secondaryColor': '#F7F9FC', 'tertiaryColor': '#FFF7E6, 'fontSize': '13px'}}}%%
 flowchart LR
     subgraph Parse["① 解析阶段"]
         direction TB
@@ -99,7 +88,7 @@ flowchart LR
         D1 --> D2
     end
 
-    subgraph Raster[⑤ 光栅化]
+    subgraph Raster["⑤ 光栅化"]
         direction TB
         E1[Tile 切分]
         E2[光栅化线程]
@@ -117,20 +106,21 @@ flowchart LR
 
     Parse --> Render --> Layout --> Paint --> Raster --> Composite
 
-    classDef parse fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef render fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
-    classDef layout fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef paint fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef raster fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef composite fill:#FEE2E2,stroke:#EF4444,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
 
-    class A1,A2,A3,A4 parse;
-    class B1,B2 render;
-    class C1,C2,C3 layout;
-    class D1,D2 paint;
-    class E1,E2,E3 raster;
-    class F1,F2,F3 composite;
+    class A1,A2,A3,A4 wait;
+    class B1,B2 work;
+    class C1,C2,C3 block;
+    class D1,D2 work;
+    class E1,E2,E3 metric;
+    class F1,F2,F3 core;
 ```
+
+图中从左到右依次是解析、渲染树、布局、绘制、光栅化和合成。阅读时先看每个方框的输入输出，再注意跨阶段的箭头：解析产物决定渲染树，布局结果决定绘制内容，而光栅化和合成已经可以离开主线程。
 
 每个阶段的输入和输出大致如下：
 
@@ -146,7 +136,7 @@ flowchart LR
 
 ::: info 关键认知
 
-注意"主线程 / 合成线程 / 光栅化工作线程 / GPU 进程"的分工。**Layout 和 Paint 在主线程**，所以它们会阻塞 JS、阻塞交互；**Raster 和 Composite 可以在主线程之外完成**，所以 `transform/opacity` 动画即使主线程被 JS 占满也能流畅。这是后面所有优化策略的根因。
+注意"主线程 / 合成线程 / 光栅化工作线程 / GPU 进程"的分工。**Layout 和 Paint 占用主线程**，因此会推迟 JS 和交互；**Raster 和 Composite 可以在主线程之外完成**，所以 `transform/opacity` 动画即使主线程被 JS 占满也能流畅。这是后续优化策略的共同依据。
 :::
 
 ---
@@ -165,7 +155,7 @@ HTML 解析器不是等 HTML 全部下载完才开始工作的，而是**字节�
 
 ### 2. 预加载扫描器（Preload Scanner）
 
-主解析器遇到 `<script src="...">`（无 defer/async）会被阻塞，但浏览器不会傻等。**预加载扫描器**会在主解析器阻塞期间，继续向前扫描原始 HTML 标记，提前发现图片、CSS、JS 等资源并并行下载。
+主解析器遇到 `<script src="...">`（无 defer/async）会被阻塞，但解析不会完全停住。**预加载扫描器**会在主解析器阻塞期间，继续向前扫描原始 HTML 标记，提前发现图片、CSS、JS 等资源并并行下载。
 
 ```html
 <!-- 预加载扫描器能发现 -->
@@ -189,7 +179,6 @@ HTML 解析阶段的主要阻塞点有两个：
 - **CSS 阻塞 JS 执行**：如果脚本要操作 DOM 的样式，CSS 必须先加载完成。所以 CSS 不阻塞 HTML 解析，但可能阻塞 JS 执行
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([HTML 到达]) --> Parse[主解析器流式构建 DOM]
     Parse --> MeetCSS{遇到 CSS 链接}
@@ -204,25 +193,22 @@ flowchart TB
     MeetScript -->|defer/async| Parallel[并行下载]
     Parallel --> Continue2
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef normal fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
     classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef decision fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Parse,LoadCSS,Continue1,Parallel,Continue2 normal;
+    class Start core;
+    class Parse,LoadCSS,Continue1,Parallel,Continue2,MeetCSS,MeetScript,WaitCSS wait;
     class Wait,WaitJS block;
-    class MeetCSS,MeetScript,WaitCSS decision;
 ```
 
-::: tip 本节核心结论
+图中从上到下是一条解析主线，右侧分支是遇到 CSS 或 script 后的等待路径。关键转折在 `WaitCSS`：CSS 不就绪时，同步脚本无法执行，HTML 解析也会停在这一步。
 
-HTML 解析是流式的，越早返回越好。同步 script 和 CSS 是主要阻塞点。让首屏关键资源出现在 HTML 中、对非关键 JS 使用 `defer`，是降低解析阶段成本的核心手段。
-:::
+因此，首屏关键资源要尽早出现在 HTML 中，非关键 JS 则用 `defer` 或 `async` 移出解析主路径。
 
 ::: warning 常见误区
 
-把 SSR 当成性能银弹。SSR 让 HTML 更早返回，但如果 SSR 输出的 HTML 体积过大、或者把所有数据都塞进 HTML，反而会拖慢 Parse HTML 阶段。流式 SSR + 关键内容前置才是正确姿势。
+把 SSR 当成性能万能解。SSR 让 HTML 更早返回，但如果输出体积过大，或者把全部数据都塞进 HTML，Parse HTML 阶段反而会变长。流式 SSR 与关键内容前置通常更稳妥。
 :::
 
 ---
@@ -241,11 +227,6 @@ CSSOM 之所以是树形，是因为 CSS 有继承和层叠：
 ### 2. CSS 阻塞首次渲染
 
 CSS 不阻塞 HTML 解析（解析器可以继续构建 DOM），但**阻塞首次渲染**。原因是浏览器要避免"先渲染无样式版本，再重绘成有样式版本"的闪烁（FOUC，Flash of Unstyled Content）。
-
-::: info 关键认知
-
-"CSS 阻塞渲染"不等于"CSS 阻塞解析"。这就是为什么我们说 CSS 是渲染阻塞资源，但不是解析阻塞资源。
-:::
 
 ### 3. CSS 阻塞 JS 执行
 
@@ -275,10 +256,7 @@ Style 计算的成本取决于：
 - CSS 规则数量
 - 选择器复杂度（后代选择器、通配符选择器更贵）
 
-::: tip 本节核心结论
-
-CSS 阻塞首次渲染但不阻塞 HTML 解析。关键 CSS 必须尽早加载，非关键 CSS 可以用 media hack 异步化。选择器越简单越好，避免大规模后代选择器。
-:::
+这三项中，选择器复杂度最容易被忽视，因为它通常不会在单个组件里暴露，却会在节点规模变大后放大 Style 计算成本。
 
 ---
 
@@ -303,7 +281,7 @@ CSS 阻塞首次渲染但不阻塞 HTML 解析。关键 CSS 必须尽早加载�
 
 Layout Tree 的构建规则大致是：
 
-```
+```text
 对 DOM 树中每个节点：
   如果它生成盒子（有 box，比如 display 不是 none）
     则为它创建 LayoutObject
@@ -318,10 +296,7 @@ Layout Tree 的构建规则大致是：
 - 为什么大量 `display: none` 节点会拖慢初始渲染：它们虽然不绘制，但 DOM 解析、Style 计算阶段仍要处理
 - 为什么虚拟列表能优化长列表：从源头减少 Layout Tree 的节点数
 
-::: tip 本节核心结论
-
-渲染树 ≠ DOM 树。`display: none` 的元素不在渲染树，避免初始 Layout 成本；但它们仍在 DOM 里，仍要参与解析和 Style 计算。控制 DOM 规模才是根本。
-:::
+因此，控制 DOM 规模和减少不必要的渲染树节点，比事后优化 Layout 更根本。
 
 ---
 
@@ -353,7 +328,7 @@ Layout 是渲染流水线里最贵的阶段之一，原因：
 
 ### 4. 强制同步布局（Forced Synchronous Layout）
 
-JS 读取布局属性时，如果之前有未消化的样式修改，浏览器会被迫**立即执行 Layout**才能返回正确值。这就是后面要专门讲的 Layout Thrashing 的根源。
+JS 读取布局属性时，如果之前有未消化的样式修改，浏览器会被迫**立即执行 Layout**才能返回正确值。这也是[布局抖动](/browser/layout-thrashing)的根源。
 
 常见的"会触发 Layout 的读取"包括：
 
@@ -366,10 +341,7 @@ element.getBoundingClientRect()
 window.scrollX / scrollY / innerWidth / innerHeight
 ```
 
-::: tip 本节核心结论
-
-Layout 是渲染流水线最贵的阶段，且具有全局性。优先避免触发它，触发时尽量缩小范围。读写布局信息交替进行会触发强制同步布局，详见后续 Layout Thrashing 专文。
-:::
+因此，优化 Layout 的方向始终是减少触发次数和缩小影响范围，而不是记住一份"昂贵属性清单"。
 
 ::: warning 常见误区
 
@@ -386,7 +358,7 @@ Paint 阶段不直接产生像素，而是产生**绘制指令列表（Paint Rec
 
 Paint Record 是一系列绘制指令，类似：
 
-```
+```text
 drawRect(0, 0, 100, 100, #ff0000)
 drawText("hello", 10, 50, font=...)
 drawImage(hero.webp, 0, 200, 800, 600)
@@ -419,10 +391,7 @@ Paint 的成本主要来自：
 
 `box-shadow: 0 0 50px rgba(0,0,0,0.5)` 这种大面积模糊阴影非常贵，因为浏览器要么用 CPU 软件模糊，要么用 GPU 多次采样。
 
-::: tip 本节核心结论
-
-Paint 产生绘制指令而非像素，按图层组织。控制重绘面积、避免大面积模糊阴影、合理使用图层，是降低 Paint 成本的关键。
-:::
+控制重绘面积和绘制复杂度，通常比单纯增加图层更直接。
 
 ---
 
@@ -432,7 +401,7 @@ Paint 产生绘制指令而非像素，按图层组织。控制重绘面积、�
 
 合成阶段把多个已经光栅化的图层按正确顺序、正确变换拼到一起，最终输出到屏幕。
 
-关键点：合成阶段**在 GPU 进程里完成**，主线程不参与。所以只要动画只改 `transform` 和 `opacity`，即使主线程被 JS 占满，合成线程和 GPU 仍然能继续推进动画。
+关键点：合成主要由**合成线程与 GPU 进程**完成，主线程不参与。所以只要动画只改 `transform` 和 `opacity`，即使主线程被 JS 占满，合成线程和 GPU 仍然能继续推进动画。
 
 ### 2. 合成层（Compositing Layer）
 
@@ -448,7 +417,7 @@ Paint 产生绘制指令而非像素，按图层组织。控制重绘面积、�
 
 ### 3. GPU 加速的正确理解
 
-"GPU 加速"是个被滥用的词。准确说法是：**这个图层被提升为合成层，它的变换和透明度变化由 GPU 直接处理，不触发 Layout 和 Paint**。
+"GPU 加速"常被当成一个统一开关，实际它指不同的优化方式。最常见的含义是：**某个图层被提升为合成层，它的变换和透明度变化由 GPU 直接处理，不触发 Layout 和 Paint**。
 
 不是所有"GPU 加速"都好：
 
@@ -456,10 +425,7 @@ Paint 产生绘制指令而非像素，按图层组织。控制重绘面积、�
 - 大量合成层会让合成阶段本身变慢
 - `will-change` 滥用会导致内存爆炸
 
-::: tip 本节核心结论
-
-合成是渲染流水线唯一在主线程之外完成的关键阶段。把动画做成"只改 transform / opacity"是流畅动画的根本前提，但合成层不是越多越好。
-:::
+合成与光栅化都可以离开主线程，但新图层、新动画的启动仍要主线程参与；这决定了优化能走多远。
 
 ::: warning 常见误区
 
@@ -470,7 +436,7 @@ Paint 产生绘制指令而非像素，按图层组织。控制重绘面积、�
 
 ## 八、每个阶段的性能瓶颈
 
-下面这张表汇总了每个阶段的常见瓶颈和优化方向：
+各阶段的常见瓶颈与可观察信号如下：
 
 | 阶段 | 常见瓶颈 | 优化方向 | 性能面板标记 |
 | --- | --- | --- | --- |
@@ -505,10 +471,7 @@ function updateList(items) {
 2. 先读 `clientWidth`，再批量写
 3. 把阴影做成静态背景或用 filter（合成层）
 
-::: tip 本节核心结论
-
-性能瓶颈定位就是回答一个问题："这次操作触发了流水线的哪几段？每段成本有多大？" Performance 面板的颜色块直接回答了这个问题。
-:::
+先回答问题，再选优化手段；颜色块只是线索，不是结论。
 
 ---
 
@@ -517,7 +480,6 @@ function updateList(items) {
 这是渲染流水线最实用的知识：**修改不同 CSS 属性会触发不同长度的流水线**。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#EEF6FF', 'primaryTextColor': '#172033', 'primaryBorderColor': '#6EA8FE', 'lineColor': '#8A94A6, 'fontSize': '13px'}}}%%
 flowchart TB
     Start([修改 CSS 属性]) --> Class{属性类别}
 
@@ -534,19 +496,20 @@ flowchart TB
 
     Composite[只触发 Composite]
 
-    classDef start fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef decision fill:#F7F9FC,stroke:#8A94A6,color:#172033,stroke-width:1.5px;
-    classDef layout fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef paint fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef composite fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
 
-    class Start start;
-    class Class decision;
-    class Layout layout;
-    class Paint,Paint2 paint;
-    class Raster2,Raster3,Raster composite;
-    class Composite,Composite2,Composite3 composite;
+    class Start core;
+    class Class wait;
+    class Layout block;
+    class Paint,Paint2,Raster2,Raster3,Raster work;
+    class Composite,Composite2,Composite3 metric;
 ```
+
+图中从属性类别分出三条路径，越往下游走链路越短。阅读时注意：`transform/opacity/filter` 不是"不触发任何阶段"，而是通常只落在 Composite；具体仍取决于元素是否已是合成层。
 
 ### 1. 触发 Layout 的属性
 
@@ -570,29 +533,23 @@ flowchart TB
 - `background-image`
 - `border-radius`
 
-### 3. 只触发 Composite 的属性（黄金属性）
+### 3. 只触发 Composite 的属性
 
 - `transform`
 - `opacity`
 - `filter`（部分情况下）
 
-这两个属性之所以神奇，是因为它们作用在合成层：浏览器不需要重新计算布局、不需要重新生成绘制指令，只需要在合成时改变变换矩阵或透明度。
+这类属性作用在合成层：浏览器不需要重新计算布局，也不需要重新生成绘制指令，只需要在合成时改变变换矩阵或透明度。
 
-::: tip 本节核心结论
+因此，动画优先用 `transform` 和 `opacity`；但前提是元素处于合成层，且没有同时修改其他会触发 Paint 的属性。
 
-动画优先用 `transform` 和 `opacity`。需要位移用 `transform: translate()`，需要旋转用 `transform: rotate()`，需要缩放用 `transform: scale()`，需要淡入淡出用 `opacity`。
-:::
-
-::: info CSS Triggers 参考
-
-csstriggers.com 网站列出了每个 CSS 属性在主流浏览器中触发的渲染阶段，可以做快速参考。但要注意：实际行为还会受到合成层提升、增量 Layout 等优化影响。
-:::
+csstriggers.com 列出了每个 CSS 属性在主流浏览器中触发的渲染阶段，可作快速参考；实际行为还会受合成层提升与增量 Layout 影响。
 
 ---
 
 ## 十、实战：用 Performance 面板定位瓶颈
 
-### 1. 录制正确姿势
+### 1. 录制步骤
 
 1. 打开 DevTools → Performance 面板
 2. 启用 CPU 4× slowdown（模拟低端设备）
@@ -626,67 +583,45 @@ DevTools → More tools → Rendering 提供：
 - **Layer borders**：显示合成层边界
 - **FPS meter**：实时帧率
 
-::: tip 本节核心结论
-
-定位渲染瓶颈的标准流程：Performance 录制 → 看颜色分布 → 找最长的那段 → 定位到具体代码 → 针对性优化。Rendering 标签页用来辅助验证。
-:::
+定位时先看最长的那段事件，再确认它是主动触发还是被资源阻塞间接触发；Rendering 标签页用于验证，而不是替代判断。
 
 ---
 
-## 结语：把流水线当作状态机来管理
+## 结语
 
-理解渲染流水线后，你应该能回答这些问题：
+把渲染流水线重新理解为一张依赖图，而不是六道依次执行的工序：解析决定输入何时可用，Style 决定每个节点匹配什么规则，Layout 把树变成几何，Paint 与 Raster 把几何变成像素，Composite 把像素送到屏幕。每类修改只是在这张图上点亮不同的节点。
 
-- 这段 JS 修改会不会触发 Layout？为什么？
-- 这个动画用 `transform` 还是 `top/left`？为什么？
-- 为什么 `display:none` 切换比 `visibility:hidden` 更贵？
-- 为什么 `will-change` 不能滥用？
-- 为什么 Performance 面板里出现连续紫色 Layout 块是坏信号？
-
-最终的心智模型应该是：
-
-> **渲染流水线是一张带依赖关系的状态机。每次 DOM/JS/CSS 变更都是一次事件，浏览器根据事件类型决定走流水线的哪几段。优化的本质是减少事件触发次数、缩小每次触发的范围、把触发的阶段尽量往后推（从 Layout 推到 Paint，从 Paint 推到 Composite）。**
-
-记住这张状态机的关键节点：
-
-1. **解析** → 决定 DOM 和 CSSOM 何时准备好
-2. **Style** → 决定每个节点长什么样
-3. **Layout** → 决定每个节点在哪、多大（最贵）
-4. **Paint** → 产生绘制指令（中等）
-5. **Raster** → 把指令变成像素（贵，但在工作线程）
-6. **Composite** → 把图层拼到屏幕（便宜，在 GPU）
-
-把所有优化策略都对应到这六个节点上，你就能形成一个完整、自洽的渲染性能模型。
+下一步，拿一次真实的交互录制 Performance：先看最长的事件属于哪一段，再确认它是被业务代码主动触发，还是被资源阻塞间接触发。把优化动作对应到具体节点，比记住"少用这个属性"更可复用。
 
 ---
 
 ## FAQ
 
-### 1. 为什么 `transform: translate()` 比 `top/left` 更适合做动画？
+### 1. `defer` 和 `async` 为什么仍可能拖慢首屏？
 
-`top/left` 改变的是几何位置，会触发 Layout，然后连带触发 Paint、Raster、Composite 整条流水线。`transform` 作用在合成层，浏览器只需要改变合成时的变换矩阵，不触发 Layout、不触发 Paint，只在 Composite 阶段处理。前者占用主线程，后者在 GPU 进程完成，所以 `transform` 动画更流畅。
+两者都避免脚本阻塞 HTML 解析，但脚本下载完成后仍要在主线程执行。`defer` 按顺序在解析结束后执行，`async` 则可能在任意时刻执行并打断其他任务；如果脚本本身很重，仍会占用主线程，推迟首次渲染或后续交互。它们改变的是调度时机，不是执行成本。
 
-### 2. `display: none` 和 `visibility: hidden` 哪个性能更好？
+### 2. Style 计算和 Layout 有什么区别？
 
-要看场景。初始加载时，`display: none` 的元素不在渲染树里，不参与 Layout 和 Paint，所以初始渲染成本更低。但切换时，`display: none` 要重建渲染树节点并触发完整 Layout，而 `visibility: hidden` 只触发 Paint。所以频繁切换用 `visibility: hidden`，长时间隐藏用 `display: none`。
+Style 计算回答"每个节点最终应用哪些 CSS 值"，输出是计算样式；Layout 回答"这些值对应什么几何位置和尺寸"，输出是盒子在页面上的位置。修改颜色通常只需要重新计算 Style 和 Paint，不需要 Layout；修改宽度则可能同时影响两者。
 
-### 3. CSS 选择器复杂度对性能影响大吗？
+### 3. 修改 `transform` 为什么有时仍触发 Paint 或 Layout？
 
-在多数场景下影响不大，因为现代浏览器的 Style 匹配算法已经很快了。但当 DOM 节点数量上万、CSS 规则上千时，复杂选择器（特别是后代选择器、通配符）会让 Recalculate Style 阶段明显变慢。规则是：能用类名就用类名，避免 `div ul li a` 这种长链后代选择器。
+`transform` 本身通常只影响合成阶段的变换矩阵，但如果元素不在合成层、同时修改了其他几何属性，或者变换导致内容需要重新绘制（例如改变 3D 变换后的可见面），仍可能触发 Paint 甚至 Layout。看到"用了 transform"不能直接推断"只走 Composite"。
 
-### 4. `will-change` 应该一直开着吗？
+### 4. 增量 Layout 能保证只重排局部吗？
 
-不应该。`will-change` 会预先创建合成层并占用 GPU 内存。一直开着会让浏览器为不一定发生的动画预留资源，导致内存浪费和合成层爆炸。正确做法是：在动画即将开始时（如 hover、scroll 进入触发区域）加上，动画结束后移除。
+不能保证。增量 Layout 会尽量缩小范围，但一个节点的变化可能影响父节点、兄弟节点或后续文本流，具体取决于盒模型、浮动、字体和依赖关系。它能减少成本，但不是"改一个节点就只重算一个节点"的承诺。
 
-### 5. 为什么 SSR 返回的 HTML 越大反而越慢？
+### 5. CSS 选择器复杂度对性能影响大吗？
 
-HTML 体积过大，Parse HTML 阶段会变长，主线程被占用时间增加，可能阻塞后续脚本执行和首屏渲染。SSR 的价值是让 HTML 更早返回 + 让关键内容直接出现在 HTML 中（更早被浏览器发现），不是把所有数据都塞进 HTML。流式 SSR + 关键内容前置才是正确姿势。
+多数场景下影响有限，因为现代浏览器的样式匹配已经很快。但当 DOM 节点上万、CSS 规则很多时，复杂选择器（尤其是长链后代选择器和通配符）会让 Recalculate Style 明显变慢。优先用类名，避免 `div ul li a` 这类依赖深层结构的写法。
 
 ---
 
 ## 来源
 
-本文基于 Chromium 官方文档、Web.dev 性能系列、Chrome DevTools 文档以及作者工程实践总结。涉及的关键技术细节可参考：
+以下资料可直接支撑文中的机制与工具说明：
 
 1. Chromium Graphics 架构文档：[https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/](https://source.chromium.org/chromium/chromium/src/+/main:docs/graphics/)
 2. web.dev 渲染性能系列：[https://web.dev/articles/rendering-performance](https://web.dev/articles/rendering-performance)

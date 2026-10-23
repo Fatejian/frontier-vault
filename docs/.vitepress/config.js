@@ -19,6 +19,49 @@ export default defineConfig({
       md.use(footnote)
     }
   },
+  themeConfig: {
+    search: {
+      provider: 'local',
+      options: {
+        locales: {
+          root: {
+            translations: {
+              button: {
+                buttonText: '搜索文档',
+                buttonAriaLabel: '搜索文档'
+              },
+              modal: {
+                noResultsText: '无法找到相关结果',
+                resetButtonTitle: '清除查询条件',
+                footer: {
+                  selectText: '选择',
+                  navigateText: '切换',
+                  closeText: '关闭'
+                }
+              }
+            }
+          },
+          en: {
+            translations: {
+              button: {
+                buttonText: 'Search documentation',
+                buttonAriaLabel: 'Search documentation'
+              },
+              modal: {
+                noResultsText: 'No results found',
+                resetButtonTitle: 'Reset search',
+                footer: {
+                  selectText: 'Select',
+                  navigateText: 'Navigate',
+                  closeText: 'Close'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   locales: {
     root: {
       label: '中文',
@@ -198,26 +241,6 @@ export default defineConfig({
         footer: {
           message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
-        },
-        search: {
-          provider: 'local',
-          options: {
-            translations: {
-              button: {
-                buttonText: '搜索文档',
-                buttonAriaLabel: '搜索文档'
-              },
-              modal: {
-                noResultsText: '无法找到相关结果',
-                resetButtonTitle: '清除查询条件',
-                footer: {
-                  selectText: '选择',
-                  navigateText: '切换',
-                  closeText: '关闭'
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -400,26 +423,6 @@ export default defineConfig({
         footer: {
           message: 'Code: MIT | Content: CC BY 4.0 | <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026097578号-1</a>',
           copyright: 'Copyright © 2026-present'
-        },
-        search: {
-          provider: 'local',
-          options: {
-            translations: {
-              button: {
-                buttonText: 'Search documentation',
-                buttonAriaLabel: 'Search documentation'
-              },
-              modal: {
-                noResultsText: 'No results found',
-                resetButtonTitle: 'Reset search',
-                footer: {
-                  selectText: 'Select',
-                  navigateText: 'Navigate',
-                  closeText: 'Close'
-                }
-              }
-            }
-          }
         }
       }
     }

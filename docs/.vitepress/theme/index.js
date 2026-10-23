@@ -53,7 +53,8 @@ const MERMAID_THEME_VARS = {
     titleColor: '#ffffff',
     edgeLabelBackground: '#1a2332',
     textColor: '#e2e8f0',
-    fontFamily: 'inherit'
+    fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif',
+    fontSize: '13px'
   },
   default: {
     primaryColor: '#3b82f6',
@@ -69,7 +70,8 @@ const MERMAID_THEME_VARS = {
     titleColor: '#1e293b',
     edgeLabelBackground: '#ffffff',
     textColor: '#1e293b',
-    fontFamily: 'inherit'
+    fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif',
+    fontSize: '13px'
   }
 }
 
@@ -689,8 +691,7 @@ async function toggleMermaidTheme(container) {
       toggleBtn.innerHTML = newTheme === 'dark' ? '\u{1F319}' : '\u2600\uFE0F'
     }
 
-    // 渲染完成后，将全局 mermaid 主题恢复为页面主题
-    mermaid.initialize(getMermaidThemeConfig(getPageTheme()))
+    // 主题由下一次渲染前的 initialize 统一设置，避免在渲染回调中重复初始化
   })
 }
 

@@ -175,8 +175,6 @@ function generateLocaleBlock(lang) {
       : ` | ${footer.icp}`
     footerMessage = footerMessage ? footerMessage + icpHtml : footer.icp
   }
-  // search.translations 块缩进对齐到 12 空格（与现有 config.js 一致）
-  const searchTranslations = formatJs(uiStrings[lang.code].search, 12)
 
   const linkLine = lang.isDefault ? '' : `      link: '/${lang.dir}/',\n`
   const localeKey = lang.isDefault ? 'root' : lang.code
@@ -194,12 +192,6 @@ ${navLines}
         footer: {
           message: ${jsString(footerMessage)},
           copyright: ${jsString(footer.copyright)}
-        },
-        search: {
-          provider: 'local',
-          options: {
-            translations: ${searchTranslations}
-          }
         }
       }
     }`
@@ -210,6 +202,13 @@ ${navLines}
  */
 function generateConfigContent() {
   const localeBlocks = languages.map(generateLocaleBlock).join(',\n')
+  // VitePress 只在顶层 themeConfig 读取 search 配置；按语言提供 translations。
+  const searchLocales = languages
+    .map(lang => {
+      const key = lang.isDefault ? 'root' : lang.code
+      return `          ${key}: {\n            translations: ${formatJs(uiStrings[lang.code].search, 12)}\n          }`
+    })
+    .join(',\n')
 
   return `import { defineConfig } from 'vitepress'
 import taskLists from 'markdown-it-task-lists'
@@ -230,6 +229,16 @@ export default defineConfig({
     config: (md) => {
       md.use(taskLists, { enabled: true, label: true })
       md.use(footnote)
+    }
+  },
+  themeConfig: {
+    search: {
+      provider: 'local',
+      options: {
+        locales: {
+${searchLocales}
+        }
+      }
     }
   },
   locales: {

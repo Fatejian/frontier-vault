@@ -172,6 +172,21 @@
   line-height: 1.5 !important;
 }
 
+/* 阻止 .vp-doc p 的 text-wrap: pretty / margin 泄漏进 Mermaid 标签：
+   Mermaid 按单行计算 foreignObject 高度，标签一旦换行，第二行会被裁掉。 */
+.vp-doc .mermaid-container svg foreignObject div,
+.vp-doc .mermaid-container svg foreignObject span,
+.vp-doc .mermaid-container svg foreignObject p,
+.vp-doc .mermaid-container .noteLabel p,
+.vp-doc .mermaid-container .edgeLabel p,
+.vp-doc .mermaid-container .label p {
+  margin: 0 !important;
+  white-space: nowrap !important;
+  text-wrap: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
 /* 暗色主题容器背景（写死颜色，不依赖页面主题变量） */
 .mermaid-container[data-theme="dark"] {
   background: #1e293b;

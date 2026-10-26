@@ -518,20 +518,24 @@ function autoTextColor(svg) {
     const isDark = isDarkColor(bgColor)
     const textColor = isDark ? '#ffffff' : '#1e293b'
 
-    // 给 foreignObject 直接子 div 动态添加 padding 并强制水平居中
+    // 给 foreignObject 直接子 div 动态添加水平 padding 并强制水平居中
     // 只处理 :scope > div 避免嵌套结构下 padding 累加压缩内容区
     // 同步设置 text-align:center 与 box-sizing:border-box：
     //   - text-align:center：内层 span/p 默认 left 对齐，加 padding 后文字会偏左
     //   - box-sizing:border-box：padding 不增加 div 总宽度，避免溢出 foreignObject
+    // 只加水平 padding：垂直 padding 会超过 Mermaid 按单行计算的固定高度，
+    // 导致标签底部被 foreignObject 裁掉。
     // 动态阈值：foreignObject 宽度 < 80px 时（短标签、序号、状态码节点），
     //   padding 占比过高会显著挤压文字空间，直接取消 padding 让文字充分利用宽度
     const foWidth = parseFloat(fo.getAttribute('width')) || fo.clientWidth || 0
     fo.querySelectorAll(':scope > div').forEach(div => {
       if (!div.style.padding || div.style.padding === '0px') {
-        div.style.padding = foWidth >= 80 ? '2px 6px' : '0'
+        div.style.padding = foWidth >= 80 ? '0 6px' : '0'
       }
       div.style.setProperty('text-align', 'center', 'important')
       div.style.setProperty('box-sizing', 'border-box', 'important')
+      div.style.setProperty('margin-left', 'auto', 'important')
+      div.style.setProperty('margin-right', 'auto', 'important')
     })
 
     // 设置文字颜色（important 确保覆盖 Mermaid 内联样式）
@@ -557,6 +561,15 @@ function expandForeignObjects(svg) {
     const div = fo.querySelector('div')
     if (!div) return
 
+    // Mermaid 可能按两行预留高度，但 nowrap 后实际只有一行：收缩并垂直居中
+    const textHeight = div.scrollHeight || div.offsetHeight
+    const currentHeight = parseFloat(fo.getAttribute('height')) || fo.clientHeight || 0
+    if (textHeight > 0 && currentHeight > textHeight + 1) {
+      const currentY = parseFloat(fo.getAttribute('y')) || 0
+      fo.setAttribute('y', currentY + (currentHeight - textHeight) / 2)
+      fo.setAttribute('height', textHeight)
+    }
+
     // 测量文字实际宽度
     const textWidth = div.scrollWidth || div.offsetWidth
     const currentWidth = parseFloat(fo.getAttribute('width')) || fo.clientWidth || 0
@@ -564,6 +577,9 @@ function expandForeignObjects(svg) {
 
     const newWidth = Math.max(textWidth + 12, currentWidth)
     fo.setAttribute('width', newWidth)
+    // 扩宽后同步左移 foreignObject，保持标签相对节点中心对称
+    const currentX = parseFloat(fo.getAttribute('x')) || 0
+    fo.setAttribute('x', currentX - (newWidth - currentWidth) / 2)
 
     // 同步调整同级或父级 rect 的宽度，使背景框跟随文字扩展
     const g = fo.parentElement
@@ -579,6 +595,21 @@ function expandForeignObjects(svg) {
       }
     }
   })
+
+  // 扩宽标签后同步扩展 viewBox，避免右侧内容越过 SVG 视口被裁切
+  const viewBox = svg.viewBox && svg.viewBox.baseVal
+  if (!viewBox || !viewBox.width || !viewBox.height) return
+
+  const bbox = svg.getBBox()
+  const padding = 8
+  const minX = Math.min(viewBox.x, bbox.x - padding)
+  const minY = Math.min(viewBox.y, bbox.y - padding)
+  const maxX = Math.max(viewBox.x + viewBox.width, bbox.x + bbox.width + padding)
+  const maxY = Math.max(viewBox.y + viewBox.height, bbox.y + bbox.height + padding)
+
+  if (minX < viewBox.x || minY < viewBox.y || maxX > viewBox.x + viewBox.width || maxY > viewBox.y + viewBox.height) {
+    svg.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`)
+  }
 }
 
 function applyThemeToSvg(svg, theme) {

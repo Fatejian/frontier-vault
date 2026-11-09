@@ -392,7 +392,7 @@ Frontier Vault 是面向**中高级前端工程师**的系统化知识库，覆�
 
 没有结构关系时，不强行添加 Mermaid。
 
-若项目现有规范定义了 Mermaid 主题、配色和字体，必须复用；否则先读取同目录文章和项目配置，不在本 Skill 中重复硬编码易失效的视觉值。
+若项目现有规范定义了 Mermaid 主题、配色和字体，必须复用；否则先读取同目录文章和项目配置，不在本 Skill 中重复硬编码易失效的视觉值。当前唯一色源是 `docs/.vitepress/theme/style.css` 的 token 与 `docs/.vitepress/theme/index.js` 的 `FV_PALETTE`，图表使用低饱和五色语义色；`npm run color:check` 校验三处同源与对比度，引用色值前以仓库现状为准。
 
 图后必须有 1 至 3 句解读，告诉读者从哪里看、关键转折是什么。图不能代替正文解释。
 

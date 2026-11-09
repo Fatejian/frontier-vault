@@ -99,9 +99,9 @@ flowchart TB
         T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> T7 --> T8 --> T9
     end
 
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
 
     class N1,N2,N3,N4,N5 work;
     class F1,F2,F3,F4,F5,F6 block;
@@ -220,8 +220,8 @@ flowchart TB
         G5 --> G6[帧末统一 1 次 Layout]
     end
 
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class B1,B2,B3,B4,B5 block;
     class G1,G2,G3,G4,G5,G6 work;

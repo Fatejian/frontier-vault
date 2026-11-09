@@ -17,7 +17,7 @@
 ## 知识地图
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F8FAFC', 'primaryTextColor': '#172033', 'primaryBorderColor': '#CBD5E1', 'lineColor': '#64748B', 'fontSize': '13px'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F4F7F4', 'primaryTextColor': '#22322B', 'primaryBorderColor': '#CDD8D2', 'lineColor': '#6B7772', 'fontSize': '13px'}}}%%
 flowchart TB
     core["测试工程"]
 
@@ -42,9 +42,9 @@ flowchart TB
     core --> wait4
     core --> wait5
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
 
     class core core
     class work1,work2 work

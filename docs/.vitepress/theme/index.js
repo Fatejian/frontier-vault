@@ -38,39 +38,90 @@ const MERMAID_CONFIG = {
   ]
 }
 
+// 单一色源：与 theme/style.css 的 hex 回退声明、各篇 Markdown 的 classDef 色值同源。
+// Mermaid 的 themeVariables 与 applyThemeToSvg 的字符串替换只认 hex，不能写 OKLCH。
+// scripts/check-color-contrast.mjs 会校验三处色源一致。
+const FV_PALETTE = {
+  light: {
+    bg: '#FDFDFA',
+    surface: '#F7F7F3',
+    surfaceSoft: '#F6F6F2',
+    text: '#262C32',
+    textMuted: '#555C62',
+    primary: '#176540',
+    accent: '#24744D',
+    border: '#CED3D8',
+    divider: '#E1E4E8',
+    codeBg: '#F3F7F4',
+    white: '#FFFFFF',
+    chartCore: '#22322B',
+    chartLine: '#6B7772',
+    chartWait: '#5B8CA8',
+    chartBlock: '#B27B2C',
+    chartWork: '#3E9B6B',
+    chartMetric: '#8E6BA8',
+    overlay: 'rgba(253, 253, 250, 0.94)',
+    shadow: '0 8px 32px rgba(38, 44, 50, 0.15)'
+  },
+  dark: {
+    bg: '#13181D',
+    surface: '#0F1318',
+    surfaceSoft: '#1B2127',
+    text: '#E2E5E8',
+    textMuted: '#A0A5AB',
+    primary: '#72CE9B',
+    accent: '#35835B',
+    border: '#353B42',
+    divider: '#282D32',
+    codeBg: '#0D1116',
+    white: '#FFFFFF',
+    chartCore: '#22322B',
+    chartLine: '#8A9096',
+    chartWait: '#5B8CA8',
+    chartBlock: '#B27B2C',
+    chartWork: '#3E9B6B',
+    chartMetric: '#8E6BA8',
+    overlay: 'rgba(13, 17, 22, 0.88)',
+    shadow: '0 8px 32px rgba(13, 17, 22, 0.5)'
+  }
+}
+
+// 图表字体与页面 --fv-font-body 保持同一套系统字体栈，避免图表内仍以 Inter 为首。
+const FV_FONT_STACK = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
+
 const MERMAID_THEME_VARS = {
   dark: {
-    primaryColor: '#3b82f6',
-    primaryTextColor: '#ffffff',
-    primaryBorderColor: '#3b82f6',
-    lineColor: '#6b7280',
-    secondaryColor: '#6366f1',
-    tertiaryColor: '#8b5cf6',
-    background: '#1a2332',
-    mainBkg: '#1a2332',
-    nodeBorder: '#3b82f6',
-    clusterBkg: '#0f172a',
-    titleColor: '#ffffff',
-    edgeLabelBackground: '#1a2332',
-    textColor: '#e2e8f0',
-    fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif',
+    primaryColor: FV_PALETTE.dark.accent,
+    primaryTextColor: FV_PALETTE.dark.white,
+    primaryBorderColor: FV_PALETTE.dark.primary,
+    lineColor: FV_PALETTE.dark.textMuted,
+    secondaryColor: FV_PALETTE.dark.chartWait,
+    tertiaryColor: FV_PALETTE.dark.chartMetric,
+    background: FV_PALETTE.dark.bg,
+    mainBkg: FV_PALETTE.dark.surfaceSoft,
+    nodeBorder: FV_PALETTE.dark.primary,
+    clusterBkg: FV_PALETTE.dark.surface,
+    titleColor: FV_PALETTE.dark.text,
+    edgeLabelBackground: FV_PALETTE.dark.surfaceSoft,
+    textColor: FV_PALETTE.dark.text,
+    fontFamily: FV_FONT_STACK,
     fontSize: '13px'
   },
   default: {
-    primaryColor: '#3b82f6',
-    primaryTextColor: '#1e293b',
-    primaryBorderColor: '#3b82f6',
-    lineColor: '#64748b',
-    secondaryColor: '#6366f1',
-    tertiaryColor: '#8b5cf6',
-    background: '#ffffff',
-    mainBkg: '#ffffff',
-    nodeBorder: '#3b82f6',
-    clusterBkg: '#f8fafc',
-    titleColor: '#1e293b',
-    edgeLabelBackground: '#ffffff',
-    textColor: '#1e293b',
-    fontFamily: 'Inter, PingFang SC, Microsoft YaHei, sans-serif',
+    primaryColor: FV_PALETTE.light.accent,
+    primaryTextColor: FV_PALETTE.light.white,
+    primaryBorderColor: FV_PALETTE.light.primary,
+    lineColor: FV_PALETTE.light.textMuted,
+    secondaryColor: FV_PALETTE.light.chartWait,
+    tertiaryColor: FV_PALETTE.light.chartMetric,
+    background: FV_PALETTE.light.bg,
+    mainBkg: FV_PALETTE.light.bg,
+    nodeBorder: FV_PALETTE.light.primary,
+    clusterBkg: FV_PALETTE.light.surface,
+    titleColor: FV_PALETTE.light.text,
+    edgeLabelBackground: FV_PALETTE.light.bg,
+    textColor: FV_PALETTE.light.text,
+    fontFamily: FV_FONT_STACK,
     fontSize: '13px'
   }
 }
@@ -258,22 +309,20 @@ function setupMermaidZoom() {
     overlay.className = 'mermaid-overlay'
     // 跟随当前图表主题设置遮罩背景色
     const isDark = rendered.dataset.theme !== 'default'
-    overlay.style.background = isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.92)'
+    overlay.style.background = isDark ? FV_PALETTE.dark.overlay : FV_PALETTE.light.overlay
     isOverlayOpen = true
 
     const content = document.createElement('div')
     content.className = 'mermaid-overlay-content'
     // 跟随当前图表主题设置内容区背景色
-    content.style.background = isDark ? '#1e293b' : '#ffffff'
-    content.style.boxShadow = isDark
-      ? '0 8px 32px rgba(0, 0, 0, 0.5)'
-      : '0 8px 32px rgba(0, 0, 0, 0.15)'
+    content.style.background = isDark ? FV_PALETTE.dark.surfaceSoft : FV_PALETTE.light.bg
+    content.style.boxShadow = isDark ? FV_PALETTE.dark.shadow : FV_PALETTE.light.shadow
 
     const closeBtn = document.createElement('button')
     closeBtn.className = 'mermaid-overlay-close'
     closeBtn.setAttribute('aria-label', '关闭')
     closeBtn.textContent = '✕'
-    closeBtn.style.color = isDark ? '#ffffff' : '#1e293b'
+    closeBtn.style.color = isDark ? FV_PALETTE.dark.text : FV_PALETTE.light.text
     closeBtn.addEventListener('click', () => {
       overlay.remove()
       isOverlayOpen = false
@@ -343,17 +392,17 @@ function addThemeSwitcher() {
   })
 }
 
-// 主题颜色映射
+// 主题颜色映射（由 FV_PALETTE 派生，避免与 CSS token 不同源）
 const themeColors = {
   dark: {
-    text: '#ffffff',
-    line: '#6b7280',
-    containerBg: '#1e293b'
+    text: FV_PALETTE.dark.white,
+    line: FV_PALETTE.dark.textMuted,
+    containerBg: FV_PALETTE.dark.surfaceSoft
   },
   default: {
-    text: '#1e293b',
-    line: '#475569',
-    containerBg: '#ffffff'
+    text: FV_PALETTE.light.text,
+    line: FV_PALETTE.light.textMuted,
+    containerBg: FV_PALETTE.light.bg
   }
 }
 
@@ -465,9 +514,9 @@ function getEffectiveBgColor(el) {
   }
 
   // 5. 主题兜底：无 rect 且无 CSS 背景时，按页面主题推断默认背景色
-  //    深色主题 → #1a2332（深色）→ 白色文字；浅色主题 → #ffffff（浅色）→ 深色文字
+  //    深色主题 → #13181D（深色）→ 白色文字；浅色主题 → #FDFDFA（浅色）→ 深色文字
   const pageTheme = getPageTheme()
-  const themedDefault = pageTheme === 'dark' ? '#1a2332' : '#ffffff'
+  const themedDefault = pageTheme === 'dark' ? FV_PALETTE.dark.bg : FV_PALETTE.light.bg
   return themedDefault
 }
 
@@ -516,7 +565,7 @@ function autoTextColor(svg) {
   svg.querySelectorAll('foreignObject').forEach(fo => {
     const bgColor = getEffectiveBgColor(fo)
     const isDark = isDarkColor(bgColor)
-    const textColor = isDark ? '#ffffff' : '#1e293b'
+    const textColor = isDark ? FV_PALETTE.dark.white : FV_PALETTE.light.text
 
     // 给 foreignObject 直接子 div 动态添加水平 padding 并强制水平居中
     // 只处理 :scope > div 避免嵌套结构下 padding 累加压缩内容区
@@ -549,7 +598,7 @@ function autoTextColor(svg) {
   textEls.forEach(el => {
     const bgColor = getEffectiveBgColor(el)
     const isDark = isDarkColor(bgColor)
-    const textColor = isDark ? '#ffffff' : '#1e293b'
+    const textColor = isDark ? FV_PALETTE.dark.white : FV_PALETTE.light.text
 
     el.style.setProperty('fill', textColor, 'important')
   })
@@ -619,30 +668,35 @@ function applyThemeToSvg(svg, theme) {
   if (styleEl) {
     let css = styleEl.textContent
     if (theme === 'default') {
-      // dark → light
+      // dark → light：core 深绿底（#22322B）是稳定语义色，不参与文字色替换
       css = css.replace(/fill:#ffffff/g, 'fill:' + colors.text)
       css = css.replace(/fill:#fff\b/g, 'fill:' + colors.text)
       css = css.replace(/fill:#000819/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#172033/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#0f172a/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#1e293b/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#0F1318/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#1B2127/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#13181D/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#FDFDFA/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#F6F6F2/g, 'fill:' + colors.containerBg)
       css = css.replace(/fill:#000000/g, 'fill:' + colors.text)
       css = css.replace(/fill:#000\b/g, 'fill:' + colors.text)
-      css = css.replace(/stroke:#6b7280/g, 'stroke:' + colors.line)
+      css = css.replace(/stroke:#8A9096/g, 'stroke:' + colors.line)
+      css = css.replace(/stroke:#6B7772/g, 'stroke:' + colors.line)
     } else {
       // light → dark
       // 将暗色文字替换为亮色，确保暗色方框上文字可读
       css = css.replace(/fill:#000000/g, 'fill:' + colors.text)
       css = css.replace(/fill:#000\b/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#172033/g, 'fill:' + colors.text)
       css = css.replace(/fill:#000819/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#475569/g, 'fill:' + colors.text)
-      // 将白色背景替换为容器背景色
+      css = css.replace(/fill:#6C737A/g, 'fill:' + colors.text)
+      // 将浅色背景替换为容器背景色
       css = css.replace(/fill:#ffffff/g, 'fill:' + colors.containerBg)
       css = css.replace(/fill:#fff\b/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#f8fafc/g, 'fill:' + colors.containerBg)
-      css = css.replace(/stroke:#475569/g, 'stroke:' + colors.line)
-      css = css.replace(/stroke:#64748b/g, 'stroke:' + colors.line)
+      css = css.replace(/fill:#F6F6F2/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#FDFDFA/g, 'fill:' + colors.containerBg)
+      css = css.replace(/fill:#F7F7F3/g, 'fill:' + colors.containerBg)
+      css = css.replace(/stroke:#6C737A/g, 'stroke:' + colors.line)
+      css = css.replace(/stroke:#8A9096/g, 'stroke:' + colors.line)
+      css = css.replace(/stroke:#555C62/g, 'stroke:' + colors.line)
     }
     styleEl.textContent = css
   }
@@ -652,21 +706,21 @@ function applyThemeToSvg(svg, theme) {
     const fill = el.getAttribute('fill')
     if (theme === 'default') {
       if (fill === '#ffffff' || fill === '#fff') el.setAttribute('fill', colors.text)
-      if (fill === '#000819' || fill === '#172033' || fill === '#000000' || fill === '#000') el.setAttribute('fill', colors.text)
-      if (fill === '#0f172a' || fill === '#1e293b' || fill === '#1a2332') el.setAttribute('fill', colors.containerBg)
+      if (fill === '#000819' || fill === '#000000' || fill === '#000') el.setAttribute('fill', colors.text)
+      if (fill === '#0F1318' || fill === '#1B2127' || fill === '#13181D' || fill === '#FDFDFA' || fill === '#F6F6F2') el.setAttribute('fill', colors.containerBg)
     } else {
-      // 暗色模式：不替换 #1e293b / #1a2332，保留 Mermaid 原生暗色方框背景
-      if (fill === '#ffffff' || fill === '#fff' || fill === '#f8fafc') el.setAttribute('fill', colors.containerBg)
-      if (fill === '#475569') el.setAttribute('fill', colors.line)
+      // 暗色模式：不替换 #1B2127 / #13181D，保留 Mermaid 原生暗色方框背景
+      if (fill === '#ffffff' || fill === '#fff' || fill === '#F6F6F2' || fill === '#FDFDFA' || fill === '#F7F7F3') el.setAttribute('fill', colors.containerBg)
+      if (fill === '#6C737A') el.setAttribute('fill', colors.line)
     }
   })
 
   svg.querySelectorAll('[stroke]').forEach(el => {
     const stroke = el.getAttribute('stroke')
     if (theme === 'default') {
-      if (stroke === '#6b7280') el.setAttribute('stroke', colors.line)
+      if (stroke === '#8A9096' || stroke === '#6B7772') el.setAttribute('stroke', colors.line)
     } else {
-      if (stroke === '#475569' || stroke === '#64748b') el.setAttribute('stroke', colors.line)
+      if (stroke === '#6C737A' || stroke === '#8A9096' || stroke === '#555C62') el.setAttribute('stroke', colors.line)
     }
   })
 }

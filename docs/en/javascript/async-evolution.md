@@ -89,10 +89,10 @@ flowchart LR
     uQ -- "Microtasks enter the stack one by one" --> Stack
     MQ -- "Next macrotask" --> Stack
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
     class Stack block;
     class Timer,Net,DOM,MQ wait;
     class Micro,uQ work;

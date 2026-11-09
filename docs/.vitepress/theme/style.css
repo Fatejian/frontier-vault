@@ -3,28 +3,85 @@
    ============================================ */
 
 /* Design Tokens
-   设计原则：单一克制强调色（ink-blue），暖度轻微的中性色，着色阴影，
-   无第二强调色，无渐变。Mermaid 图表内部五色主题由 index.js 独立管理，与此处解耦。 */
+   设计原则：以低饱和绿为单一强调色（参考 kb.fatejian.icu 的 modern 主题），
+   亮色用微暖中性底、暗色用中性冷灰底，着色阴影，无渐变、无第二强调色。
+   主体颜色先声明等效 hex 作为渐进增强回退，再声明 OKLCH 主值：
+   不支持 OKLCH 的浏览器会忽略第二条声明并保留 hex；
+   AA 修正值、功能语义色与 Mermaid 字符串替换用色只保留 hex，避免换算误差。
+   JS / Mermaid / Markdown 侧只使用同一套 hex（见 index.js 的 FV_PALETTE），
+   由 scripts/check-color-contrast.mjs 校验三处色源同源。 */
 :root {
-  /* Colors - Light
-     主色从通用 blue-500 (#3b82f6) 收敛到更克制的 ink-blue (#2563eb)，
-     避免普通 SaaS 蓝的"亮蓝按钮"既视感；中性色保留 slate 冷调以匹配工程师审美。 */
-  --fv-bg: #ffffff;
-  --fv-surface: #f8fafc;
-  --fv-surface-elevated: #ffffff;
-  --fv-text: #172033;
-  --fv-text-muted: #64748b;
-  --fv-border: #e2e8f0;
-  --fv-primary: #2563eb;
-  --fv-primary-soft: rgba(37, 99, 235, 0.10);
-  --fv-success: #16a34a;
-  --fv-warning: #d97706;
-  --fv-danger: #dc2626;
+  /* Colors - Light */
+  --fv-bg: #FDFDFA;
+  --fv-bg: oklch(.994 .004 106);
+  --fv-surface: #F7F7F3;
+  --fv-surface: oklch(.975 .006 112);
+  --fv-surface-elevated: #FFFFFF;
+  --fv-surface-elevated: oklch(1 0 0);
+  --fv-text: #262C32;
+  --fv-text: oklch(.29 .014 245);
+  --fv-text-muted: #555C62;
+  --fv-text-muted: oklch(.47 .014 245);
+  /* subtle 为 WCAG AA 修正值（4.71:1），不照抄参考站不足 4.5:1 的原值 */
+  --fv-text-subtle: #6C737A;
+  --fv-border: #CED3D8;
+  --fv-border: oklch(.865 .008 245);
+  --fv-divider: #E1E4E8;
+  --fv-divider: oklch(.918 .006 245);
 
-  /* Tinted shadows — 与背景同色相的着色阴影，替代纯黑透明，避免灰冷感 */
-  --fv-shadow-sm: 0 1px 2px rgba(30, 58, 138, 0.04);
-  --fv-shadow-md: 0 4px 12px rgba(30, 58, 138, 0.06);
-  --fv-shadow-lg: 0 8px 24px rgba(30, 58, 138, 0.08);
+  /* 品牌绿：低饱和墨绿；hover 更浓，accent 用于需要深一档绿色的场景 */
+  --fv-primary: #176540;
+  --fv-primary: oklch(.45 .095 158);
+  --fv-primary-hover: #004F2E;
+  --fv-primary-hover: oklch(.375 .088 158);
+  --fv-primary-accent: #24744D;
+  --fv-primary-accent: oklch(.5 .1 158);
+  --fv-primary-soft: rgba(36, 116, 77, 0.13);
+
+  /* 品牌绿底上的前景随模式反转：亮色白字，暗色深字（暗色亮绿底禁用白字） */
+  --fv-on-primary: #FFFFFF;
+  --fv-on-primary: oklch(1 0 0);
+
+  /* 功能绿比品牌绿更亮；warning / danger 保留红琥珀语义，避免与主色混淆 */
+  --fv-success: #1B7A4B;
+  --fv-warning: #96590F;
+  --fv-danger: #B42318;
+
+  /* Mermaid 字符串替换只认 hex，图表线色在此登记色源（见 FV_PALETTE.chartLine） */
+  --fv-chart-line: #6B7772;
+
+  /* Tinted shadows — 与文字同源的着色阴影，避免纯黑带来的灰冷感 */
+  --fv-shadow-sm: 0 1px 2px rgba(38, 44, 50, 0.06);
+  --fv-shadow-md: 0 4px 14px rgba(38, 44, 50, 0.08);
+  --fv-shadow-lg: 0 14px 34px rgba(38, 44, 50, 0.10);
+
+  /* VitePress 框架变量：补齐原本缺失的 brand 系列，让框架组件与自定义组件同源 */
+  --vp-c-brand-1: #176540;
+  --vp-c-brand-1: oklch(.45 .095 158);
+  --vp-c-brand-2: #004F2E;
+  --vp-c-brand-2: oklch(.375 .088 158);
+  --vp-c-brand-3: #24744D;
+  --vp-c-brand-3: oklch(.5 .1 158);
+  --vp-c-brand-soft: rgba(36, 116, 77, 0.13);
+  --vp-c-bg: #FDFDFA;
+  --vp-c-bg: oklch(.994 .004 106);
+  --vp-c-bg-alt: #F7F7F3;
+  --vp-c-bg-alt: oklch(.975 .006 112);
+  --vp-c-bg-soft: #F6F6F2;
+  --vp-c-bg-soft: oklch(.972 .006 112);
+  --vp-c-bg-elv: #FFFFFF;
+  --vp-c-bg-elv: oklch(1 0 0);
+  --vp-c-text-1: #262C32;
+  --vp-c-text-1: oklch(.29 .014 245);
+  --vp-c-text-2: #555C62;
+  --vp-c-text-2: oklch(.47 .014 245);
+  --vp-c-text-3: #6C737A;
+  --vp-c-border: #CED3D8;
+  --vp-c-divider: #E1E4E8;
+  --vp-c-gutter: #E1E4E8;
+  --vp-sidebar-bg-color: #F7F7F3;
+  --vp-nav-bg-color: #FDFDFA;
+  --vp-local-nav-bg-color: #FDFDFA;
 
   /* Radius
      代码块圆角从 16px 收紧到 10px，技术内容更"工程化"而非"卡片化" */
@@ -50,20 +107,95 @@
 }
 
 /* Dark Mode Tokens
-   暗色底从纯 slate-900 微调到带轻微蓝墨色温的 #0c1424，提升高级感；
-   表面色相应跟随，避免冷暖不一致。 */
+   暗色底保持中性冷灰（hue 250），绿色只作强调；深底避免染绿，保证代码与图表可读。 */
 .dark {
-  --fv-bg: #0c1424;
-  --fv-surface: #162136;
-  --fv-surface-elevated: #1e2d47;
-  --fv-text: #e6eaf0;
-  --fv-text-muted: #8b97a8;
-  --fv-border: #243149;
-  --fv-primary: #7aa2f7;
-  --fv-primary-soft: rgba(122, 162, 247, 0.14);
+  --fv-bg: #13181D;
+  --fv-bg: oklch(.205 .012 250);
+  --fv-surface: #0F1318;
+  --fv-surface: oklch(.185 .012 250);
+  --fv-surface-elevated: #1E2329;
+  --fv-surface-elevated: oklch(.255 .014 250);
+  --fv-text: #E2E5E8;
+  --fv-text: oklch(.92 .006 250);
+  --fv-text-muted: #A0A5AB;
+  --fv-text-muted: oklch(.72 .01 250);
+  /* subtle 为 WCAG AA 修正值（5.54:1） */
+  --fv-text-subtle: #8A9096;
+  --fv-border: #353B42;
+  --fv-border: oklch(.35 .014 250);
+  --fv-divider: #282D32;
+  --fv-divider: oklch(.295 .012 250);
+  --fv-primary: #72CE9B;
+  --fv-primary: oklch(.78 .115 158);
+  --fv-primary-hover: #82E2AD;
+  --fv-primary-hover: oklch(.84 .12 158);
+  --fv-primary-accent: #35835B;
+  --fv-primary-accent: oklch(.55 .1 158);
+  --fv-primary-soft: rgba(114, 206, 155, 0.18);
+  /* 暗色品牌绿是亮色，白字仅 1.91:1；前景改为深底同色，达 9.37:1 */
+  --fv-on-primary: #13181D;
+  --fv-on-primary: oklch(.205 .012 250);
+  --fv-success: #5FCB91;
+  --fv-warning: #E0A45C;
+  --fv-danger: #F08A85;
+  --fv-chart-line: #8A9096;
   --fv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
-  --fv-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --fv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --fv-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --fv-shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.45);
+
+  --vp-c-brand-1: #72CE9B;
+  --vp-c-brand-1: oklch(.78 .115 158);
+  --vp-c-brand-2: #82E2AD;
+  --vp-c-brand-2: oklch(.84 .12 158);
+  --vp-c-brand-3: #35835B;
+  --vp-c-brand-3: oklch(.55 .1 158);
+  --vp-c-brand-soft: rgba(114, 206, 155, 0.18);
+  --vp-c-bg: #13181D;
+  --vp-c-bg: oklch(.205 .012 250);
+  --vp-c-bg-alt: #0F1318;
+  --vp-c-bg-alt: oklch(.185 .012 250);
+  --vp-c-bg-soft: #1B2127;
+  --vp-c-bg-soft: oklch(.245 .014 250);
+  --vp-c-bg-elv: #1E2329;
+  --vp-c-bg-elv: oklch(.255 .014 250);
+  --vp-c-text-1: #E2E5E8;
+  --vp-c-text-1: oklch(.92 .006 250);
+  --vp-c-text-2: #A0A5AB;
+  --vp-c-text-2: oklch(.72 .01 250);
+  --vp-c-text-3: #8A9096;
+  --vp-c-border: #353B42;
+  --vp-c-divider: #282D32;
+  --vp-c-gutter: #282D32;
+  --vp-sidebar-bg-color: #0F1318;
+  --vp-nav-bg-color: #13181D;
+  --vp-local-nav-bg-color: #13181D;
+}
+
+/* VitePress 按钮变量接线
+   默认主题的 .VPButton.* 规则带 [data-v-*] 属性选择器，特异性高于
+   .VPButton.brand 这类自定义规则，直接覆盖会静默失效（实测 brand 按钮仍取
+   --vp-c-brand-3）。改为在变量层把框架按钮映射到 --fv-*，避免特异性竞赛：
+   :root 与 .dark 同属 html 元素，var(--fv-*) 会解析为当前模式的计算值。 */
+:root,
+.dark {
+  --vp-button-brand-border: var(--fv-primary);
+  --vp-button-brand-text: var(--fv-on-primary);
+  --vp-button-brand-bg: var(--fv-primary);
+  --vp-button-brand-hover-border: var(--fv-primary-hover);
+  --vp-button-brand-hover-text: var(--fv-on-primary);
+  --vp-button-brand-hover-bg: var(--fv-primary-hover);
+  --vp-button-brand-active-border: var(--fv-primary-hover);
+  --vp-button-brand-active-text: var(--fv-on-primary);
+  --vp-button-brand-active-bg: var(--fv-primary-hover);
+  --vp-button-alt-border: var(--fv-border);
+  --vp-button-alt-text: var(--fv-text);
+  --vp-button-alt-bg: var(--fv-surface-elevated);
+  --vp-button-alt-hover-border: var(--fv-primary);
+  --vp-button-alt-hover-text: var(--fv-primary);
+  --vp-button-alt-hover-bg: var(--fv-surface);
+  --vp-button-alt-active-border: var(--fv-primary);
+  --vp-button-alt-active-text: var(--fv-primary);
+  --vp-button-alt-active-bg: var(--fv-surface);
 }
 
 /* ============================================
@@ -189,14 +321,14 @@
 
 /* 暗色主题容器背景（写死颜色，不依赖页面主题变量） */
 .mermaid-container[data-theme="dark"] {
-  background: #1e293b;
-  border-color: #334155;
+  background: #13181D;
+  border-color: #353B42;
 }
 
 /* 亮色主题容器背景 */
 .mermaid-container[data-theme="default"] {
-  background: #ffffff;
-  border-color: #e2e8f0;
+  background: #FDFDFA;
+  border-color: #E1E4E8;
 }
 
 .mermaid-container:hover {
@@ -212,9 +344,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #1e293b;
+  border: 1px solid #E1E4E8;
+  background: #FDFDFA;
+  color: #262C32;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -227,21 +359,21 @@
 }
 
 .mermaid-theme-toggle:hover {
-  border-color: #2563eb;
-  background: #f1f5f9;
+  border-color: #176540;
+  background: #EDF2ED;
   transform: scale(1.1);
 }
 
 /* 深色 Mermaid 图表内的按钮样式 */
 .mermaid-container[data-theme="dark"] .mermaid-theme-toggle {
-  border-color: #475569 !important;
-  background: #334155 !important;
+  border-color: #353B42 !important;
+  background: #1B2127 !important;
   color: #ffffff !important;
 }
 
 .mermaid-container[data-theme="dark"] .mermaid-theme-toggle:hover {
-  border-color: #7aa2f7 !important;
-  background: #475569 !important;
+  border-color: #72CE9B !important;
+  background: #282D32 !important;
 }
 
 .mermaid-container svg {
@@ -253,12 +385,12 @@
 
 /* Light theme SVG background */
 .mermaid-container[data-theme="default"] {
-  background: #ffffff !important;
-  border-color: #e2e8f0;
+  background: #FDFDFA !important;
+  border-color: #E1E4E8;
 }
 
 .mermaid-container[data-theme="default"] svg {
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.05));
+  filter: drop-shadow(0 1px 2px rgba(38, 44, 50, 0.08));
 }
 
 /* Mermaid 代码块始终隐藏（兼容所有现代浏览器） */
@@ -305,7 +437,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(13, 17, 22, 0.88);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,7 +459,7 @@
   background: var(--fv-surface);
   border-radius: var(--fv-radius-xl);
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(13, 17, 22, 0.5);
   cursor: default;
 }
 
@@ -348,8 +480,8 @@
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(114, 206, 155, 0.14);
+  color: #E2E5E8;
   font-size: 1.1rem;
   cursor: pointer;
   display: flex;
@@ -360,7 +492,7 @@
 }
 
 .mermaid-overlay-close:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(114, 206, 155, 0.28);
 }
 
 /* ============================================
@@ -391,28 +523,28 @@
 /* 亮色主题代码块：确保文字可读性 */
 .vp-doc div[class*='language-'] {
   /* 亮色模式下使用浅灰背景，深色文字 */
-  --vp-code-block-bg: #f6f8fa;
-  --vp-code-line-highlight-color: rgba(0, 0, 0, 0.06);
-  --vp-code-line-number-color: #8b949e;
-  --vp-code-copy-code-hover-bg: rgba(0, 0, 0, 0.04);
-  --vp-code-copy-code-active-text: #57606a;
+  --vp-code-block-bg: #F3F7F4;
+  --vp-code-line-highlight-color: rgba(38, 44, 50, 0.06);
+  --vp-code-line-number-color: #6C737A;
+  --vp-code-copy-code-hover-bg: rgba(38, 44, 50, 0.05);
+  --vp-code-copy-code-active-text: #555C62;
 }
 
 /* 亮色模式下语法高亮文字颜色加深 */
 .vp-doc div[class*='language-'] .token {
   /* 默认文字颜色 */
-  color: #24292f;
+  color: #262C32;
 }
 
 .vp-doc div[class*='language-'] .token.comment,
 .vp-doc div[class*='language-'] .token.prolog,
 .vp-doc div[class*='language-'] .token.doctype,
 .vp-doc div[class*='language-'] .token.cdata {
-  color: #6e7781;
+  color: #6C737A;
 }
 
 .vp-doc div[class*='language-'] .token.punctuation {
-  color: #24292f;
+  color: #262C32;
 }
 
 .vp-doc div[class*='language-'] .token.namespace {
@@ -425,7 +557,7 @@
 .vp-doc div[class*='language-'] .token.number,
 .vp-doc div[class*='language-'] .token.constant,
 .vp-doc div[class*='language-'] .token.symbol {
-  color: #0550ae;
+  color: #2F6F4F;
 }
 
 .vp-doc div[class*='language-'] .token.selector,
@@ -433,7 +565,7 @@
 .vp-doc div[class*='language-'] .token.string,
 .vp-doc div[class*='language-'] .token.char,
 .vp-doc div[class*='language-'] .token.builtin {
-  color: #0a3069;
+  color: #3E7C8C;
 }
 
 .vp-doc div[class*='language-'] .token.operator,
@@ -441,53 +573,53 @@
 .vp-doc div[class*='language-'] .token.url,
 .vp-doc div[class*='language-'] .language-css .token.string,
 .vp-doc div[class*='language-'] .style .token.string {
-  color: #0550ae;
+  color: #2F6F4F;
 }
 
 .vp-doc div[class*='language-'] .token.atrule,
 .vp-doc div[class*='language-'] .token.attr-value,
 .vp-doc div[class*='language-'] .token.keyword {
-  color: #cf222e;
+  color: #B42318;
 }
 
 .vp-doc div[class*='language-'] .token.function,
 .vp-doc div[class*='language-'] .token.class-name {
-  color: #8250df;
+  color: #8E6BA8;
 }
 
 .vp-doc div[class*='language-'] .token.regex,
 .vp-doc div[class*='language-'] .token.important,
 .vp-doc div[class*='language-'] .token.variable {
-  color: #0550ae;
+  color: #2F6F4F;
 }
 
 /* 亮色模式下行号颜色加深 */
 .vp-doc div[class*='language-'] .line-numbers-wrapper .line-number {
-  color: #8b949e;
+  color: #6C737A;
 }
 
 /* 暗色主题代码块：保持原有样式 */
 .dark .vp-doc div[class*='language-'] {
-  --vp-code-block-bg: #16181d;
-  --vp-code-line-highlight-color: rgba(255, 255, 255, 0.06);
-  --vp-code-line-number-color: #484f58;
-  --vp-code-copy-code-hover-bg: rgba(255, 255, 255, 0.04);
-  --vp-code-copy-code-active-text: #8b949e;
+  --vp-code-block-bg: #0D1116;
+  --vp-code-line-highlight-color: rgba(226, 229, 232, 0.08);
+  --vp-code-line-number-color: #8A9096;
+  --vp-code-copy-code-hover-bg: rgba(226, 229, 232, 0.06);
+  --vp-code-copy-code-active-text: #A0A5AB;
 }
 
 .dark .vp-doc div[class*='language-'] .token {
-  color: #e6edf3;
+  color: #E2E5E8;
 }
 
 .dark .vp-doc div[class*='language-'] .token.comment,
 .dark .vp-doc div[class*='language-'] .token.prolog,
 .dark .vp-doc div[class*='language-'] .token.doctype,
 .dark .vp-doc div[class*='language-'] .token.cdata {
-  color: #8b949e;
+  color: #8A9096;
 }
 
 .dark .vp-doc div[class*='language-'] .token.punctuation {
-  color: #e6edf3;
+  color: #E2E5E8;
 }
 
 .dark .vp-doc div[class*='language-'] .token.property,
@@ -496,7 +628,7 @@
 .dark .vp-doc div[class*='language-'] .token.number,
 .dark .vp-doc div[class*='language-'] .token.constant,
 .dark .vp-doc div[class*='language-'] .token.symbol {
-  color: #79c0ff;
+  color: #72CE9B;
 }
 
 .dark .vp-doc div[class*='language-'] .token.selector,
@@ -504,7 +636,7 @@
 .dark .vp-doc div[class*='language-'] .token.string,
 .dark .vp-doc div[class*='language-'] .token.char,
 .dark .vp-doc div[class*='language-'] .token.builtin {
-  color: #a5d6ff;
+  color: #9AD8C2;
 }
 
 .dark .vp-doc div[class*='language-'] .token.operator,
@@ -512,36 +644,36 @@
 .dark .vp-doc div[class*='language-'] .token.url,
 .dark .vp-doc div[class*='language-'] .language-css .token.string,
 .dark .vp-doc div[class*='language-'] .style .token.string {
-  color: #79c0ff;
+  color: #72CE9B;
 }
 
 .dark .vp-doc div[class*='language-'] .token.atrule,
 .dark .vp-doc div[class*='language-'] .token.attr-value,
 .dark .vp-doc div[class*='language-'] .token.keyword {
-  color: #ff7b72;
+  color: #F08A85;
 }
 
 .dark .vp-doc div[class*='language-'] .token.function,
 .dark .vp-doc div[class*='language-'] .token.class-name {
-  color: #d2a8ff;
+  color: #C0A3D8;
 }
 
 .dark .vp-doc div[class*='language-'] .token.regex,
 .dark .vp-doc div[class*='language-'] .token.important,
 .dark .vp-doc div[class*='language-'] .token.variable {
-  color: #79c0ff;
+  color: #72CE9B;
 }
 
 .dark .vp-doc div[class*='language-'] .line-numbers-wrapper .line-number {
-  color: #484f58;
+  color: #8A9096;
 }
 
 /* 行内代码（inline code）样式优化
-   红色稍微柔化（#cf222e → #b3231f），避免在长段落中过度跳眼；
+   使用品牌绿而非红色，避免在长段落中过度跳眼；
    圆角与边框跟随新 token 体系 */
 .vp-doc :not(pre) > code {
   background: var(--fv-surface);
-  color: #b3231f;
+  color: #176540;
   padding: 0.15em 0.4em;
   border-radius: var(--fv-radius-sm);
   font-size: 0.875em;
@@ -550,9 +682,9 @@
 }
 
 .dark .vp-doc :not(pre) > code {
-  background: #16181d;
-  color: #ff8a82;
-  border-color: #30363d;
+  background: #0D1116;
+  color: #72CE9B;
+  border-color: #282D32;
 }
 
 /* 代码块语言标签 */
@@ -648,7 +780,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
+  color: var(--fv-on-primary);
   font-size: 12px;
   font-weight: bold;
 }
@@ -733,7 +865,7 @@
   height: 44px;
   border-radius: 50%;
   background: var(--fv-primary);
-  color: white;
+  color: var(--fv-on-primary);
   border: none;
   cursor: pointer;
   display: flex;
@@ -753,7 +885,7 @@
 }
 
 .back-to-top:hover {
-  background: #1d4ed8;
+  background: var(--fv-primary-hover);
   transform: translateY(-2px);
   box-shadow: var(--fv-shadow-lg);
 }
@@ -809,25 +941,8 @@
   margin-top: 1.25rem !important;
 }
 
-/* Hero 按钮：alt 按钮去除默认紫色调，统一到中性色边框，避免引入第二强调色 */
-.VPButton.alt {
-  border-color: var(--fv-border);
-  background-color: var(--fv-surface-elevated);
-  color: var(--fv-text);
-}
-
-.VPButton.alt:hover {
-  border-color: var(--fv-primary);
-  color: var(--fv-primary);
-}
-
-.VPButton.brand {
-  background-color: var(--fv-primary);
-}
-
-.VPButton.brand:hover {
-  background-color: #1d4ed8;
-}
+/* Hero 按钮：颜色统一由上方 :root/.dark 的 --vp-button-* 变量提供。
+   不再直接写 .VPButton.* 覆盖规则（特异性低于默认主题的 [data-v-*] 规则）。 */
 
 /* Features 网格：保持 3 列（docs 站点约定，非营销页），
    但去除重边框、加品牌色左侧锚点、收紧间距与 hover 反馈 */

@@ -787,6 +787,10 @@ html .VPSidebar .VPSidebarItem.level-0.has-active > .item > .text { ... }
 **检查点**：构建后在产物中同时找到两条规则，逐一比对特异性（class 级 + 属性级 + 元素级），
 确认自定义规则更高，或至少同特异性且顺序在后。
 
+**配色 token 约束**：双模式色板只在 `docs/.vitepress/theme/style.css` 的 `:root` / `.dark` 中定义（OKLCH 主值 + 等价 hex 回退）；Mermaid 运行时只接受 hex，色值统一由 `docs/.vitepress/theme/index.js` 的 `FV_PALETTE` 提供；图表语义色写在各篇 Markdown 的 `classDef` 中。三处必须同源，改动后运行 `npm run color:check`（对比度、OKLCH/hex 等价、旧色残留），并复核 `docs:build` 与 `docs:build -- --base /frontier-vault/` 两路产物。
+
+**品牌绿底前景约束**：按钮、回到顶部、任务勾选态等品牌绿底上的文字/图标只能用 `--fv-on-primary`（亮色白、暗色深）；暗色 `--fv-primary` 为亮绿，白字仅 1.91:1，禁止写死白字。VitePress 按钮色通过 `:root, .dark` 中的 `--vp-button-*` 变量映射到 `--fv-*`，不要直接写 `.VPButton.brand` / `.VPButton.alt` 覆盖规则——默认主题选择器带 `[data-v-*]` 属性，特异性更高。`npm run color:check` 会校验这些接线与对比度。
+
 ---
 
 ## 提交前自检清单

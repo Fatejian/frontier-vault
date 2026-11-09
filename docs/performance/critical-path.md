@@ -113,11 +113,11 @@ flowchart LR
 
     Start --> Network --> Discovery --> Runtime --> Render --> Experience
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Start core;
     class N1,N2,N3,D3 wait;
@@ -356,9 +356,9 @@ flowchart LR
     D -. 下载慢 .-> E
     I -. 主线程或渲染管线繁忙 .-> J
 
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class A,B,C,D wait;
     class E,F,G,H,I work;
@@ -655,18 +655,18 @@ flowchart TB
     Block --> Strategy2["拆分长任务 / 延迟非关键逻辑"]
     Repeat --> Strategy3["复用结果 / 减少无效更新"]
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class Core core;
     class W1,W2,W3,W4,W5 wait;
     class B1,B2,B3,B4,B5 block;
     class R1,R2,R3,R4,R5 work;
-    style Strategy1 fill:#ECFDF3,stroke:#22C55E,stroke-width:1.5px,stroke-dasharray: 4 3
-    style Strategy2 fill:#ECFDF3,stroke:#22C55E,stroke-width:1.5px,stroke-dasharray: 4 3
-    style Strategy3 fill:#ECFDF3,stroke:#22C55E,stroke-width:1.5px,stroke-dasharray: 4 3
+    style Strategy1 fill:#EDF5EF,stroke:#3E9B6B,stroke-width:1.5px,stroke-dasharray: 4 3
+    style Strategy2 fill:#EDF5EF,stroke:#3E9B6B,stroke-width:1.5px,stroke-dasharray: 4 3
+    style Strategy3 fill:#EDF5EF,stroke:#3E9B6B,stroke-width:1.5px,stroke-dasharray: 4 3
 ```
 
 图中上半部分是按症状归类的观察面，下半部分是每个观察面对应的策略方向。它不是严格的分类学：同一个问题可能同时属于等待和阻塞，例如 Hydration 既要在等待队列里完成，也会占用主线程。把它当作排查顺序，而不是互斥标签。

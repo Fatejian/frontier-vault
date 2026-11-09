@@ -81,9 +81,9 @@ flowchart LR
     P4[监控盲区] -.-> S4
     P5[瓶颈归因错误] -.-> S5
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
 
     class Start core;
     class S1,S2,S3,S4,S5,End work;
@@ -184,9 +184,9 @@ flowchart TB
     Wait -->|累积到临界点| Block
     Block -->|物理根因| Exhaust
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
 
     class Core core;
     class W1,W2,W3,W4,W5 wait;
@@ -322,9 +322,9 @@ flowchart TB
     Metrics --> A3[错误率曲线]
     Metrics --> A4[资源使用率]
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class M1,M2,M3,M4 wait;
     class Metrics metric;
@@ -407,9 +407,9 @@ flowchart TB
     Q3 -->|是| R3["代码层瓶颈<br/>优化 SQL / 算法 / 锁粒度"]
     Q3 -->|否| R4["外部依赖瓶颈<br/>检查第三方服务"]
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class Start core;
     class Q1,Q2,Q3 metric;

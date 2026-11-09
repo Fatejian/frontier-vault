@@ -71,10 +71,10 @@ flowchart LR
     TF -. "Type assumption broken" .-> Deopt["Deoptimization<br/>Fallback to Ignition bytecode"]
     Deopt -. "Re-collect feedback" .-> Ignition
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
     class Src,Parser,AST wait;
     class Ignition,Feedback work;
     class SP,ML,TF metric;
@@ -149,10 +149,10 @@ flowchart LR
     G --> H["Optimize again<br/>polymorphic version or re-specialization"]
     D -- "No" --> C
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
     class A,G wait;
     class B,C,H work;
     class E,F block;
@@ -204,8 +204,8 @@ flowchart LR
     C2 -. "share" .-> Note1
     C2a -. "differ" .-> Note2
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
     class C0,C1,C2,C0a,C1a,C2a wait;
     class Note1,Note2 block;
 ```
@@ -348,9 +348,9 @@ flowchart TB
     Main["Main thread"] -. "Brief pause" .-> Old
     Main -. "Brief pause" .-> Young
 
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:2px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
     class Y1,Y2,Y3 work;
     class O1,O2,O3,O4 wait;
     class Main block;

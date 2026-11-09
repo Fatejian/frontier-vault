@@ -100,11 +100,11 @@ flowchart TB
     RB --> M
     S --> M
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Core core;
     class L,R,A wait;
@@ -150,11 +150,11 @@ flowchart LR
     Halluc1["事实性幻觉<br/>训练知识缺失或过期"] -. 作用域 .-> Context
     Halluc2["忠实性幻觉<br/>忽略输入约束或编造引用"] -. 作用域 .-> Sampling
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Input,Output work;
     class Token,Context wait;
@@ -248,11 +248,11 @@ flowchart LR
     Rerank --> LLM
     LLM --> Answer
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Doc,Query,Answer work;
     class Chunk,Embed wait;
@@ -383,11 +383,11 @@ flowchart TB
     Observe -. 写入 .-> Memory
     Reflect -. 读写 .-> Memory
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Perceive,Act work;
     class Plan,Reflect wait;
@@ -634,11 +634,11 @@ flowchart TB
     Surface --> Category
     Category --> Mitigation
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class Core core;
     class S1,S2,S3,S4 wait;

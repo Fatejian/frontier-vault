@@ -173,11 +173,11 @@ flowchart TB
     B1 --> B2 --> B3
     E3 -.->|"跨越边界需要工程化"| D3
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px
 
     class C core
     class E1,E2,E3 wait

@@ -91,10 +91,10 @@ flowchart TB
     Core --> Levels
     Core --> Shape
 
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef block fill:#FFF7E6,stroke:#F59E0B,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
 
     class Core core;
     class D1,D2,D3,D4,D5 wait;
@@ -224,10 +224,10 @@ flowchart LR
 
     L1 --> L2 --> L3 --> L4 --> L5
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef work fill:#ECFDF3,stroke:#22C55E,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
-    classDef core fill:#172033,color:#fff,stroke:#172033,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
 
     class L1,L1A,L1B,L1C,L2,L2A,L2B,L2C wait;
     class L3,L3A,L3B,L3C work;
@@ -387,8 +387,8 @@ flowchart LR
     P1 --> P2 --> P3 --> P4 --> P5
     P5 -. feedback .-> P2
 
-    classDef wait fill:#EEF6FF,stroke:#3B82F6,color:#172033,stroke-width:1.5px;
-    classDef metric fill:#F5E8FF,stroke:#A855F7,color:#172033,stroke-width:2px;
+    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
 
     class P1,P2,P3,P4 wait;
     class P5 metric;

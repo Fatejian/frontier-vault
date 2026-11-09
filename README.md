@@ -127,11 +127,21 @@ frontier-vault/
 
 Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-plugin-mermaid`），核心能力：
 
-- **五色主题**：`wait`（蓝）/ `block`（橙）/ `work`（绿）/ `metric`（紫）/ `core`（深色）
+- **五色主题（低饱和）**：`wait`（雾蓝）/ `block`（琥珀）/ `work`（功能绿）/ `metric`（紫）/ `core`（深绿墨）；语义色相不变，饱和度统一收敛
 - **点击放大**：点击图表在 90vw × 85vh 全屏 overlay 中渲染，带关闭按钮
 - **明暗切换**：每图表右上角独立切换主题，并通过 `MutationObserver` 自动跟随 VitePress 页面主题
 - **autoTextColor**：形状无关的背景检测自动调整文字对比度；`foreignObject` 动态扩展宽度防溢出
 - **去重与防闪烁**：基于 FNV-1a 哈希跟踪已渲染代码块；代码块 `visibility:hidden + height:0` 预隐藏避免渲染闪烁
+
+## 配色体系
+
+站点采用以低饱和绿为主的双模式配色（参考 `kb.fatejian.icu` 的 modern 主题）：亮色为微暖中性底 + 墨绿强调色，暗色为中性冷灰底 + 亮绿强调色，无渐变。单一色源分三层：
+
+- `docs/.vitepress/theme/style.css`：`:root` / `.dark` 中的 `--fv-*` 与 `--vp-c-*` token（OKLCH 主值 + 等价 hex 渐进增强回退）
+- `docs/.vitepress/theme/index.js`：`FV_PALETTE`，Mermaid 运行时只接受 hex
+- `docs/**/*.md`：图表 `classDef` 的 12 个低饱和语义色
+
+品牌绿（墨绿）与功能绿刻意分层，warning / danger 仍保留琥珀与红的语义。品牌绿底上的文字统一使用 `--fv-on-primary`（亮色白字、暗色深字），VitePress 按钮则通过 `--vp-button-*` 变量映射到 `--fv-*`，避免直接覆盖 `.VPButton.*` 时特异性不足而静默失效。运行 `npm run color:check` 可校验三处色源同源、OKLCH 与 hex 等价、按钮/回到顶部/勾选态的对比度与接线，以及 WCAG AA 对比度矩阵。
 
 ## AI 技能资产
 

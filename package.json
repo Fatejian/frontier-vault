@@ -9,7 +9,8 @@
     "docs:preview": "vitepress preview docs",
     "sidebar:gen": "node scripts/generate-sidebar.js",
     "i18n:check": "node scripts/generate-sidebar.js --check",
-    "i18n:home": "node scripts/generate-sidebar.js --sync-home"
+    "i18n:home": "node scripts/generate-sidebar.js --sync-home",
+    "color:check": "node scripts/check-color-contrast.mjs"
   },
   "repository": {
     "type": "git",

@@ -31,7 +31,7 @@ Built with [VitePress](https://vitepress.dev/) · Bilingual 中文 / English · 
 ## 项目特色
 
 - **深度优先**：每篇文章 20+ 分钟长文，覆盖原理、机制、工程实践与可执行结论，而非碎片化技巧罗列
-- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇结构、渐进式解释、Mermaid 五色主题、反例/正例对照，以及按需使用的统一模型与实践/决策清单
+- **统一风格**：所有文章遵循 [`frontier-vault-article-style`](skills/project/frontier-vault-article-style/SKILL.md) 规范——开篇结构、渐进式解释、Mermaid 统一图表配色、反例/正例对照，以及按需使用的统一模型与实践/决策清单
 - **核心论点贯穿**：每篇文章有明确核心论点，开篇提出判断，章节补充证据或限制条件，结语给出工程判断，避免原句重复
 - **可执行结论**：实践型文章以分组实践清单（task list）收尾，其他类型按需使用决策清单或行动建议
 - **数据驱动 i18n**：所有语言元数据集中管理在单一数据源，通过代码生成 `config.js`，新增语言无需修改任何硬编码
@@ -45,6 +45,7 @@ npm install           # 安装依赖
 npm run docs:dev      # 启动本地开发服务器（http://localhost:5173）
 npm run docs:build    # 构建生产版本
 npm run docs:preview  # 本地预览构建产物
+npm run color:check   # 配色、对比度与旧色残留校验
 ```
 
 ## 架构概览
@@ -106,6 +107,7 @@ frontier-vault/
 ├── assets/readme/             # README 视觉资产（hero.svg）
 ├── scripts/                   # 工具脚本
 │   ├── generate-sidebar.js        # 由 i18n 数据源生成 config.js
+│   ├── check-color-contrast.mjs   # 双模式色板、对比度与旧色残留校验
 │   ├── vite-plugin-auto-sidebar.js# dev 时监听 md 变更并自动重生成
 │   ├── audit-articles.ps1         # 文章格式审计
 │   ├── extract-headings.js        # 标题层级提取
@@ -127,7 +129,8 @@ frontier-vault/
 
 Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-plugin-mermaid`），核心能力：
 
-- **五色主题（低饱和）**：`wait`（雾蓝）/ `block`（琥珀）/ `work`（功能绿）/ `metric`（紫）/ `core`（深绿墨）；语义色相不变，饱和度统一收敛
+- **统一图表配色**：所有节点底面统一为站点表面色（亮 `#F7F7F3` / 暗 `#1B2127`），`wait`（雾蓝）/ `block`（琥珀）/ `work`（功能绿）/ `metric`（紫）只用低饱和描边区分语义，`core` 用加粗品牌绿描边作为唯一焦点（不使用实心填充）；文字由 `autoTextColor` 按底色反转
+- **双模式映射**：Markdown `classDef` 只写亮色基准，渲染前由 `FV_CHART_DARK` 统一替换；暗色图表不再出现亮色卡片或孤立色块
 - **点击放大**：点击图表在 90vw × 85vh 全屏 overlay 中渲染，带关闭按钮
 - **明暗切换**：每图表右上角独立切换主题，并通过 `MutationObserver` 自动跟随 VitePress 页面主题
 - **autoTextColor**：形状无关的背景检测自动调整文字对比度；`foreignObject` 动态扩展宽度防溢出
@@ -137,11 +140,12 @@ Mermaid v11 集成在 `docs/.vitepress/theme/index.js`（未使用 `vitepress-pl
 
 站点采用以低饱和绿为主的双模式配色（参考 `kb.fatejian.icu` 的 modern 主题）：亮色为微暖中性底 + 墨绿强调色，暗色为中性冷灰底 + 亮绿强调色，无渐变。单一色源分三层：
 
-- `docs/.vitepress/theme/style.css`：`:root` / `.dark` 中的 `--fv-*` 与 `--vp-c-*` token（OKLCH 主值 + 等价 hex 渐进增强回退）
-- `docs/.vitepress/theme/index.js`：`FV_PALETTE`，Mermaid 运行时只接受 hex
-- `docs/**/*.md`：图表 `classDef` 的 12 个低饱和语义色
+- `docs/.vitepress/theme/style.css`：`:root` / `.dark` 中的 `--fv-*`、`--fv-chart-*` 与 `--vp-c-*` token（OKLCH 主值 + 等价 hex 渐进增强回退）
+- `docs/.vitepress/theme/index.js`：`FV_PALETTE`、`FV_CHART_BASE` / `FV_CHART_DARK` 与 `FV_FONT_STACK`；Mermaid 只接受 hex，主题在渲染前按页面模式统一映射
+- `docs/**/*.md`：图表 `classDef` 只写亮色基准（统一中性底 + 语义描边 + 品牌绿核心），不写死文字色、不写 `%%{init}%%`
+- `scripts/check-color-contrast.mjs`：`npm run color:check` 的实现，校验三处色源同源、OKLCH/hex 等价、图表与按钮的 WCAG 对比度、`classDef` 合规与旧色残留
 
-品牌绿（墨绿）与功能绿刻意分层，warning / danger 仍保留琥珀与红的语义。品牌绿底上的文字统一使用 `--fv-on-primary`（亮色白字、暗色深字），VitePress 按钮则通过 `--vp-button-*` 变量映射到 `--fv-*`，避免直接覆盖 `.VPButton.*` 时特异性不足而静默失效。运行 `npm run color:check` 可校验三处色源同源、OKLCH 与 hex 等价、按钮/回到顶部/勾选态的对比度与接线，以及 WCAG AA 对比度矩阵。
+品牌绿（墨绿）与功能绿刻意分层，warning / danger 仍保留琥珀与红的语义。图表节点统一用中性表面底，`core` 只以加粗品牌绿描边突出，不再使用实心填充，语义色只走描边，亮暗两态都与页面融合。品牌绿底上的文字统一使用 `--fv-on-primary`（亮色白字、暗色深字），VitePress 按钮则通过 `--vp-button-*` 变量映射到 `--fv-*`，避免直接覆盖 `.VPButton.*` 时特异性不足而静默失效。运行 `npm run color:check` 可校验三处色源同源、OKLCH 与 hex 等价、按钮/回到顶部/勾选态及图表节点/描边的对比度与接线，以及 WCAG AA 对比度矩阵。
 
 ## AI 技能资产
 

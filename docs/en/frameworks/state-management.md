@@ -109,8 +109,8 @@ flowchart LR
     M3 -->|change| V3
     V3 -->|set| M2
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
 
     class V1,V2,V3 wait;
     class M1,M2,M3 block;
@@ -199,10 +199,10 @@ flowchart LR
     Store -->|change event| View
     View -->|user event| Action
 
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
 
     class Action metric;
     class Dispatcher core;
@@ -312,10 +312,10 @@ flowchart LR
     UI --> A --> R --> S --> UI2
     UI2 -.user event.-> UI
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
 
     class UI,UI2 wait;
     class A metric;
@@ -496,10 +496,10 @@ flowchart LR
     S -->|track| R
     D -->|track| R
 
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
 
     class S block;
     class A metric;
@@ -746,10 +746,10 @@ flowchart TB
         J2 --> J5
     end
 
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
 
     class Z1 block;
     class J1,J2,J3 work;
@@ -879,9 +879,9 @@ flowchart TB
     Q4 -->|dynamic graph| R4
     Q4 -->|reactive mutable| R6
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class Start core;
     class Q1,Q2,Q3,Q4 wait;

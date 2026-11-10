@@ -108,11 +108,11 @@ flowchart TB
     L5 --> Q5["团队共同规则是什么"]
     L6 --> Q6["什么不能做、必须满足什么"]
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class Core core;
     class L1,L2 wait;
@@ -486,11 +486,11 @@ flowchart TB
     L1 --> L2
     L2 --> L3
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,color:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,color:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class Core core;
     class A1,A2 wait;

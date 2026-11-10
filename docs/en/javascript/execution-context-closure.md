@@ -80,9 +80,9 @@ flowchart TB
 
     Stack -. "The top context is executing" .-> Lifecycle
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
     class S3,S4 wait;
     class S2 block;
     class L1,L2,L3 work;
@@ -226,9 +226,9 @@ flowchart LR
     IE -. "look up x: step 1 missed" .-> OE
     OE -. "step 2 hit x = inner" .-> Hit((found))
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:2px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
     class IE,OE,GE wait;
     class Hit work;
     class Null block;
@@ -301,9 +301,9 @@ flowchart TB
 
     CTX -. "outer" .-> GCTX["global Context"]
 
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
     class FN block;
     class CTX,GCTX wait;
     class FR work;

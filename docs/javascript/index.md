@@ -15,8 +15,6 @@ JavaScript 是前端工程师每天使用的语言，但"会用"和"理解"之�
 ## 知识地图
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Inter, PingFang SC, Microsoft YaHei, sans-serif', 'primaryColor': '#F4F7F4', 'primaryTextColor': '#22322B', 'primaryBorderColor': '#CDD8D2', 'lineColor': '#6B7772', 'fontSize': '13px'}}}%%
-
 flowchart TB
     center["JavaScript 深度"]
 
@@ -41,9 +39,9 @@ flowchart TB
     center --> engine
     center --> lang
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
 
     class center core
     class n1,n2,n5 work

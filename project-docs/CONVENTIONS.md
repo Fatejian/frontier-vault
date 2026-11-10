@@ -157,6 +157,8 @@ git cat-file blob <ref> | od -c | head     # 看原始字节
 
 **现象**：判断 `enhanceApp.js` 是否被引用，搜索整个 docs/ 返回 0 匹配，得出「文件未被引用」；
 而该文件位于 `.vitepress/`（以点开头的隐藏目录），根本未被搜到。
+> 现状补充（2026-11-09）：`theme/enhanceApp.js` 已删除，Mermaid 初始化合并进 `theme/index.js`；
+> 本案例只用于说明隐藏目录漏检，`enhanceApp({ app, router })` 是 VitePress 生命周期钩子，仍需保留。
 
 **根因**：ripgrep 默认跳过隐藏文件/目录；`Select-String` 直接读文件不跳过。
 两种工具结论相反时，说明至少一方漏检。
@@ -787,7 +789,9 @@ html .VPSidebar .VPSidebarItem.level-0.has-active > .item > .text { ... }
 **检查点**：构建后在产物中同时找到两条规则，逐一比对特异性（class 级 + 属性级 + 元素级），
 确认自定义规则更高，或至少同特异性且顺序在后。
 
-**配色 token 约束**：双模式色板只在 `docs/.vitepress/theme/style.css` 的 `:root` / `.dark` 中定义（OKLCH 主值 + 等价 hex 回退）；Mermaid 运行时只接受 hex，色值统一由 `docs/.vitepress/theme/index.js` 的 `FV_PALETTE` 提供；图表语义色写在各篇 Markdown 的 `classDef` 中。三处必须同源，改动后运行 `npm run color:check`（对比度、OKLCH/hex 等价、旧色残留），并复核 `docs:build` 与 `docs:build -- --base /frontier-vault/` 两路产物。
+**配色 token 约束**：双模式色板只在 `docs/.vitepress/theme/style.css` 的 `:root` / `.dark` 中定义（OKLCH 主值 + 等价 hex 回退）；图表色板由 `docs/.vitepress/theme/index.js` 的 `FV_CHART_BASE` / `FV_CHART_DARK` 提供并与 `--fv-chart-*` token 同源；Markdown `classDef` 只写亮色基准，暗色由渲染前统一映射。三处必须同源，改动后运行 `npm run color:check`（对比度、OKLCH/hex 等价、旧色残留、`classDef` 合规），并复核 `docs:build` 与 `docs:build -- --base /frontier-vault/` 两路产物。
+
+**图表配色约束**：所有节点底面统一为 `--fv-chart-node`（亮 `#F7F7F3` / 暗 `#1B2127`），`wait` / `block` / `work` / `metric` 只允许低饱和描边，`core` 只使用 `--fv-chart-core` 品牌绿加粗描边（禁止实心填充）；`classDef` 禁止写死 `color:`（由 `autoTextColor` 按底色反转），禁止 `%%{init}%%`。未分配 `classDef` 的节点由 `MERMAID_THEME_VARS` 兜底为普通节点色，避免孤立色块。
 
 **品牌绿底前景约束**：按钮、回到顶部、任务勾选态等品牌绿底上的文字/图标只能用 `--fv-on-primary`（亮色白、暗色深）；暗色 `--fv-primary` 为亮绿，白字仅 1.91:1，禁止写死白字。VitePress 按钮色通过 `:root, .dark` 中的 `--vp-button-*` 变量映射到 `--fv-*`，不要直接写 `.VPButton.brand` / `.VPButton.alt` 覆盖规则——默认主题选择器带 `[data-v-*]` 属性，特异性更高。`npm run color:check` 会校验这些接线与对比度。
 
@@ -810,6 +814,9 @@ python -c "import yaml;yaml.safe_load(open('.github/workflows/deploy.yml'));prin
 
 # 5. shell 语法
 bash -n scripts/*.sh && echo ok
+
+# 6. 配色一致性（期望「全部校验通过」）
+npm run color:check
 ```
 
 ---

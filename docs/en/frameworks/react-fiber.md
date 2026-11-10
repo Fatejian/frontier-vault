@@ -124,9 +124,9 @@ flowchart LR
     S2 -.solves.-> F2 -.implements.-> I2
     S3 -.solves.-> F3 -.implements.-> I3
 
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class S1,S2,S3 block;
     class F1,F2,F3 wait;
@@ -227,8 +227,8 @@ flowchart TB
     Item1 -.->|return| List
     Item2 -.->|return| List
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
     class App core;
     class Header,Nav,Logo,Content,List,Item1,Item2 wait;
 ```
@@ -312,9 +312,9 @@ flowchart LR
     C3 ==>|commit| DOM[("Real DOM")]
     W3 -.switch after completion.-> C3
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class C1,C2,C3 wait;
     class W1,W2,W3 block;
@@ -550,10 +550,10 @@ flowchart TB
     Start --> I1 --> I2 --> I3 --> Restart
     Restart --> Resume
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class Start core;
     class I1,I2,I3 block;
@@ -647,9 +647,9 @@ flowchart LR
     Render -->|complete| Commit
     Render -.interrupted by high priority.-> Render
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
 
     class R1,R2,R3 wait;
     class C1,C2,C3,C4 block;
@@ -699,10 +699,10 @@ flowchart TB
 
     A --> Schedule --> Render --> Commit --> Done(["Done"])
 
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:1.5px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
 
     class A,Done core;
     class S1,S2,S3,S4,S5 metric;

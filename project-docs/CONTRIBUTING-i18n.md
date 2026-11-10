@@ -90,6 +90,7 @@
 | `npm run sidebar:gen` | 生成 `config.js`（修改 i18n 数据源或增删文章后必须运行） |
 | `npm run i18n:check` | 翻译完整性检查，对比默认语言与其他语言的 slug 集合；输出 `MISSING <lang> <module>/<slug>` 或 `MISSING MODULE <lang> <module>`；有缺失时退出码 1 |
 | `npm run i18n:home` | 校验各语言 `index.md` 的 hero / features frontmatter 与 `home.js` 一致 |
+| `npm run color:check` | 配色一致性检查（双模式色板、WCAG 对比度、旧色残留、Mermaid 主题接线）；改动各语言 `index.md` 图表或配色后必须运行 |
 
 ---
 

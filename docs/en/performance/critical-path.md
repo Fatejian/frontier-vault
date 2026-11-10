@@ -113,11 +113,11 @@ flowchart LR
 
     Start --> Network --> Discovery --> Runtime --> Render --> Experience
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class Start core;
     class N1,N2,N3,D3 wait;
@@ -126,7 +126,7 @@ flowchart LR
     class D1,D2,D4,R1,R2,R3,P1,P2,P3,P4,P5 work;
 ```
 
-Read from left to right: the first four stages determine when the page can appear, and the fifth determines whether it stays reliable after it appears. Purple nodes are metrics you can collect directly; amber nodes are the stages most likely to occupy the main thread or interrupt the critical path. In the fourth stage, Style, Layout, Paint, Raster, and Composite stand for style calculation, layout, paint, rasterization, and compositing.
+Read from left to right: the first four stages determine when the page can appear, and the fifth determines whether it stays reliable after it appears. Purple-outlined nodes are metrics you can collect directly; amber-outlined nodes are the stages most likely to occupy the main thread or interrupt the critical path. In the fourth stage, Style, Layout, Paint, Raster, and Composite stand for style calculation, layout, paint, rasterization, and compositing.
 
 ---
 
@@ -358,9 +358,9 @@ flowchart LR
     D -. "Download slow" .-> E
     I -. "Main thread or render pipeline busy" .-> J
 
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class A,B,C,D wait;
     class E,F,G,H,I work;
@@ -657,10 +657,10 @@ flowchart TB
     Block --> Strategy2["Split Long Tasks / Defer Non-Critical Logic"]
     Repeat --> Strategy3["Reuse Results / Reduce Invalid Updates"]
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class Core core;
     class W1,W2,W3,W4,W5 wait;

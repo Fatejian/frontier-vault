@@ -39,7 +39,8 @@ const MERMAID_CONFIG = {
 }
 
 // 单一色源：与 theme/style.css 的 hex 回退声明、各篇 Markdown 的 classDef 色值同源。
-// Mermaid 的 themeVariables 与 applyThemeToSvg 的字符串替换只认 hex，不能写 OKLCH。
+// Mermaid 的 themeVariables 与源码级颜色替换只认 hex，不能写 OKLCH。
+// Markdown 只写亮色基准，暗色由 FV_CHART_DARK 在渲染前统一映射；
 // scripts/check-color-contrast.mjs 会校验三处色源一致。
 const FV_PALETTE = {
   light: {
@@ -54,12 +55,6 @@ const FV_PALETTE = {
     divider: '#E1E4E8',
     codeBg: '#F3F7F4',
     white: '#FFFFFF',
-    chartCore: '#22322B',
-    chartLine: '#6B7772',
-    chartWait: '#5B8CA8',
-    chartBlock: '#B27B2C',
-    chartWork: '#3E9B6B',
-    chartMetric: '#8E6BA8',
     overlay: 'rgba(253, 253, 250, 0.94)',
     shadow: '0 8px 32px rgba(38, 44, 50, 0.15)'
   },
@@ -75,52 +70,84 @@ const FV_PALETTE = {
     divider: '#282D32',
     codeBg: '#0D1116',
     white: '#FFFFFF',
-    chartCore: '#22322B',
-    chartLine: '#8A9096',
-    chartWait: '#5B8CA8',
-    chartBlock: '#B27B2C',
-    chartWork: '#3E9B6B',
-    chartMetric: '#8E6BA8',
     overlay: 'rgba(13, 17, 22, 0.88)',
     shadow: '0 8px 32px rgba(13, 17, 22, 0.5)'
   }
 }
 
+// 图表色板：亮色基准写在各篇 Markdown 的 classDef 里，暗色在渲染前统一替换。
+// 所有节点底面只用一个中性表面色，语义靠描边区分；core 用加粗品牌绿描边作为唯一焦点。
+// 与 style.css 的 --fv-chart-* token 一一对应，由 color:check 校验同源。
+const FV_CHART_BASE = {
+  node: '#F7F7F3',
+  core: '#176540',
+  wait: '#5B8CA8',
+  block: '#B27B2C',
+  work: '#3E9B6B',
+  metric: '#8E6BA8',
+  line: '#6B7772',
+  border: '#CED3D8',
+  text: '#262C32'
+}
+const FV_CHART_DARK = {
+  node: '#1B2127',
+  core: '#72CE9B',
+  wait: '#7FB0C8',
+  block: '#D3A65C',
+  work: '#6FCB9B',
+  metric: '#B694CE',
+  line: '#8A9096',
+  border: '#353B42',
+  text: '#E2E5E8'
+}
+
+function applyChartThemeToCode(code, theme) {
+  if (theme !== 'dark') return code
+  let out = code
+  for (const key of Object.keys(FV_CHART_BASE)) {
+    out = out.replace(new RegExp(FV_CHART_BASE[key], 'gi'), FV_CHART_DARK[key])
+  }
+  return out
+}
+
 // 图表字体与页面 --fv-font-body 保持同一套系统字体栈，避免图表内仍以 Inter 为首。
 const FV_FONT_STACK = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
 
+// 未显式分配 classDef 的节点也使用普通节点色，避免出现孤立色块。
 const MERMAID_THEME_VARS = {
   dark: {
-    primaryColor: FV_PALETTE.dark.accent,
-    primaryTextColor: FV_PALETTE.dark.white,
-    primaryBorderColor: FV_PALETTE.dark.primary,
-    lineColor: FV_PALETTE.dark.textMuted,
-    secondaryColor: FV_PALETTE.dark.chartWait,
-    tertiaryColor: FV_PALETTE.dark.chartMetric,
+    primaryColor: FV_CHART_DARK.node,
+    primaryTextColor: FV_CHART_DARK.text,
+    primaryBorderColor: FV_CHART_DARK.border,
+    lineColor: FV_CHART_DARK.line,
+    secondaryColor: FV_CHART_DARK.node,
+    tertiaryColor: FV_PALETTE.dark.surface,
     background: FV_PALETTE.dark.bg,
-    mainBkg: FV_PALETTE.dark.surfaceSoft,
-    nodeBorder: FV_PALETTE.dark.primary,
+    mainBkg: FV_CHART_DARK.node,
+    nodeBorder: FV_CHART_DARK.border,
     clusterBkg: FV_PALETTE.dark.surface,
-    titleColor: FV_PALETTE.dark.text,
-    edgeLabelBackground: FV_PALETTE.dark.surfaceSoft,
-    textColor: FV_PALETTE.dark.text,
+    clusterBorder: FV_CHART_DARK.border,
+    titleColor: FV_CHART_DARK.text,
+    edgeLabelBackground: FV_CHART_DARK.node,
+    textColor: FV_CHART_DARK.text,
     fontFamily: FV_FONT_STACK,
     fontSize: '13px'
   },
   default: {
-    primaryColor: FV_PALETTE.light.accent,
-    primaryTextColor: FV_PALETTE.light.white,
-    primaryBorderColor: FV_PALETTE.light.primary,
-    lineColor: FV_PALETTE.light.textMuted,
-    secondaryColor: FV_PALETTE.light.chartWait,
-    tertiaryColor: FV_PALETTE.light.chartMetric,
+    primaryColor: FV_CHART_BASE.node,
+    primaryTextColor: FV_CHART_BASE.text,
+    primaryBorderColor: FV_CHART_BASE.border,
+    lineColor: FV_CHART_BASE.line,
+    secondaryColor: FV_CHART_BASE.node,
+    tertiaryColor: FV_PALETTE.light.bg,
     background: FV_PALETTE.light.bg,
-    mainBkg: FV_PALETTE.light.bg,
-    nodeBorder: FV_PALETTE.light.primary,
-    clusterBkg: FV_PALETTE.light.surface,
-    titleColor: FV_PALETTE.light.text,
-    edgeLabelBackground: FV_PALETTE.light.bg,
-    textColor: FV_PALETTE.light.text,
+    mainBkg: FV_CHART_BASE.node,
+    nodeBorder: FV_CHART_BASE.border,
+    clusterBkg: FV_PALETTE.light.bg,
+    clusterBorder: FV_CHART_BASE.border,
+    titleColor: FV_CHART_BASE.text,
+    edgeLabelBackground: FV_CHART_BASE.node,
+    textColor: FV_CHART_BASE.text,
     fontFamily: FV_FONT_STACK,
     fontSize: '13px'
   }
@@ -200,7 +227,7 @@ async function renderSingleMermaid(codeBlock, options = {}) {
   const mermaidLib = await loadMermaid()
   mermaidLib.initialize(getMermaidThemeConfig(pageTheme))
 
-  mermaidLib.render('mermaid-' + Date.now() + '-' + (mermaidRenderCounter++), code).then(({ svg }) => {
+  mermaidLib.render('mermaid-' + Date.now() + '-' + (mermaidRenderCounter++), applyChartThemeToCode(code, pageTheme)).then(({ svg }) => {
     container.innerHTML = svg
     container.dataset.theme = pageTheme
     container.title = '点击放大查看'
@@ -343,8 +370,7 @@ function setupMermaidZoom() {
     svgClone.style.width = 'auto'
     svgClone.style.height = 'auto'
 
-    // overlay 中需要重新应用主题颜色（字符串替换，无需挂载 DOM）
-    applyThemeToSvg(svgClone, rendered.dataset.theme || getPageTheme())
+    // 颜色已在渲染前按主题写入 SVG，clone 直接复用即可
 
     content.appendChild(closeBtn)
     content.appendChild(svgClone)
@@ -390,20 +416,6 @@ function addThemeSwitcher() {
     container.style.position = 'relative'
     container.appendChild(toggleBtn)
   })
-}
-
-// 主题颜色映射（由 FV_PALETTE 派生，避免与 CSS token 不同源）
-const themeColors = {
-  dark: {
-    text: FV_PALETTE.dark.white,
-    line: FV_PALETTE.dark.textMuted,
-    containerBg: FV_PALETTE.dark.surfaceSoft
-  },
-  default: {
-    text: FV_PALETTE.light.text,
-    line: FV_PALETTE.light.textMuted,
-    containerBg: FV_PALETTE.light.bg
-  }
 }
 
 // Mermaid 节点背景形状选择器（覆盖所有 SVG 可填充图形元素）
@@ -661,70 +673,6 @@ function expandForeignObjects(svg) {
   }
 }
 
-function applyThemeToSvg(svg, theme) {
-  const colors = themeColors[theme]
-  const styleEl = svg.querySelector('style')
-
-  if (styleEl) {
-    let css = styleEl.textContent
-    if (theme === 'default') {
-      // dark → light：core 深绿底（#22322B）是稳定语义色，不参与文字色替换
-      css = css.replace(/fill:#ffffff/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#fff\b/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#000819/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#0F1318/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#1B2127/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#13181D/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#FDFDFA/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#F6F6F2/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#000000/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#000\b/g, 'fill:' + colors.text)
-      css = css.replace(/stroke:#8A9096/g, 'stroke:' + colors.line)
-      css = css.replace(/stroke:#6B7772/g, 'stroke:' + colors.line)
-    } else {
-      // light → dark
-      // 将暗色文字替换为亮色，确保暗色方框上文字可读
-      css = css.replace(/fill:#000000/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#000\b/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#000819/g, 'fill:' + colors.text)
-      css = css.replace(/fill:#6C737A/g, 'fill:' + colors.text)
-      // 将浅色背景替换为容器背景色
-      css = css.replace(/fill:#ffffff/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#fff\b/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#F6F6F2/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#FDFDFA/g, 'fill:' + colors.containerBg)
-      css = css.replace(/fill:#F7F7F3/g, 'fill:' + colors.containerBg)
-      css = css.replace(/stroke:#6C737A/g, 'stroke:' + colors.line)
-      css = css.replace(/stroke:#8A9096/g, 'stroke:' + colors.line)
-      css = css.replace(/stroke:#555C62/g, 'stroke:' + colors.line)
-    }
-    styleEl.textContent = css
-  }
-
-  // 替换 SVG 元素的直接 fill/stroke 属性
-  svg.querySelectorAll('[fill]').forEach(el => {
-    const fill = el.getAttribute('fill')
-    if (theme === 'default') {
-      if (fill === '#ffffff' || fill === '#fff') el.setAttribute('fill', colors.text)
-      if (fill === '#000819' || fill === '#000000' || fill === '#000') el.setAttribute('fill', colors.text)
-      if (fill === '#0F1318' || fill === '#1B2127' || fill === '#13181D' || fill === '#FDFDFA' || fill === '#F6F6F2') el.setAttribute('fill', colors.containerBg)
-    } else {
-      // 暗色模式：不替换 #1B2127 / #13181D，保留 Mermaid 原生暗色方框背景
-      if (fill === '#ffffff' || fill === '#fff' || fill === '#F6F6F2' || fill === '#FDFDFA' || fill === '#F7F7F3') el.setAttribute('fill', colors.containerBg)
-      if (fill === '#6C737A') el.setAttribute('fill', colors.line)
-    }
-  })
-
-  svg.querySelectorAll('[stroke]').forEach(el => {
-    const stroke = el.getAttribute('stroke')
-    if (theme === 'default') {
-      if (stroke === '#8A9096' || stroke === '#6B7772') el.setAttribute('stroke', colors.line)
-    } else {
-      if (stroke === '#6C737A' || stroke === '#8A9096' || stroke === '#555C62') el.setAttribute('stroke', colors.line)
-    }
-  })
-}
-
 async function toggleMermaidTheme(container) {
   const currentTheme = container.dataset.theme
   const newTheme = currentTheme === 'dark' ? 'default' : 'dark'
@@ -743,19 +691,11 @@ async function toggleMermaidTheme(container) {
   mermaidLib.initialize(getMermaidThemeConfig(newTheme))
 
   const id = 'mermaid-' + Date.now()
-  mermaidLib.render(id, mermaidCode).then(({ svg: newSvgStr }) => {
-    // mermaid.render 返回的是 SVG 字符串，需要解析为 DOM 元素才能应用主题颜色
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(newSvgStr, 'image/svg+xml')
-    const svgEl = doc.querySelector('svg')
-    if (svgEl) {
-      applyThemeToSvg(svgEl, newTheme)
-    }
-
-    // 替换容器内的 SVG
+  mermaidLib.render(id, applyChartThemeToCode(mermaidCode, newTheme)).then(({ svg: newSvg }) => {
+    // 替换容器内的 SVG（颜色已在源码层按目标主题写入）
     const oldSvg = container.querySelector('svg')
     if (oldSvg) {
-      oldSvg.outerHTML = svgEl ? svgEl.outerHTML : newSvgStr
+      oldSvg.outerHTML = newSvg
     }
 
     // 更新容器主题状态
@@ -800,7 +740,7 @@ function setupPageThemeSync() {
       const mermaidCode = code.textContent.trim()
       const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).slice(2)
 
-      mermaidLib.render(id, mermaidCode).then(({ svg: newSvg }) => {
+      mermaidLib.render(id, applyChartThemeToCode(mermaidCode, pageTheme)).then(({ svg: newSvg }) => {
         const oldSvg = container.querySelector('svg')
         if (oldSvg) {
           oldSvg.outerHTML = newSvg

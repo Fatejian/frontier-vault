@@ -75,10 +75,10 @@ flowchart LR
     Stage3 -->|Abstract design| Stage4
     Stage4 -->|Global vision| Stage5
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
 
     class Stage1,S1,Stage2,S2 wait;
     class Stage3,S3 work;
@@ -111,9 +111,9 @@ flowchart LR
 
     P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9 --> P10
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px;
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class P1,P10 core;
     class P2,P4,P6,P8 wait;
@@ -555,9 +555,9 @@ flowchart LR
     I --> P --> O
     O -. feedback .-> I
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
 
     class I wait;
     class P block;

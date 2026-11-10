@@ -73,9 +73,9 @@ flowchart LR
     P2["Breaks on every DOM change"] -.-> S2
     P3["Browser leak / residue"] -.-> S3
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
 
     class Start core
     class S1,S2,S3,End work
@@ -243,10 +243,10 @@ flowchart TB
 
     Change["Frontend changes id to class"] -.->|"Only one place to update"| P1
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
 
     class Core core
     class T1,T2,T3 wait
@@ -447,11 +447,11 @@ flowchart TB
     Q3 -->|"Yes"| R3["CSS Selector<br/>Faster"]
     Q3 -->|"No"| R4["Refactor frontend or add data-testid<br/>Do not locate on fragile structures"]
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
 
     class Start core
     class Q1,Q2,Q3 metric
@@ -722,11 +722,11 @@ flowchart TB
 
     Leak["driver.close() only closes window<br/>Process lingers / memory leak"] -.->|"Anti-pattern"| Q1
 
-    classDef core fill:#22322B,color:#fff,stroke:#22322B,stroke-width:2px
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px
-    classDef metric fill:#F4EFF8,stroke:#8E6BA8,color:#22322B,stroke-width:2px
+    classDef core fill:#F7F7F3,stroke:#176540,stroke-width:2px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef metric fill:#F7F7F3,stroke:#8E6BA8,stroke-width:1.5px;
 
     class Core core
     class C1,C2,C3 wait

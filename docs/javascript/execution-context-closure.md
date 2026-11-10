@@ -76,9 +76,9 @@ flowchart TB
 
     Stack -. "栈顶上下文正在执行" .-> Lifecycle
 
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
     class S3,S4 wait;
     class S2 block;
     class L1,L2,L3 work;
@@ -222,9 +222,9 @@ flowchart LR
     IE -. "查找 x: 第 1 步未命中" .-> OE
     OE -. "第 2 步命中 x=inner" .-> Hit((找到))
 
-    classDef env fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef hit fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:2px;
-    classDef ending fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:1.5px;
+    classDef env fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef hit fill:#F7F7F3,stroke:#3E9B6B,stroke-width:2px;
+    classDef ending fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
     class IE,OE,GE env;
     class Hit hit;
     class Null ending;
@@ -297,9 +297,9 @@ flowchart TB
 
     CTX -. "outer" .-> GCTX["全局 Context"]
 
-    classDef block fill:#FBF5EA,stroke:#B27B2C,color:#22322B,stroke-width:2px;
-    classDef wait fill:#EFF5F7,stroke:#5B8CA8,color:#22322B,stroke-width:1.5px;
-    classDef work fill:#EDF5EF,stroke:#3E9B6B,color:#22322B,stroke-width:1.5px;
+    classDef block fill:#F7F7F3,stroke:#B27B2C,stroke-width:1.5px;
+    classDef wait fill:#F7F7F3,stroke:#5B8CA8,stroke-width:1.5px;
+    classDef work fill:#F7F7F3,stroke:#3E9B6B,stroke-width:1.5px;
     class FN block;
     class CTX,GCTX wait;
     class FR work;

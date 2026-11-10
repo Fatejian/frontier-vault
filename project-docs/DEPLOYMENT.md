@@ -41,6 +41,8 @@ push 到 `master` 后，`.github/workflows/deploy.yml` 依次执行：
 | Build for GitHub Pages | `npm run docs:build -- --base /frontier-vault/` | — |
 | Deploy to GitHub Pages | `peaceiris/actions-gh-pages` | `gh-pages` 分支 |
 
+> 配色改动在提交/部署前需运行 `npm run color:check`（双模式色板、对比度、旧色残留与 Mermaid 主题接线）。该校验目前未接入 CI，需人工执行。
+
 **两次构建不是重复劳动**，因为两路的站点根路径不同：
 
 | 部署目标 | 站点根路径 | 产物中的资源引用 |

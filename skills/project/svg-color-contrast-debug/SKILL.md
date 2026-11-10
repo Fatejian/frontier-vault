@@ -251,11 +251,11 @@ for (const shape of shapes) {
 // ⚠️ 问题：正则只捕获 RGB，丢失 alpha
 function rgbToHex(color) {
   const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
-  // rgba(26,35,50,0.5) → #1a2332（丢失 0.5 透明度，变为全不透明）
+  // rgba(19,24,29,0.5) → #13181D（站点当前暗色底；丢失 0.5 透明度，变为全不透明）
 }
 
 // ✅ 修复：将 rgba 在页面背景上合成后再转 hex
-function rgbToHex(color, pageBgColor = '#1a2332') {
+function rgbToHex(color, pageBgColor = '#13181D') {
   const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
   if (!match) return color
   let [, r, g, b, a] = match

@@ -59,13 +59,15 @@
 
 **修复前示例**：
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': '...', 'primaryColor': '#EEF6FF', ...}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': '...', 'primaryColor': '#F7F7F3', ...}}}%%
 ```
 
 **修复后示例**：
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': '...', 'primaryColor': '#EEF6FF', ..., 'fontSize': '13px'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': '...', 'primaryColor': '#F7F7F3', ..., 'fontSize': '13px'}}}%%
 ```
+
+> 说明：本报告是 2026-08-05 的历史快照，示例色值按当前色板书写，仅用于演示 `fontSize` 的插入位置。当前主题由渲染层统一提供，不再使用 `%%{init}%%`。
 
 **批量修复脚本核心逻辑**：
 ```powershell

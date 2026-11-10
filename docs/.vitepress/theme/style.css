@@ -47,8 +47,15 @@
   --fv-warning: #96590F;
   --fv-danger: #B42318;
 
-  /* Mermaid 字符串替换只认 hex，图表线色在此登记色源（见 FV_PALETTE.chartLine） */
+  /* 图表语义色（亮色基准）：Markdown classDef 与 FV_CHART_BASE 使用同一组 hex。
+     所有节点底面统一为表面色，语义只体现在描边；core 用加粗品牌绿描边作为唯一焦点。 */
   --fv-chart-line: #6B7772;
+  --fv-chart-node: #F7F7F3;
+  --fv-chart-core: #176540;
+  --fv-chart-wait: #5B8CA8;
+  --fv-chart-block: #B27B2C;
+  --fv-chart-work: #3E9B6B;
+  --fv-chart-metric: #8E6BA8;
 
   /* Tinted shadows — 与文字同源的着色阴影，避免纯黑带来的灰冷感 */
   --fv-shadow-sm: 0 1px 2px rgba(38, 44, 50, 0.06);
@@ -139,6 +146,13 @@
   --fv-warning: #E0A45C;
   --fv-danger: #F08A85;
   --fv-chart-line: #8A9096;
+  /* 图表语义色（暗色映射）：与 FV_CHART_DARK 同源，节点底融入暗色表面 */
+  --fv-chart-node: #1B2127;
+  --fv-chart-core: #72CE9B;
+  --fv-chart-wait: #7FB0C8;
+  --fv-chart-block: #D3A65C;
+  --fv-chart-work: #6FCB9B;
+  --fv-chart-metric: #B694CE;
   --fv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
   --fv-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
   --fv-shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.45);

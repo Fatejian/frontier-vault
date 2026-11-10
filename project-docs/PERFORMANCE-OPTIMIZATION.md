@@ -735,16 +735,16 @@ content-encoding : 39/39 全部为空（未压缩）
 
 ### D. 项目侧已确认无需改动的项
 
-避免后人重复折腾（2026-10-12 复核）：
+避免后人重复折腾（2026-10-12 复核，2026-11-09 按配色改动更新）：
 
 - **mermaid 已是懒加载** —— `theme/index.js` 中用动态 `import('mermaid')`，且无图表时直接 return。**不要再改**。
-- **全站 mermaid 图表共 79 处**（` ```mermaid ` 围栏计数），全部依赖上述懒加载实现。
-  > 更正版：旧文档记为 54 处，站点内容扩充后已过时。
+- **全站 Mermaid 图表围栏共 152 处**（`docs/**/*.md` 中 ` ```mermaid ` 计数：中文 76 / 英文 76），全部依赖上述懒加载实现。
+  > 旧文档记 54 / 79 处，均为历史统计，随内容增减变化，不作为验收依据。
 - **`vite.config.js` 的 autoSidebar 插件**只含 `configureServer`（dev 文件监听），生产构建无开销。
-- **`theme/enhanceApp.js` 是死代码** —— 已被 git 跟踪，但 `theme/index.js` 中无任何 import/require 引用它。
-  > 注意区分：`index.js` 第 812 行的 `enhanceApp({ app, router })` 是 **VitePress 生命周期钩子**，
-  > 与该文件同名但**毫无关系**，不要因搜索命中而误判为"已被引用"。
-  > 若误删 `index.js` 中的正确实现，全站 79 处图表会失效。建议 `git rm`。
+- **`theme/enhanceApp.js` 已删除**（2026-11-09 配色改动中把 Mermaid 初始化合并进 `theme/index.js`）。
+  > `theme/index.js` 中的 `enhanceApp({ app, router })` 是 **VitePress 生命周期钩子**，不是该文件的引用；
+  > 图表主题现由 `FV_PALETTE` / `FV_FONT_STACK` 统一提供，各篇 `index.md` 不再写 `%%{init}%%` 硬编码配置，
+  > 校验由 `npm run color:check` 负责。
 - **lean 模式**为 VitePress 默认行为，二次拉取完整版 chunk 是正常设计，不建议盲目改。
 
 ### E. 遗留问题
